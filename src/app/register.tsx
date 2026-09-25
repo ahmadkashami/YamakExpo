@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
+import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
 import { useMemo, useState } from 'react';
 import {
   FlatList,
@@ -90,6 +91,27 @@ function getPasswordError(password: string): string | null {
   return null;
 }
 
+type PhoneValidation = {
+  error: string | null;
+  e164: string | null;
+};
+
+function getPhoneValidation(phone: string, isoCode: CountryCode): PhoneValidation {
+  const value = phone.trim();
+
+  if (value.length === 0) {
+    return { error: 'Phone number is required', e164: null };
+  }
+
+  const parsedPhone = parsePhoneNumberFromString(value, isoCode);
+
+  if (parsedPhone === undefined || !parsedPhone.isPossible()) {
+    return { error: 'Enter a valid phone number', e164: null };
+  }
+
+  return { error: null, e164: parsedPhone.number };
+}
+
 function FieldError({ message }: { message: string | null }) {
   if (message === null) {
     return null;
@@ -120,6 +142,7 @@ export default function RegisterScreen() {
   const [nameTouched, setNameTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [termsTouched, setTermsTouched] = useState(false);
   const callingCode = getCallingCode(selectedCountry.isoCode);
 
@@ -127,6 +150,12 @@ export default function RegisterScreen() {
   const emailError = emailTouched ? getEmailError(email) : null;
   const passwordError = passwordTouched ? getPasswordError(password) : null;
   const termsError = termsTouched && !isAgreed ? 'You must agree to the Terms and Privacy Policy' : null;
+
+  const phoneValidation = useMemo(
+    () => getPhoneValidation(phone, selectedCountry.isoCode),
+    [phone, selectedCountry.isoCode],
+  );
+  const phoneError = phoneTouched ? phoneValidation.error : null;
 
   const visibleCountries = useMemo(() => {
     const query = countrySearchQuery.trim().toLowerCase();
@@ -298,7 +327,11 @@ export default function RegisterScreen() {
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Phone</Text>
-              <View style={styles.phoneInputContainer}>
+              <View
+                style={[
+                  styles.phoneInputContainer,
+                  phoneError !== null && styles.phoneInputContainerInvalid,
+                ]}>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`${selectedCountry.name}, ${selectedCountry.isoCode}, ${callingCode}`}
@@ -309,6 +342,7 @@ export default function RegisterScreen() {
                   }}
                   style={({ pressed }) => [
                     styles.callingCodePrefix,
+                    phoneError !== null && styles.callingCodePrefixInvalid,
                     pressed && styles.callingCodePrefixPressed,
                   ]}>
                   <Text style={styles.flag}>{selectedCountry.flag}</Text>
@@ -321,9 +355,12 @@ export default function RegisterScreen() {
                   />
                 </Pressable>
                 <TextInput
-                  accessibilityLabel="Phone number"
+                  accessibilityLabel={
+                    phoneError !== null ? `Phone number, ${phoneError}` : 'Phone number'
+                  }
                   value={phone}
                   onChangeText={setPhone}
+                  onBlur={() => setPhoneTouched(true)}
                   placeholder="5XXX XXXX"
                   placeholderTextColor={colors.placeholder}
                   selectionColor={colors.navy}
@@ -333,6 +370,7 @@ export default function RegisterScreen() {
                   style={[styles.input, styles.phoneInput]}
                 />
               </View>
+              <FieldError message={phoneError} />
             </View>
             <View style={styles.agreementRow}>
               <Pressable
@@ -484,19 +522,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   logoPlate: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    padding: 8,
+    width: 100,
+    height: 100,
+    borderRadius: 24,
+    padding: 12,
     backgroundColor: colors.surface,
   },
   logo: {
-    width: 48,
-    height: 48,
+    width: 76,
+    height: 76,
   },
   brandNameRow: {
     height: 24,
-    marginTop: 12,
+    marginTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -634,6 +672,13 @@ const styles = StyleSheet.create({
   },
   callingCodePrefixPressed: {
     opacity: 0.7,
+  },
+  phoneInputContainerInvalid: {
+    borderColor: colors.error,
+    backgroundColor: colors.errorBackground,
+  },
+  callingCodePrefixInvalid: {
+    backgroundColor: colors.errorBackground,
   },
   flag: {
     fontSize: 16,
