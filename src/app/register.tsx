@@ -1,7 +1,18 @@
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
-import { Image, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Image,
+  Keyboard,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const appLogo = require('@/assets/images/appLogo.png');
@@ -38,11 +49,20 @@ export default function RegisterScreen() {
   const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
   const [isCountrySelectorVisible, setIsCountrySelectorVisible] = useState(false);
   const [phone, setPhone] = useState('');
+  const [isAgreed, setIsAgreed] = useState(false);
   const callingCode = selectedCountry.callingCode;
 
   function selectCountry(country: Country) {
     setSelectedCountry(country);
     setIsCountrySelectorVisible(false);
+  }
+
+  function openTermsOfService() {
+    void Linking.openURL('https://yamak-kw.com/terms');
+  }
+
+  function openPrivacyPolicy() {
+    void Linking.openURL('https://yamak-kw.com/privacy');
   }
 
   return (
@@ -199,6 +219,44 @@ export default function RegisterScreen() {
                   style={[styles.input, styles.phoneInput]}
                 />
               </View>
+            </View>
+            <View style={styles.agreementRow}>
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityLabel="Agree to the Terms of Service and Privacy Policy"
+                accessibilityState={{ checked: isAgreed }}
+                hitSlop={10}
+                onPress={() => setIsAgreed((agreed) => !agreed)}
+                style={({ pressed }) => [
+                  styles.agreementCheckbox,
+                  isAgreed && styles.agreementCheckboxChecked,
+                  pressed && styles.agreementCheckboxPressed,
+                ]}>
+                {isAgreed ? (
+                  <SymbolView
+                    name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                    size={14}
+                    tintColor={colors.gold}
+                  />
+                ) : null}
+              </Pressable>
+              <Text style={styles.agreementText}>
+                By providing your phone number you agree to the{' '}
+                <Text
+                  accessibilityRole="link"
+                  onPress={openTermsOfService}
+                  style={styles.agreementLink}>
+                  Terms of Service
+                </Text>{' '}
+                and{' '}
+                <Text
+                  accessibilityRole="link"
+                  onPress={openPrivacyPolicy}
+                  style={styles.agreementLink}>
+                  Privacy Policy
+                </Text>
+                .
+              </Text>
             </View>
           </View>
         </ScrollView>
@@ -436,6 +494,42 @@ const styles = StyleSheet.create({
   },
   phoneInput: {
     paddingHorizontal: 14,
+  },
+  agreementRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  agreementCheckbox: {
+    width: 22,
+    height: 22,
+    marginTop: 1,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 6,
+    backgroundColor: colors.surface,
+  },
+  agreementCheckboxChecked: {
+    borderColor: colors.navy,
+    backgroundColor: colors.navy,
+  },
+  agreementCheckboxPressed: {
+    opacity: 0.6,
+  },
+  agreementText: {
+    flex: 1,
+    color: colors.subtitle,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '400',
+  },
+  agreementLink: {
+    color: colors.title,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   countryModalBackdrop: {
     flex: 1,
