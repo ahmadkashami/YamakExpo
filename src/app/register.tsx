@@ -1,7 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
+  FlatList,
   Image,
   Keyboard,
   Linking,
@@ -15,15 +16,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  defaultCountry,
+  getAllowedCountries,
+  getCallingCode,
+  type Country,
+} from '@/data/allowed-countries';
+
 const appLogo = require('@/assets/images/appLogo.png');
 
-const countries = [
-  { name: 'Kuwait', isoCode: 'KW', callingCode: '+965', flag: '🇰🇼' },
-  { name: 'Syria', isoCode: 'SY', callingCode: '+963', flag: '🇸🇾' },
-  { name: 'Yemen', isoCode: 'YE', callingCode: '+967', flag: '🇾🇪' },
-] as const;
-
-type Country = (typeof countries)[number];
+const countries = getAllowedCountries();
 
 const colors = {
   navy: '#0C1C33',
@@ -46,14 +48,36 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
+  const [selectedCountry, setSelectedCountry] = useState<Country>(defaultCountry);
   const [isCountrySelectorVisible, setIsCountrySelectorVisible] = useState(false);
+  const [countrySearchQuery, setCountrySearchQuery] = useState('');
   const [phone, setPhone] = useState('');
   const [isAgreed, setIsAgreed] = useState(false);
-  const callingCode = selectedCountry.callingCode;
+  const callingCode = getCallingCode(selectedCountry.isoCode);
+
+  const visibleCountries = useMemo(() => {
+    const query = countrySearchQuery.trim().toLowerCase();
+
+    if (query.length === 0) {
+      return countries;
+    }
+
+    return countries.filter((country) => {
+      return (
+        country.name.toLowerCase().includes(query) ||
+        country.isoCode.toLowerCase().includes(query) ||
+        getCallingCode(country.isoCode).includes(query)
+      );
+    });
+  }, [countrySearchQuery]);
 
   function selectCountry(country: Country) {
     setSelectedCountry(country);
+    closeCountrySelector();
+  }
+
+  function closeCountrySelector() {
+    setCountrySearchQuery('');
     setIsCountrySelectorVisible(false);
   }
 
@@ -265,12 +289,12 @@ export default function RegisterScreen() {
         visible={isCountrySelectorVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setIsCountrySelectorVisible(false)}>
+        onRequestClose={closeCountrySelector}>
         <View style={styles.countryModalBackdrop}>
           <Pressable
             accessible={false}
             style={styles.countryModalDismissArea}
-            onPress={() => setIsCountrySelectorVisible(false)}
+            onPress={closeCountrySelector}
           />
           <View style={styles.countryModalCard}>
             <View style={styles.countryModalHeader}>
@@ -278,7 +302,7 @@ export default function RegisterScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Close country selector"
-                onPress={() => setIsCountrySelectorVisible(false)}
+                onPress={closeCountrySelector}
                 style={({ pressed }) => [
                   styles.countryModalClose,
                   pressed && styles.countryModalClosePressed,
@@ -290,15 +314,35 @@ export default function RegisterScreen() {
                 />
               </Pressable>
             </View>
-            <View style={styles.countryOptions}>
-              {countries.map((country) => {
+            <View style={styles.countrySearch}>
+              <SymbolView
+                name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+                size={16}
+                tintColor={colors.subtitle}
+              />
+              <TextInput
+                value={countrySearchQuery}
+                onChangeText={setCountrySearchQuery}
+                placeholder="Search country"
+                placeholderTextColor={colors.placeholder}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={styles.countrySearchInput}
+                accessibilityLabel="Search country"
+              />
+            </View>
+            <FlatList
+              data={visibleCountries}
+              keyExtractor={(country) => country.isoCode}
+              keyboardShouldPersistTaps="handled"
+              style={styles.countryList}
+              renderItem={({ item: country }) => {
                 const isSelected = country.isoCode === selectedCountry.isoCode;
 
                 return (
                   <Pressable
-                    key={country.isoCode}
                     accessibilityRole="button"
-                    accessibilityLabel={`${country.name}, ${country.isoCode}, ${country.callingCode}`}
+                    accessibilityLabel={`${country.name}, ${country.isoCode}, ${getCallingCode(country.isoCode)}`}
                     accessibilityState={{ selected: isSelected }}
                     onPress={() => selectCountry(country)}
                     style={({ pressed }) => [
@@ -310,7 +354,7 @@ export default function RegisterScreen() {
                     <View style={styles.countryOptionText}>
                       <Text style={styles.countryOptionName}>{country.name}</Text>
                       <Text style={styles.countryOptionMeta}>
-                        {country.isoCode} · {country.callingCode}
+                        {country.isoCode} · {getCallingCode(country.isoCode)}
                       </Text>
                     </View>
                     {isSelected ? (
@@ -322,8 +366,11 @@ export default function RegisterScreen() {
                     ) : null}
                   </Pressable>
                 );
-              })}
-            </View>
+              }}
+              ListEmptyComponent={
+                <Text style={styles.countryEmptyText}>No matching country</Text>
+              }
+            />
           </View>
         </View>
       </Modal>
@@ -577,9 +624,37 @@ const styles = StyleSheet.create({
   countryModalClosePressed: {
     backgroundColor: colors.phonePrefix,
   },
-  countryOptions: {
+  countrySearch: {
+    height: 44,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.phonePrefix,
+  },
+  countrySearchInput: {
+    flex: 1,
+    marginLeft: 8,
+    paddingVertical: 0,
+    color: colors.fieldText,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  countryList: {
+    maxHeight: 320,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  countryEmptyText: {
+    paddingVertical: 24,
+    color: colors.subtitle,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
   },
   countryOption: {
     minHeight: 64,
