@@ -1,8 +1,11 @@
 export const colors = {
   navy: '#0C1C33',
   gold: '#FBBF24',
-  brandText: '#F8FAFC',
-  tagline: '#CBD5E1',
+  wordmark: '#E9A319',
+  routeGold: '#F4A817',
+  routeBlue: '#38BDF8',
+  brandText: '#FFFFFF',
+  tagline: '#94A9C3',
   surface: '#FFFFFF',
   title: '#0F172A',
   subtitle: '#64748B',
@@ -15,5 +18,7 @@ export const colors = {
   error: '#EF4444',
   errorBackground: '#FFFAFA',
   errorIcon: '#F87171',
+  glass: 'rgba(255, 255, 255, 0.08)',
+  glassBorder: 'rgba(255, 255, 255, 0.12)',
   scrim: 'rgba(12, 28, 51, 0.55)',
 } as const;
