@@ -41,7 +41,71 @@ const colors = {
   border: '#E2E8F0',
   phonePrefix: '#F8FAFC',
   countrySelected: '#FFF8EB',
+  error: '#EF4444',
+  errorBackground: '#FFFAFA',
+  errorIcon: '#F87171',
 } as const;
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MINIMUM_NAME_LENGTH = 3;
+const MINIMUM_PASSWORD_LENGTH = 8;
+
+function getNameError(name: string): string | null {
+  const value = name.trim();
+
+  if (value.length === 0) {
+    return 'Name is required';
+  }
+
+  if (value.length < MINIMUM_NAME_LENGTH) {
+    return 'Name must be at least 3 characters';
+  }
+
+  return null;
+}
+
+function getEmailError(email: string): string | null {
+  const value = email.trim();
+
+  if (value.length === 0) {
+    return 'Email is required';
+  }
+
+  if (!EMAIL_PATTERN.test(value)) {
+    return 'Enter a valid email address';
+  }
+
+  return null;
+}
+
+function getPasswordError(password: string): string | null {
+  if (password.length === 0) {
+    return 'Password is required';
+  }
+
+  if (password.length < MINIMUM_PASSWORD_LENGTH) {
+    return 'Password must be at least 8 characters';
+  }
+
+  return null;
+}
+
+function FieldError({ message }: { message: string | null }) {
+  if (message === null) {
+    return null;
+  }
+
+  return (
+    <View style={styles.fieldError} accessibilityRole="alert" accessibilityLiveRegion="polite">
+      <SymbolView
+        name={{ ios: 'info.circle', android: 'error', web: 'info' }}
+        size={12}
+        tintColor={colors.error}
+      />
+      <Text style={styles.fieldErrorText}>{message}</Text>
+    </View>
+  );
+}
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -53,7 +117,16 @@ export default function RegisterScreen() {
   const [countrySearchQuery, setCountrySearchQuery] = useState('');
   const [phone, setPhone] = useState('');
   const [isAgreed, setIsAgreed] = useState(false);
+  const [nameTouched, setNameTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [termsTouched, setTermsTouched] = useState(false);
   const callingCode = getCallingCode(selectedCountry.isoCode);
+
+  const nameError = nameTouched ? getNameError(name) : null;
+  const emailError = emailTouched ? getEmailError(email) : null;
+  const passwordError = passwordTouched ? getPasswordError(password) : null;
+  const termsError = termsTouched && !isAgreed ? 'You must agree to the Terms and Privacy Policy' : null;
 
   const visibleCountries = useMemo(() => {
     const query = countrySearchQuery.trim().toLowerCase();
@@ -119,17 +192,21 @@ export default function RegisterScreen() {
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Full Name</Text>
-              <View style={styles.inputContainer}>
+              <View
+                style={[styles.inputContainer, nameError !== null && styles.inputContainerInvalid]}>
                 <SymbolView
                   name={{ ios: 'person', android: 'person', web: 'person' }}
                   size={18}
-                  tintColor={colors.placeholder}
+                  tintColor={nameError !== null ? colors.errorIcon : colors.placeholder}
                   style={styles.leadingIcon}
                 />
                 <TextInput
-                  accessibilityLabel="Full Name"
+                  accessibilityLabel={
+                    nameError !== null ? `Full Name, ${nameError}` : 'Full Name'
+                  }
                   value={name}
                   onChangeText={setName}
+                  onBlur={() => setNameTouched(true)}
                   placeholder="Your name"
                   placeholderTextColor={colors.placeholder}
                   selectionColor={colors.navy}
@@ -138,20 +215,23 @@ export default function RegisterScreen() {
                   style={styles.input}
                 />
               </View>
+              <FieldError message={nameError} />
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Email</Text>
-              <View style={styles.inputContainer}>
+              <View
+                style={[styles.inputContainer, emailError !== null && styles.inputContainerInvalid]}>
                 <SymbolView
                   name={{ ios: 'envelope', android: 'mail', web: 'mail' }}
                   size={18}
-                  tintColor={colors.placeholder}
+                  tintColor={emailError !== null ? colors.errorIcon : colors.placeholder}
                   style={styles.leadingIcon}
                 />
                 <TextInput
-                  accessibilityLabel="Email"
+                  accessibilityLabel={emailError !== null ? `Email, ${emailError}` : 'Email'}
                   value={email}
                   onChangeText={setEmail}
+                  onBlur={() => setEmailTouched(true)}
                   placeholder="name@example.com"
                   placeholderTextColor={colors.placeholder}
                   selectionColor={colors.navy}
@@ -162,20 +242,29 @@ export default function RegisterScreen() {
                   style={styles.input}
                 />
               </View>
+              <FieldError message={emailError} />
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Password</Text>
-              <View style={[styles.inputContainer, styles.passwordInputContainer]}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  styles.passwordInputContainer,
+                  passwordError !== null && styles.inputContainerInvalid,
+                ]}>
                 <SymbolView
                   name={{ ios: 'lock', android: 'lock', web: 'lock' }}
                   size={18}
-                  tintColor={colors.placeholder}
+                  tintColor={passwordError !== null ? colors.errorIcon : colors.placeholder}
                   style={styles.leadingIcon}
                 />
                 <TextInput
-                  accessibilityLabel="Password"
+                  accessibilityLabel={
+                    passwordError !== null ? `Password, ${passwordError}` : 'Password'
+                  }
                   value={password}
                   onChangeText={setPassword}
+                  onBlur={() => setPasswordTouched(true)}
                   placeholder="Enter password"
                   placeholderTextColor={colors.placeholder}
                   selectionColor={colors.navy}
@@ -205,6 +294,7 @@ export default function RegisterScreen() {
                   />
                 </Pressable>
               </View>
+              <FieldError message={passwordError} />
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Phone</Text>
@@ -250,7 +340,10 @@ export default function RegisterScreen() {
                 accessibilityLabel="Agree to the Terms of Service and Privacy Policy"
                 accessibilityState={{ checked: isAgreed }}
                 hitSlop={10}
-                onPress={() => setIsAgreed((agreed) => !agreed)}
+                onPress={() => {
+                  setTermsTouched(true);
+                  setIsAgreed((agreed) => !agreed);
+                }}
                 style={({ pressed }) => [
                   styles.agreementCheckbox,
                   isAgreed && styles.agreementCheckboxChecked,
@@ -282,6 +375,7 @@ export default function RegisterScreen() {
                 .
               </Text>
             </View>
+            <FieldError message={termsError} />
           </View>
         </ScrollView>
       </View>
@@ -476,6 +570,24 @@ const styles = StyleSheet.create({
   },
   leadingIcon: {
     marginRight: 10,
+  },
+  inputContainerInvalid: {
+    borderColor: colors.error,
+    backgroundColor: colors.errorBackground,
+  },
+  fieldError: {
+    marginTop: 6,
+    paddingLeft: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  fieldErrorText: {
+    flex: 1,
+    color: colors.error,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '500',
   },
   input: {
     flex: 1,
