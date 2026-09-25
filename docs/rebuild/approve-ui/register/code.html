@@ -1,0 +1,252 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>Create Account | Yamak Kuwait</title>
+<!-- Tailwind CSS CDN with forms and container queries plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Font Awesome Icons for polished mobile UI icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<!-- Google Fonts: Inter & Outfit -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Outfit:wght@500;600;700;800&amp;family=Noto+Sans+Arabic:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+            arabic: ['"Noto Sans Arabic"', 'sans-serif'],
+          },
+          colors: {
+            yamak: {
+              gold: '#F4A817',
+              goldHover: '#E09710',
+              goldLight: '#FFF8EB',
+              navy: '#102A45',
+              navyLight: '#183B60',
+              navyDark: '#0A1C30',
+              accentBlue: '#2B6CB0',
+              surface: '#F8FAFC',
+              border: '#E2E8F0',
+            }
+          },
+          boxShadow: {
+            'phone': '0 25px 60px -15px rgba(16, 42, 69, 0.22), 0 0 0 1px rgba(16, 42, 69, 0.06)',
+            'btn': '0 4px 14px 0 rgba(16, 42, 69, 0.28)',
+            'focus-gold': '0 0 0 3px rgba(244, 168, 23, 0.25)',
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="base-styling">
+    body {
+      background-color: #ECEEF2;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Smooth custom checkbox */
+    .custom-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 1.8px solid #CBD5E1;
+      border-radius: 6px;
+      display: inline-grid;
+      place-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      background-color: #FFFFFF;
+    }
+
+    .custom-checkbox::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      transform: scale(0);
+      transition: 120ms transform ease-in-out;
+      box-shadow: inset 1em 1em white;
+      transform-origin: center;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+
+    .custom-checkbox:checked {
+      background-color: #102A45;
+      border-color: #102A45;
+    }
+
+    .custom-checkbox:checked::before {
+      transform: scale(1);
+    }
+
+    /* iOS mock scrollbar styling */
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style data-purpose="micro-interactions">
+    .tap-press:active {
+      transform: scale(0.985);
+      transition: transform 0.1s ease;
+    }
+
+    .input-focus-ring:focus-within {
+      border-color: #102A45;
+      box-shadow: 0 0 0 3px rgba(16, 42, 69, 0.1);
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="min-h-screen flex items-center justify-center p-0 sm:p-4 md:p-8">
+<!-- BEGIN: Phone Mockup Frame Container -->
+<main class="w-full max-w-[430px] min-h-screen sm:min-h-[880px] sm:max-h-[920px] bg-white sm:rounded-[44px] shadow-phone flex flex-col relative overflow-hidden border-0 sm:border-[8px] sm:border-slate-800" style="background-color: #0C1C33;">
+<!-- BEGIN: iOS Status Bar -->
+<header aria-label="Device Status Bar" class="w-full pt-3 px-7 pb-2 flex justify-between items-center z-20 select-none bg-transparent sticky top-0"><span class="text-[15px] font-semibold tracking-tight text-white">9:41</span><div class="hidden sm:block w-24 h-4 bg-slate-950 rounded-full mx-auto -mt-1 opacity-90"></div><div class="flex items-center space-x-2 text-white text-xs"><i class="fa-solid fa-signal text-[11px]" title="Cellular connection"></i><i class="fa-solid fa-wifi text-[11px]" title="Wi-Fi"></i><div class="flex items-center space-x-0.5"><div class="w-5 h-2.5 border border-white rounded-[3px] p-[1px] flex items-center"><div class="h-full w-full bg-white rounded-[1.5px]"></div></div><div class="w-0.5 h-1 bg-white rounded-r-sm"></div></div></div></header>
+<!-- END: iOS Status Bar -->
+<!-- BEGIN: Scrollable Content Container -->
+<div class="flex-1 overflow-y-auto hide-scrollbar flex flex-col justify-between p-0">
+<div class="flex flex-col">
+<!-- BEGIN: Brand Header Section -->
+<section class="flex flex-col items-center text-center px-6 pt-7 pb-8 text-white relative" data-purpose="brand-header" style="background-color: #0C1C33;">
+<div class="w-16 h-16 rounded-2xl flex items-center justify-center p-2 mb-3 border bg-white border-white">
+<img alt="Yamak Logo" class="w-12 h-12 object-contain block" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPnv5ugU_48pR9LzjzcotQNY3XYvFQIJHP1zB-ciEoxAAuPzPoUTfehvm7f7att2uk0eu7_FSMuptwBYPxrTvoYRdMOnAdpo2_X2DMzbGrgfjW1_GXP32RmWc_4V7AwTaICpaPjmeDikExgF5_KV1lmWlPIP6QDGMq_HimA2JbpVLhAOJIXe7DBjo-1pkLs8fC2XKN1Y9b2UzewFHLSno9K8jVw5MjhcU7iPbZ7Grz3m6sH_hWJhWWTI5bI5r3baKjOQ">
+</div>
+<h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
+<span class="">YAMAK</span>
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+<span class="text-sm font-arabic font-bold text-amber-400">يمك</span>
+</h1>
+<p class="text-xs text-slate-300 font-medium tracking-wide mt-1">Kuwait’s road &amp; mobility partner</p>
+</section>
+<!-- END: Brand Header Section -->
+<!-- BEGIN: Title & Value Proposition -->
+<div class="bg-white rounded-t-[32px] px-6 pt-6 pb-2"><h2 class="text-2xl font-bold text-slate-900 tracking-tight leading-snug">Begin your journey</h2><p class="text-xs text-slate-500 mt-1 leading-relaxed">A premium account for every journey on Kuwait's roads. Sample copy.</p></div>
+<!-- END: Title & Value Proposition -->
+<!-- BEGIN: Registration Form -->
+<div class="bg-white px-6 pb-6"><form class="space-y-4" data-purpose="signup-form" id="register-form" onsubmit="event.preventDefault();">
+<div class="space-y-1.5">
+<label class="block text-xs font-semibold text-slate-700 tracking-wide uppercase" for="fullName">Full Name</label>
+<div class="relative flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-3 transition-all input-focus-ring">
+<span class="text-slate-400 pr-3 flex items-center text-sm"><i class="fa-regular fa-user"></i></span>
+<input class="w-full bg-transparent p-0 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none border-none focus:ring-0" id="fullName" name="fullName" placeholder="Your name" required="" type="text">
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="block text-xs font-semibold text-slate-700 tracking-wide uppercase" for="email">Email</label>
+<div class="relative flex items-center rounded-xl border border-red-500 bg-red-50/40 px-3.5 py-3 transition-all">
+<span class="text-red-400 pr-3 flex items-center text-sm"><i class="fa-regular fa-envelope"></i></span>
+<input class="w-full bg-transparent p-0 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none border-none focus:ring-0" id="email" name="email" placeholder="name@example.com" required="" type="email" value="name@">
+</div>
+<p class="text-[11px] font-medium text-red-500 flex items-center gap-1 pl-1">
+<i class="fa-solid fa-circle-info text-[10px]"></i>
+<span class="">Enter a valid email address</span>
+</p>
+</div>
+<div class="space-y-1.5">
+<label class="block text-xs font-semibold text-slate-700 tracking-wide uppercase" for="phone">Phone</label>
+<div class="flex rounded-xl border border-slate-200 bg-white overflow-hidden input-focus-ring">
+<div class="flex items-center space-x-1.5 px-3 py-3 bg-slate-50 border-r border-slate-200 text-slate-700 select-none shrink-0">
+<span class="text-base leading-none">🇰🇼</span>
+<span class="text-xs font-bold">KW</span>
+<span class="text-xs font-semibold text-slate-500">+965</span>
+<i class="fa-solid fa-chevron-down text-[9px] text-slate-400 ml-0.5"></i>
+</div>
+<input class="w-full bg-transparent px-3.5 py-3 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none border-none focus:ring-0" id="phone" name="phone" pattern="[0-9]*" placeholder="5XXX XXXX" required="" type="tel">
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="block text-xs font-semibold text-slate-700 tracking-wide uppercase" for="password">Password</label>
+<div class="relative flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-3 transition-all input-focus-ring">
+<span class="text-slate-400 pr-3 flex items-center text-sm"><i class="fa-solid fa-lock"></i></span>
+<input class="w-full bg-transparent p-0 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none border-none focus:ring-0" id="password" name="password" placeholder="••••••••" required="" type="password" value="••••••••">
+<button class="text-slate-400 hover:text-slate-600 focus:outline-none px-1" title="Show or hide password" type="button">
+<i class="fa-regular fa-eye-slash text-xs"></i>
+</button>
+</div>
+<div class="flex items-center justify-between px-1 pt-1">
+<div class="flex items-center space-x-1.5">
+<i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i>
+<span class="text-xs font-semibold text-emerald-600">Strong password</span>
+</div>
+<div class="flex items-center space-x-1">
+<div class="w-5 h-1 bg-emerald-500 rounded-full"></div>
+<div class="w-5 h-1 bg-emerald-500 rounded-full"></div>
+<div class="w-5 h-1 bg-emerald-500 rounded-full"></div>
+<div class="w-5 h-1 bg-emerald-500 rounded-full"></div>
+</div>
+</div>
+</div>
+<div class="pt-2">
+<label class="flex items-start space-x-3 cursor-pointer group">
+<input checked="" class="custom-checkbox mt-0.5 shrink-0" required="" type="checkbox">
+<span class="text-[12px] leading-tight text-slate-600 select-none">
+By providing your phone number you agree to the 
+<a class="font-semibold text-slate-900 hover:underline" href="#terms">Terms of Service</a> 
+and 
+<a class="font-semibold text-slate-900 hover:underline" href="#privacy">Privacy Policy</a>.
+</span>
+</label>
+</div>
+<div class="pt-3">
+<button class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 px-4 rounded-xl shadow-btn transition-all duration-150 flex items-center justify-center space-x-2 tap-press" type="submit">
+<span class="tracking-wide text-sm font-bold">Sign up</span>
+<i class="fa-solid fa-arrow-right text-xs opacity-90 transition-transform group-hover:translate-x-0.5"></i>
+</button>
+</div>
+<div class="pt-4 text-center">
+<p class="text-xs text-slate-600 font-medium">
+Already have an account? <a class="font-bold text-slate-900 hover:underline" href="#login">Log in</a>
+</p>
+</div>
+</form></div>
+<!-- END: Registration Form -->
+<!-- BEGIN: Social Sign-In Divider & Buttons -->
+<!-- END: Social Sign-In Divider & Buttons -->
+</div>
+<!-- BEGIN: Footer Authentication Switch -->
+<footer class="pt-2 pb-6 border-t border-slate-100 text-center bg-white px-6" data-purpose="screen-footer"><p class="text-[11px] text-slate-400 font-medium">By proceeding you accept Yamak's Terms &amp; Privacy (demo prototype).</p></footer>
+<!-- END: Footer Authentication Switch -->
+</div>
+<!-- END: Scrollable Content Container -->
+<!-- BEGIN: iOS Home Bar Indicator -->
+<div aria-hidden="true" class="w-full pb-2 pt-1 flex justify-center bg-white">
+<div class="w-32 h-1 bg-slate-300 rounded-full"></div>
+</div>
+<!-- END: iOS Home Bar Indicator -->
+</main>
+<!-- END: Phone Mockup Frame Container -->
+<!-- BEGIN: Interactive Micro-behavior Script -->
+<script data-purpose="toggle-password">
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggleBtn = document.querySelector('button[title="Show or hide password"]');
+      const passInput = document.getElementById('password');
+
+      if (toggleBtn && passInput) {
+        toggleBtn.addEventListener('click', () => {
+          const isPassword = passInput.getAttribute('type') === 'password';
+          passInput.setAttribute('type', isPassword ? 'text' : 'password');
+          
+          const icon = toggleBtn.querySelector('i');
+          if (icon) {
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+          }
+        });
+      }
+    });
+  </script>
+<!-- END: Interactive Micro-behavior Script -->
+
+
+</body></html>
