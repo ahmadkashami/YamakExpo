@@ -1,10 +1,18 @@
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const appLogo = require('@/assets/images/appLogo.png');
+
+const countries = [
+  { name: 'Kuwait', isoCode: 'KW', callingCode: '+965', flag: '🇰🇼' },
+  { name: 'Syria', isoCode: 'SY', callingCode: '+963', flag: '🇸🇾' },
+  { name: 'Yemen', isoCode: 'YE', callingCode: '+967', flag: '🇾🇪' },
+] as const;
+
+type Country = (typeof countries)[number];
 
 const colors = {
   navy: '#0C1C33',
@@ -18,6 +26,8 @@ const colors = {
   fieldText: '#1E293B',
   placeholder: '#94A3B8',
   border: '#E2E8F0',
+  phonePrefix: '#F8FAFC',
+  countrySelected: '#FFF8EB',
 } as const;
 
 export default function RegisterScreen() {
@@ -25,6 +35,15 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
+  const [isCountrySelectorVisible, setIsCountrySelectorVisible] = useState(false);
+  const [phone, setPhone] = useState('');
+  const callingCode = selectedCountry.callingCode;
+
+  function selectCountry(country: Country) {
+    setSelectedCountry(country);
+    setIsCountrySelectorVisible(false);
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -143,9 +162,113 @@ export default function RegisterScreen() {
                 </Pressable>
               </View>
             </View>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Phone</Text>
+              <View style={styles.phoneInputContainer}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${selectedCountry.name}, ${selectedCountry.isoCode}, ${callingCode}`}
+                  accessibilityState={{ expanded: isCountrySelectorVisible }}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setIsCountrySelectorVisible(true);
+                  }}
+                  style={({ pressed }) => [
+                    styles.callingCodePrefix,
+                    pressed && styles.callingCodePrefixPressed,
+                  ]}>
+                  <Text style={styles.flag}>{selectedCountry.flag}</Text>
+                  <Text style={styles.countryCode}>{selectedCountry.isoCode}</Text>
+                  <Text style={styles.callingCode}>{callingCode}</Text>
+                  <SymbolView
+                    name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }}
+                    size={12}
+                    tintColor={colors.placeholder}
+                  />
+                </Pressable>
+                <TextInput
+                  accessibilityLabel="Phone number"
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="5XXX XXXX"
+                  placeholderTextColor={colors.placeholder}
+                  selectionColor={colors.navy}
+                  keyboardType="number-pad"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={[styles.input, styles.phoneInput]}
+                />
+              </View>
+            </View>
           </View>
         </ScrollView>
       </View>
+      <Modal
+        visible={isCountrySelectorVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsCountrySelectorVisible(false)}>
+        <View style={styles.countryModalBackdrop}>
+          <Pressable
+            accessible={false}
+            style={styles.countryModalDismissArea}
+            onPress={() => setIsCountrySelectorVisible(false)}
+          />
+          <View style={styles.countryModalCard}>
+            <View style={styles.countryModalHeader}>
+              <Text style={styles.countryModalTitle}>Select country</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close country selector"
+                onPress={() => setIsCountrySelectorVisible(false)}
+                style={({ pressed }) => [
+                  styles.countryModalClose,
+                  pressed && styles.countryModalClosePressed,
+                ]}>
+                <SymbolView
+                  name={{ ios: 'xmark', android: 'close', web: 'close' }}
+                  size={18}
+                  tintColor={colors.fieldLabel}
+                />
+              </Pressable>
+            </View>
+            <View style={styles.countryOptions}>
+              {countries.map((country) => {
+                const isSelected = country.isoCode === selectedCountry.isoCode;
+
+                return (
+                  <Pressable
+                    key={country.isoCode}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${country.name}, ${country.isoCode}, ${country.callingCode}`}
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() => selectCountry(country)}
+                    style={({ pressed }) => [
+                      styles.countryOption,
+                      isSelected && styles.countryOptionSelected,
+                      pressed && styles.countryOptionPressed,
+                    ]}>
+                    <Text style={styles.countryOptionFlag}>{country.flag}</Text>
+                    <View style={styles.countryOptionText}>
+                      <Text style={styles.countryOptionName}>{country.name}</Text>
+                      <Text style={styles.countryOptionMeta}>
+                        {country.isoCode} · {country.callingCode}
+                      </Text>
+                    </View>
+                    {isSelected ? (
+                      <SymbolView
+                        name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                        size={18}
+                        tintColor={colors.navy}
+                      />
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -272,6 +395,132 @@ const styles = StyleSheet.create({
   },
   passwordTogglePressed: {
     opacity: 0.6,
+  },
+  phoneInputContainer: {
+    height: 48,
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+  },
+  callingCodePrefix: {
+    width: 112,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+    backgroundColor: colors.phonePrefix,
+  },
+  callingCodePrefixPressed: {
+    opacity: 0.7,
+  },
+  flag: {
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  countryCode: {
+    color: colors.fieldLabel,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+  },
+  callingCode: {
+    color: colors.subtitle,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+  },
+  phoneInput: {
+    paddingHorizontal: 14,
+  },
+  countryModalBackdrop: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(12, 28, 51, 0.55)',
+  },
+  countryModalDismissArea: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
+  countryModalCard: {
+    width: '100%',
+    paddingTop: 20,
+    paddingRight: 20,
+    paddingBottom: 20,
+    paddingLeft: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: colors.surface,
+  },
+  countryModalHeader: {
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  countryModalTitle: {
+    color: colors.title,
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '700',
+  },
+  countryModalClose: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+  },
+  countryModalClosePressed: {
+    backgroundColor: colors.phonePrefix,
+  },
+  countryOptions: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  countryOption: {
+    minHeight: 64,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  countryOptionSelected: {
+    backgroundColor: colors.countrySelected,
+  },
+  countryOptionPressed: {
+    opacity: 0.7,
+  },
+  countryOptionFlag: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  countryOptionText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  countryOptionName: {
+    color: colors.fieldText,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  countryOptionMeta: {
+    marginTop: 2,
+    color: colors.subtitle,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
   },
   title: {
     color: colors.title,
