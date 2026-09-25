@@ -1,0 +1,115 @@
+/* ============================================================
+   YAMAK NEW — BASE LAYOUT (prototype shared)
+   DESIGN STATUS: PROPOSED — NOT APPROVED.
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: var(--font);
+  background: #DDE2E8;          /* neutral desk around the phone frame */
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 24px 12px 48px;
+}
+
+/* ---- Review banner (prototype meta, not part of the design) ---- */
+.banner {
+  width: 100%; max-width: 680px;
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  justify-content: space-between;
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 14px; margin-bottom: 16px;
+  font-size: 12.5px; color: var(--text-secondary);
+}
+.banner b { color: var(--text-primary); }
+.banner .chip { background: var(--gold-100); color: var(--gold-600);
+  font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.banner .nav a { color: var(--brand-700); text-decoration: none; margin-left: 6px; font-weight: 600; }
+.banner .nav a:hover { text-decoration: underline; }
+
+/* ---- Phone frame ---- */
+.phone {
+  width: 390px;
+  max-width: 100%;
+  height: 844px;
+  background: var(--bg);
+  border-radius: 40px;
+  border: 8px solid #1A2026;
+  box-shadow: 0 24px 60px rgba(12, 30, 52, .35);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.phone.notch { padding-top: 0; }
+.notchbar {
+  height: 28px; flex: 0 0 28px;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.notchbar i {
+  width: 110px; height: 22px; background: #1A2026; border-radius: 0 0 14px 14px;
+  display: block;
+}
+
+@media (max-width: 460px) {
+  body { padding: 8px; }
+  .phone { height: 92vh; border-radius: 24px; border-width: 5px; }
+}
+
+/* ---- Screen shell ---- */
+.screen { flex: 1; display: flex; flex-direction: column; min-height: 0; position: relative; }
+.statusbar {
+  height: 24px; flex: 0 0 24px; padding: 0 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; font-weight: 700; color: var(--text-primary);
+}
+.statusbar.on-dark { color: #fff; }
+.content { flex: 1; overflow-y: auto; padding: var(--space-4) var(--space-4) var(--space-7); }
+.content.no-scroll { overflow: hidden; }
+.content.tight { padding-top: var(--space-2); }
+
+/* ---- Typography utilities ---- */
+.display { font-size: var(--text-display); line-height: var(--text-display-lh); font-weight: 800; letter-spacing: -0.5px; }
+.t-xl { font-size: var(--text-t-xl); line-height: var(--text-t-xl-lh); font-weight: 800; letter-spacing: -0.3px; }
+.t-lg { font-size: var(--text-t-lg); line-height: var(--text-t-lg-lh); font-weight: 700; }
+.t-sm { font-size: var(--text-t-sm); line-height: var(--text-t-sm-lh); font-weight: 600; }
+.body-lg { font-size: var(--text-body-lg); line-height: var(--text-body-lg-lh); }
+.body { font-size: var(--text-body); line-height: var(--text-body-lh); }
+.body-sm { font-size: var(--text-body-sm); line-height: var(--text-body-sm-lh); }
+.label { font-size: var(--text-label); line-height: var(--text-label-lh); font-weight: 600; }
+.caption { font-size: var(--text-caption); line-height: var(--text-caption-lh); }
+.muted { color: var(--text-secondary); }
+.muted-2 { color: var(--text-tertiary); }
+.center { text-align: center; }
+.strong { font-weight: 700; }
+
+/* ---- Spacing utilities ---- */
+.mt-1{margin-top:var(--space-1);} .mt-2{margin-top:var(--space-2);}
+.mt-3{margin-top:var(--space-3);} .mt-4{margin-top:var(--space-4);}
+.mt-5{margin-top:var(--space-5);} .mt-6{margin-top:var(--space-6);}
+.mt-7{margin-top:var(--space-7);}
+.mb-1{margin-bottom:var(--space-1);} .mb-2{margin-bottom:var(--space-2);}
+.mb-3{margin-bottom:var(--space-3);} .mb-4{margin-bottom:var(--space-4);}
+.mb-5{margin-bottom:var(--space-5);} .mb-6{margin-bottom:var(--space-6);}
+.px-4{padding-left:var(--space-4);padding-right:var(--space-4);}
+.py-4{padding-top:var(--space-4);padding-bottom:var(--space-4);}
+
+/* ---- Section helpers ---- */
+.section { margin-top: var(--space-6); }
+.section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.section-title { font-size: var(--text-t-sm); font-weight: 700; }
+.link { color: var(--brand-700); font-weight: 600; text-decoration: none; }
+.link:active { opacity: .7; }
+.divider { height: 1px; background: var(--border); margin: var(--space-4) 0; width: 100%; }
+
+/* ---- RTL awareness (logical properties where practical) ---- */
+[dir="rtl"] .content, [dir="rtl"] .phone, [dir="rtl"] .screen { text-align: right; }

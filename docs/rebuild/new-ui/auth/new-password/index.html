@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yamak New · New password</title>
+<link rel="stylesheet" href="../../prototype-shared/tokens.css">
+<link rel="stylesheet" href="../../prototype-shared/base.css">
+<link rel="stylesheet" href="../../prototype-shared/components.css">
+</head>
+<body>
+  <div class="banner">
+    <div><b>PROPOSED — requires approval</b> · Yamak New · provisional baseline · <span>New password</span></div>
+    <div class="nav"><a href="../../index.html">Index</a><a href="../../design-system/colors.md">Design system</a></div>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ · 📶 🔋</span></div>
+      <div class="appbar on-light">
+        <a class="iconbtn" href="../reset-otp/index.html" aria-label="Back">‹</a>
+        <div class="bar-title">New password</div>
+        <div class="bar-side"></div>
+      </div>
+      <div class="content">
+        <img src="../../assets/appLogo.png" alt="Yamak" style="height:64px;display:block;margin:8px auto 20px">
+        <div class="t-lg center">Set a new password</div>
+        <div class="body muted center mt-2">Use at least 8 characters mixing letters and numbers.</div>
+        <div class="field mt-5"><label class="label" for="np1">New password</label>
+          <div class="inputwrap"><span class="lead">🔒</span><input class="input" id="np1" type="password" placeholder="••••••••"></div>
+        </div>
+        <div class="field"><label class="label" for="np2">Confirm password</label>
+          <div class="inputwrap"><span class="lead">🔒</span><input class="input err" id="np2" type="password" placeholder="••••••••"></div>
+          <div class="hint-err">Passwords do not match</div>
+        </div>
+        <button class="btn btn-primary btn-block mt-4">Reset password</button>
+        <div class="modal-center">
+          <div class="modal-card">
+            <div class="modal-msg-ic ok">✓</div>
+            <div class="t-sm">Password updated</div>
+            <div class="body-sm muted mt-2">You can now log in with your new password.</div>
+            <a class="btn btn-primary btn-block mt-4" href="../login/index.html">Go to login</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+/* DIRECTION 03 — PREMIUM / MODERN
+   Editorial navy surfaces, gold thin accents, larger type, deep elevation.
+   Dark app bar blends into a premium hero; light content areas keep body text. */
+:root {
+  --brand-950: #070F1B;
+  --brand-900: #0C1C33;
+  --brand-800: #11263F;
+  --brand-700: #1B3A5F;
+  --brand-600: #2A4E78;
+  --brand-100: #E5EDF6;
+  --brand-50:  #F4F7FB;
+  --gold-600: #A96F0E;
+  --gold-500: #D99A1F;
+  --gold-400: #EFB435;
+  --gold-100: #F6E7C4;
+  --gold-50:  #FCF5E2;
+  --bg: #F4F6F9;
+  --surface: #FFFFFF;
+  --surface-2: #EDF0F4;
+  --surface-3: #E2E7EE;
+  --border: #E1E6ED;
+  --outline: #C3CDD9;
+  --text-primary: #101820;
+  --radius-sm: 10px; --radius-md: 16px; --radius-lg: 22px; --radius-xl: 32px;
+  --shadow-1: 0 2px 4px rgba(9,20,36,.05), 0 8px 20px rgba(9,20,36,.07);
+  --shadow-2: 0 12px 32px rgba(9,20,36,.16);
+  --text-display: 40px; --text-display-lh: 46px;
+  --text-t-xl: 30px; --text-t-xl-lh: 36px;
+}
+.display { font-weight: 700; letter-spacing: -0.8px; }
+.brand-head img { width: 96px; }
+/* dark premium hero band for authenticated top-level screens */
+.hero-premium { background: linear-gradient(160deg, var(--brand-900), var(--brand-700) 70%, var(--brand-600));
+  color: #fff; padding-bottom: var(--space-6); }

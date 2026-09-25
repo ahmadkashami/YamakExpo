@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yamak New · Design Review</title>
+<link rel="stylesheet" href="prototype-shared/tokens.css">
+<link rel="stylesheet" href="prototype-shared/base.css">
+<link rel="stylesheet" href="prototype-shared/components.css">
+<style>
+  body { background:#f2f4f7; }
+  .wrap { max-width:860px; margin:0 auto; padding:24px 16px 64px; }
+  .card { border-radius:var(--radius-xl); background:#fff; border:1px solid var(--border); padding:20px; }
+  h1 { font-size:24px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .card.links a { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-subtle); color:var(--text-primary); text-decoration:none; }
+  .card.links a:last-child { border-bottom:none; }
+  .badge.mix { font-size:11px; padding:4px 8px; border-radius:999px; background:var(--brand-50); color:var(--brand-700); }
+  @media (max-width:560px){ .grid3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <img src="assets/appLogo.png" alt="Yamak" style="height:44px">
+      <h1 class="mt-2">Yamak New — UI/UX Design Review</h1>
+      <div class="badge mix mt-2">📐 PROTOTYPE — NOT the live app · all visuals PROPOSED</div>
+      <p class="body muted mt-3">Provisional design phase for the Yamak rebuild. Open any prototype by double-clicking; every page is a self-contained HTML file — no build or server needed. All colors, type, and layout decisions are <b>proposals needing your approval</b>.</p>
+      <div class="alert info mt-3">Go to the live rebuild plan for the approval gate: <a class="link" href="../13-SCREEN-BY-SCREEN-REBUILD-PLAN.md">13-SCREEN-BY-SCREEN-REBUILD-PLAN.md</a> (Section 4 — PHASE 1: DESIGN).</div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="label">1 · Design system (docs)</div>
+      <div class="grid3 mt-2">
+        <a class="badge mix" href="design-system/colors.md">Colors</a>
+        <a class="badge mix" href="design-system/typography.md">Typography</a>
+        <a class="badge mix" href="design-system/spacing.md">Spacing</a>
+        <a class="badge mix" href="design-system/components.md">Components</a>
+        <a class="badge mix" href="design-system/navigation.md">Navigation</a>
+        <a class="badge mix" href="design-system/states.md">States</a>
+        <a class="badge mix" href="design-system/rtl-ltr.md">RTL / LTR</a>
+        <a class="badge mix" href="design-system/accessibility.md">Accessibility</a>
+        <a class="badge mix" href="design-system/brand-analysis.md">Brand analysis</a>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="label">2 · Choose a visual direction (pick ONE)</div>
+      <div class="grid3 mt-3">
+        <a class="card links" href="directions/01-clean/register.html" style="display:block">
+          <b>Clean / Minimal</b>
+          <div class="body-sm muted mt-1">Light, airy, gold-accent focused. 4 samples: register, home, vehicles, vehicle details.</div>
+          <span class="badge mix mt-2">01-clean</span>
+        </a>
+        <a class="card links" href="directions/02-brand/register.html" style="display:block">
+          <b>Brand-Focused</b>
+          <div class="body-sm muted mt-1">Deep-brand blue bars, strong gold primary — most Yamak-like. 4 samples.</div>
+          <span class="badge mix mt-2">02-brand</span>
+        </a>
+        <a class="card links" href="directions/03-premium/register.html" style="display:block">
+          <b>Premium / Modern</b>
+          <div class="body-sm muted mt-1">Navy hero surfaces, subtle gold ribbons, editorial feel. 4 samples.</div>
+          <span class="badge mix mt-2">03-premium</span>
+        </a>
+      </div>
+      <p class="caption muted-2 mt-3">Review all 4 screens per direction. Full-screen prototype below uses the provisional baseline, which is re-styled by switching one shared token file.</p>
+    </div>
+
+    <div class="card mt-4">
+      <div class="label">3 · Full app prototype (provisional baseline)</div>
+      <div class="grid3 mt-2">
+        <a class="badge mix" href="onboarding/index.html">Onboarding</a>
+        <a class="badge mix" href="auth/login/index.html">Login</a>
+        <a class="badge mix" href="auth/register/index.html">Register</a>
+        <a class="badge mix" href="auth/forgot-password/index.html">Forgot password</a>
+        <a class="badge mix" href="auth/phone-login/index.html">Phone login</a>
+        <a class="badge mix" href="auth/phone-otp/index.html">Phone OTP</a>
+        <a class="badge mix" href="auth/email-otp/index.html">Email OTP</a>
+        <a class="badge mix" href="auth/reset-otp/index.html">Reset OTP</a>
+        <a class="badge mix" href="auth/new-password/index.html">New password</a>
+        <a class="badge mix" href="main/home/index.html">Home</a>
+        <a class="badge mix" href="main/map/index.html">Map</a>
+        <a class="badge mix" href="main/all-vehicles/index.html">All vehicles</a>
+        <a class="badge mix" href="main/vehicle-details/index.html">Vehicle details</a>
+        <a class="badge mix" href="main/search/index.html">Search (modal)</a>
+        <a class="badge mix" href="main/favorites/index.html">Favorites</a>
+        <a class="badge mix" href="main/notifications/index.html">Notifications</a>
+        <a class="badge mix" href="main/profile/index.html">Profile</a>
+        <a class="badge mix" href="main/edit-profile/index.html">Edit profile</a>
+        <a class="badge mix" href="main/my-cars/index.html">My cars</a>
+        <a class="badge mix" href="main/messages/index.html">Messages (stub)</a>
+        <a class="badge mix" href="main/settings/index.html">Settings (stub)</a>
+        <a class="badge mix" href="main/email-validations/index.html">Email validations (stub)</a>
+        <a class="badge mix" href="main/join-us/index.html">Join us (modal)</a>
+        <a class="badge mix" href="main/about/index.html">About</a>
+        <a class="badge mix" href="main/contact-us/index.html">Contact us</a>
+        <a class="badge mix" href="main/privacy-policy/index.html">Privacy &amp; policy</a>
+        <a class="badge mix" href="main/fresh-chat/index.html">FreshChat</a>
+        <a class="badge mix" href="main/no-network/index.html">No network</a>
+        <a class="badge mix" href="main/drawer/index.html">Drawer overlay</a>
+        <a class="badge mix" href="showcase/states.html">States showcase</a>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="label">4 · Inventory &amp; flow</div>
+      <div class="card links mt-2">
+        <a href="screen-inventory.md"><span>Screen inventory (28 screens)</span><span>›</span></a>
+        <a href="app-flow.md"><span>App navigation flow</span><span>›</span></a>
+        <a href="UI-CATALOG.md"><span>UI catalog — screen ↔ prototype map</span><span>›</span></a>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="label">5 · Build note to the team</div>
+      <ul class="body-sm muted mt-2" style="padding-left:18px">
+        <li>Every prototype is static HTML with demo data clearly labeled.</li>
+        <li>Restyling the whole prototype = edit <b>prototype-shared/tokens.css</b>.</li>
+        <li>Approval gate: pick a direction; then backend REPLACES token values and the RN register screen adopts them.</li>
+        <li>Logos and brand marks are Yamak assets; prototype images are placeholders.</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,82 @@
+/* ============================================================
+   YAMAK NEW — PROVISIONAL BASELINE DESIGN TOKENS (v0.1)
+   ------------------------------------------------------------
+   DESIGN STATUS: PROPOSED — NOT APPROVED.
+   These CSS custom properties are PROTOTYPE/DOCUMENT artifacts.
+   They are NOT production React Native theme code.
+   Direction pages override this file in a single <link>.
+   Global revisions after user review -> edit THIS file only.
+   ============================================================ */
+
+:root {
+  /* ---- Brand / logo-derived palette ---- */
+  --brand-950: #081C31;
+  --brand-900: #0B2A4A;
+  --brand-800: #10355F;
+  --brand-700: #15406F;   /* primary CTA / app bar base */
+  --brand-600: #1B4C82;
+  --brand-100: #E8F0F8;
+  --brand-50:  #F3F7FB;
+
+  --gold-600: #C67D0A;    /* gold on light surfaces (text-safe) */
+  --gold-500: #E9A319;    /* Yamak logo gold - brand moments */
+  --gold-400: #F7B123;    /* legacy secondary - highlight */
+  --gold-100: #FBEED4;    /* gold tint container */
+  --gold-50:  #FDF7E6;
+
+  /* ---- Neutral / surface system ---- */
+  --bg:        #F6F8FA;
+  --surface:   #FFFFFF;
+  --surface-2: #EFF2F5;
+  --surface-3: #E7EBF0;
+  --border:    #E4E8EE;
+  --outline:   #C4CCD6;
+
+  --text-primary:   #1C2430;
+  --text-secondary: #505B68;
+  --text-tertiary:  #7A8592;
+  --text-disabled:  #A7B0BB;
+
+  /* ---- Semantic feedback ---- */
+  --success:      #177A4D;
+  --success-bg:   #E6F4EC;
+  --error:        #C62828;
+  --error-bg:     #FDECEC;
+  --warning:      #B45309;
+  --warning-bg:   #FDF3E3;
+  --info:         #1663C0;
+  --info-bg:      #EAF2FD;
+
+  /* ---- Typography scale (prototype values, see design-system/typography.md) ---- */
+  --text-display:  34px;
+  --text-display-lh: 40px;
+  --text-t-xl:     26px; --text-t-xl-lh: 32px;
+  --text-t-lg:     22px; --text-t-lg-lh: 28px;
+  --text-t-sm:     18px; --text-t-sm-lh: 24px;
+  --text-body-lg:  16px; --text-body-lg-lh: 24px;
+  --text-body:     15px; --text-body-lh: 22px;
+  --text-body-sm:  14px; --text-body-sm-lh: 20px;
+  --text-label:    13px; --text-label-lh: 18px;
+  --text-caption:  12px; --text-caption-lh: 16px;
+
+  /* ---- Spacing scale ---- */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
+  --space-4: 16px; --space-5: 20px; --space-6: 24px;
+  --space-7: 32px; --space-8: 40px; --space-9: 48px;
+
+  /* ---- Radius ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* ---- Elevation ---- */
+  --shadow-1: 0 1px 2px rgba(12, 30, 52, .06), 0 1px 3px rgba(12, 30, 52, .08);
+  --shadow-2: 0 4px 12px rgba(12, 30, 52, .10);
+
+  /* ---- Layout ---- */
+  --app-ink: #1C2430;
+  --font: "Segoe UI", Roboto, "SF Pro Text", system-ui, -apple-system, sans-serif;
+  --safe-top: 20px;
+}

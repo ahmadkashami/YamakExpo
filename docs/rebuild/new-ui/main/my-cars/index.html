@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yamak New · My Cars</title>
+<link rel="stylesheet" href="../../prototype-shared/tokens.css">
+<link rel="stylesheet" href="../../prototype-shared/base.css">
+<link rel="stylesheet" href="../../prototype-shared/components.css">
+</head>
+<body>
+  <div class="banner">
+    <div><b>PROPOSED — requires approval</b> · Yamak New · provisional baseline · <span>My cars</span></div>
+    <div class="nav"><a href="../../index.html">Index</a><a href="../../design-system/colors.md">Design system</a></div>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ · 📶 🔋</span></div>
+      <div class="appbar on-light">
+        <a class="iconbtn" href="../profile/index.html" aria-label="Back">‹</a>
+        <div class="bar-title">My cars</div>
+        <div class="bar-side"><button class="btn btn-primary btn-sm">+ Add</button></div>
+      </div>
+      <div class="content tight">
+        <div class="v-card">
+          <span class="v-img" style="background:linear-gradient(135deg,#DCE6F0,#C9D8E6)"></span>
+          <span class="v-body"><div class="t-sm">Toyota Camry 2020</div>
+            <div class="mt-1"><span class="v-pill">Plate 56790-12</span> <span class="v-pill">KWD 0.120/km · demo</span></div>
+            <div class="mt-2"><a class="link" href="#">Edit</a> · <a class="link" style="color:var(--error)" href="#">Remove</a></div>
+          </span>
+        </div>
+        <div class="sheet-scrim" style="position:relative;all:unset;display:block">
+          <div class="sheet" style="position:static;border-radius:var(--radius-xl);box-shadow:none;border:1px solid var(--border);margin-top:var(--space-5);padding-bottom:var(--space-5)">
+            <div class="t-sm">Add vehicle (demo form sheet)</div>
+            <div class="field mt-3"><label class="label">Brand &amp; model</label>
+              <div class="inputwrap"><input class="input" placeholder="Toyota Camry"></div>
+            </div>
+            <div class="field"><label class="label">Plate number</label>
+              <div class="inputwrap"><input class="input err" placeholder="5 6 7 9 0"><div class="hint-err">Plate number is required</div></div>
+            </div>
+            <div class="field"><label class="label">Year</label>
+              <div class="inputwrap"><input class="input" placeholder="2020"></div>
+            </div>
+            <button class="btn btn-primary btn-block">Save car</button>
+            <div class="caption muted-2 mt-3">Prototype — "Add car" is shown as an inline sheet pattern.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+/* DIRECTION 01 — CLEAN / MINIMAL
+   Restrained color, near-white surfaces, thin borders, generous whitespace.
+   Gold is used only on the branded logo; color carries clear hierarchy. */
+:root {
+  --brand-800: #1F4E79;
+  --brand-700: #2E6AA8;
+  --brand-600: #3879BA;
+  --brand-100: #E9F1F9;
+  --brand-50:  #F7FAFC;
+  --gold-500: #E9A319;
+  --gold-400: #F2B93B;
+  --gold-100: #FAF3E0;
+  --bg: #FAFBFc;
+  --surface: #FFFFFF;
+  --surface-2: #F2F4F6;
+  --border: #E5E9EE;
+  --outline: #CDD5DD;
+  --radius-sm: 10px; --radius-md: 14px; --radius-lg: 18px; --radius-xl: 28px;
+  --shadow-1: 0 1px 2px rgba(20,40,66,.04), 0 1px 4px rgba(20,40,66,.06);
+}

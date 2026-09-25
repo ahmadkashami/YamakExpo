@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yamak New · UI States Showcase</title>
+<link rel="stylesheet" href="../prototype-shared/tokens.css">
+<link rel="stylesheet" href="../prototype-shared/base.css">
+<link rel="stylesheet" href="../prototype-shared/components.css">
+<style>
+  .stage { display:flex; flex-direction:column; gap:12px; }
+</style>
+</head>
+<body>
+  <div class="banner">
+    <div><b>PROPOSED — requires approval</b> · Yamak New · <span>UI states showcase (docs only)</span></div>
+    <div class="nav"><a href="../index.html">Index</a><a href="../design-system/states.md">States spec</a></div>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ · 📶 🔋</span></div>
+      <div class="appbar on-light">
+        <a class="iconbtn" href="../index.html" aria-label="Back">‹</a>
+        <div class="bar-title">UI states</div>
+        <div class="bar-side"></div>
+      </div>
+      <div class="content">
+        <div class="label">Hero &amp; loading</div>
+        <div class="row"><span class="skeleton" style="width:44px;height:44px;border-radius:50%"></span><span class="r-main"><span class="skeleton" style="width:55%;height:14px"></span><span class="skeleton mt-1" style="width:80%;height:12px"></span></span></div>
+        <div class="sk-list mt-3"><div class="skeleton" style="height:90px;border-radius:var(--radius-lg)"></div></div>
+        <div class="progress mt-3">Loading demo…<div class="bar"><span class="fill" style="width:38%"></span></div></div>
+
+        <div class="label">Success / info / warning / error</div>
+        <div class="alert ok mt-2">✓ Operation completed successfully</div>
+        <div class="alert info mt-2">ℹ A helpful notice for the user</div>
+        <div class="alert warn mt-2">⚠ Please review your information</div>
+        <div class="alert err mt-2">✕ Something went wrong · <a class="link" style="color:var(--error)" href="#">Retry</a></div>
+
+        <div class="label">Toast &amp; offline</div>
+        <div class="toast ok">✓ Favourite added</div>
+        <div class="offline-banner mt-2">You're offline — showing saved content</div>
+
+        <div class="label">Buttons — enabled / pressed / disabled</div>
+        <div class="row">
+          <button class="btn btn-primary">Primary</button>
+          <button class="btn btn-primary pressed">Pressed</button>
+          <button class="btn btn-primary" disabled>Disabled</button>
+        </div>
+
+        <div class="label">Inputs — normal / focus / error</div>
+        <div class="inputwrap"><span class="lead">👤</span><input class="input" placeholder="Normal input"></div>
+        <div class="inputwrap mt-2"><span class="lead">👤</span><input class="input focus" value="Sarah Al-Ali"></div>
+        <div class="inputwrap mt-2"><span class="lead">🔒</span><input class="input err" value="123456"><div class="hint-err">Enter a valid value</div></div>
+        <div class="switch on mt-3"><span class="knob"></span></div> <span class="body-sm">Toggle on</span>
+
+        <div class="label">Selection</div>
+        <div class="chips"><button class="chip on">Selected</button><button class="chip">Idle</button></div>
+        <div class="check mt-2">✓ <span class="body-sm">Checkbox selected</span></div>
+        <div class="rad mt-1">● <span class="body-sm">Radio selected</span></div>
+
+        <div class="label">Empty &amp; no-results &amp; error pages</div>
+        <div class="empty"><div class="e-ic">📭</div><div class="t-sm">Nothing here yet</div><div class="body-sm muted mt-1">Empty state description.</div><button class="btn btn-primary btn-sm mt-3">Action</button></div>
+        <div class="empty mt-2"><div class="e-ic">🔍</div><div class="t-sm">No results</div><div class="body-sm muted mt-1">Demo no-results.</div></div>
+        <div class="empty mt-2" style="border:1px dashed var(--error)"><div class="e-ic" style="color:var(--error)">⚠</div><div class="t-sm">Something went wrong</div><div class="body-sm muted mt-1">Demo error page state.</div><button class="btn btn-outline btn-sm mt-3">Try again</button></div>
+
+        <div class="label">Maps &amp; modals</div>
+        <div class="map-frame" style="height:120px"><span class="pin">📍</span>Map placeholder</div>
+        <div class="modal-card mt-3" style="position:static;transform:none;box-shadow:none;border:1px solid var(--border)">
+          <div class="modal-msg-ic ok">✓</div>
+          <div class="t-sm">Confirmation dialog</div>
+          <div class="body-sm muted mt-2">Modal pattern with message icon and actions.</div>
+          <button class="btn btn-primary btn-block mt-4">Confirm</button>
+          <button class="btn btn-ghost btn-block mt-2">Cancel</button>
+        </div>
+        <div class="tag mt-4">All components shown are part of the Yamak New provisional design system.</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

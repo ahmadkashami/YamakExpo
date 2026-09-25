@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yamak New · Search</title>
+<link rel="stylesheet" href="../../prototype-shared/tokens.css">
+<link rel="stylesheet" href="../../prototype-shared/base.css">
+<link rel="stylesheet" href="../../prototype-shared/components.css">
+</head>
+<body>
+  <div class="banner">
+    <div><b>PROPOSED — requires approval</b> · Yamak New · provisional baseline · <span>Search (modal)</span></div>
+    <div class="nav"><a href="../../index.html">Index</a><a href="../../design-system/colors.md">Design system</a></div>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="sheet-scrim">
+        <div class="sheet" style="max-height:92%">
+          <div class="grab"></div>
+          <div class="appbar on-light" style="padding:0 0 12px">
+            <a class="iconbtn" href="../home/index.html" aria-label="Cancel">✕</a>
+            <div class="bar-title">Search</div>
+            <div class="bar-side right"><a class="tbtn" href="../home/index.html">Cancel</a></div>
+          </div>
+          <div class="inputwrap"><span class="lead">🔍</span><input class="input" placeholder="Toyota, tow, road help …"></div>
+          <div class="chips mt-3">
+            <button class="chip gold on">All</button>
+            <button class="chip">Tow</button>
+            <button class="chip">Fuel</button>
+            <button class="chip">Battery</button>
+            <button class="chip">Used car</button>
+          </div>
+          <div class="mt-4">
+            <div class="label">Results</div>
+            <a class="row mt-2" href="../vehicle-details/index.html">
+              <span class="r-ico">🚙</span>
+              <span class="r-main"><b>Toyota Land Cruiser 2020</b><div class="v-loc">Kuwait City · KWD 14,900</div></span>
+              <span class="r-chevy">›</span>
+            </a>
+            <a class="row" href="../vehicle-details/index.html">
+              <span class="r-ico">🚙</span>
+              <span class="r-main"><b>Nissan Patrol 2022</b><div class="v-loc">Salmiya · KWD 15,800</div></span>
+              <span class="r-chevy">›</span>
+            </a>
+            <div class="mt-3 empty pb-0">
+              <div class="e-ic">🔍</div>
+              <div class="t-sm">No results for "abc"</div>
+              <div class="body-sm muted mt-1">Try a different search term (demo no-results state).</div>
+              <button class="btn btn-outline btn-sm mt-3">Clear filters</button>
+            </div>
+          </div>
+          <div class="caption muted-2 mt-3">Prototype modal — search preview only.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,32 @@
+/* DIRECTION 02 — BRAND-FOCUSED
+   Embraces the legacy Yamak identity: deep blue headers, gold primary
+   actions, brand-colored tab bar. Dark text on gold keeps AA contrast. */
+:root {
+  --brand-900: #00234D;
+  --brand-800: #002F6C;
+  --brand-700: #083975;
+  --brand-600: #124583;
+  --brand-100: #DEE9F5;
+  --brand-50:  #EEF4FA;
+  --gold-600: #7A5200;
+  --gold-500: #E9A319;
+  --gold-400: #F7B123;
+  --gold-100: #F9EBC8;
+  --gold-50:  #FDF6E3;
+  --bg: #F3F5F8;
+  --surface: #FFFFFF;
+  --surface-2: #EDF0F3;
+  --border: #E0E5EB;
+  --outline: #C2CBD6;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --radius-xl: 20px;
+}
+/* gold is the primary action color in this direction */
+.btn-primary { background: var(--gold-400); color: #241700; }
+.btn-primary:focus { box-shadow: 0 0 0 3px var(--gold-100); }
+.btn-outline { color: var(--brand-800); border-color: var(--brand-700); }
+.tab.on { color: var(--gold-600); }
+.link { color: var(--brand-800); }
+.check.on { background: var(--gold-400); border-color: var(--gold-400); color: #241700; }
+.check.on::after { color: #241700; }
+.input:focus { border-color: var(--brand-800); box-shadow: 0 0 0 3px rgba(0,47,108,.12); }
+.appbar.on-brand { background: var(--brand-800); }

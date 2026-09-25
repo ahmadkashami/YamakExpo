@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yamak New · Edit Profile</title>
+<link rel="stylesheet" href="../../prototype-shared/tokens.css">
+<link rel="stylesheet" href="../../prototype-shared/base.css">
+<link rel="stylesheet" href="../../prototype-shared/components.css">
+</head>
+<body>
+  <div class="banner">
+    <div><b>PROPOSED — requires approval</b> · Yamak New · provisional baseline · <span>Edit profile</span></div>
+    <div class="nav"><a href="../../index.html">Index</a><a href="../../design-system/colors.md">Design system</a></div>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span>▮▮▮ · 📶 🔋</span></div>
+      <div class="appbar on-light">
+        <a class="iconbtn" href="../profile/index.html" aria-label="Back">‹</a>
+        <div class="bar-title">Edit profile</div>
+        <div class="bar-side"><button class="btn btn-primary btn-sm" disabled>Save</button></div>
+      </div>
+      <div class="content">
+        <div class="center">
+          <span class="avatar lg">SA</span>
+          <div class="caption muted mt-2"><a class="link" href="#">Change photo</a> · avatar upload (prototype)</div>
+        </div>
+        <div class="field mt-5"><label class="label" for="epName">Full name</label>
+          <div class="inputwrap"><span class="lead">👤</span><input class="input" id="epName" value="Sarah Al-Ali"></div>
+        </div>
+        <div class="field"><label class="label" for="epPhone">Phone</label>
+          <div class="inputwrap"><span class="lead">📞</span><input class="input err" id="epPhone" value="+965 5XX"></div>
+          <div class="hint-err">Enter a valid Kuwaiti phone number</div>
+        </div>
+        <div class="field"><label class="label" for="epEmail">Email</label>
+          <div class="inputwrap"><span class="lead">✉️</span><input class="input" id="epEmail" value="sarah@example.com"></div>
+        </div>
+        <button class="btn btn-primary btn-block mt-2">Save changes</button>
+        <div class="caption muted-2 mt-3">Prototype — Save is shown disabled as a demo of the disabled state.</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
