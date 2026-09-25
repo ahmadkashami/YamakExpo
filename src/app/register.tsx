@@ -1,5 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const appLogo = require('@/assets/images/appLogo.png');
@@ -12,9 +14,18 @@ const colors = {
   surface: '#FFFFFF',
   title: '#0F172A',
   subtitle: '#64748B',
+  fieldLabel: '#334155',
+  fieldText: '#1E293B',
+  placeholder: '#94A3B8',
+  border: '#E2E8F0',
 } as const;
 
 export default function RegisterScreen() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar style="light" />
@@ -30,12 +41,110 @@ export default function RegisterScreen() {
         <Text style={styles.tagline}>Kuwait’s road &amp; mobility partner</Text>
       </View>
       <View style={styles.surface}>
-        <Text accessibilityRole="header" style={styles.title}>
-          Begin your journey
-        </Text>
-        <Text style={styles.subtitle}>
-          A premium account for every journey on Kuwait&apos;s roads.
-        </Text>
+        <ScrollView
+          style={styles.formScroll}
+          contentContainerStyle={styles.formContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}>
+          <Text accessibilityRole="header" style={styles.title}>
+            Begin your journey
+          </Text>
+          <Text style={styles.subtitle}>
+            A premium account for every journey on Kuwait&apos;s roads.
+          </Text>
+          <View style={styles.form}>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Full Name</Text>
+              <View style={styles.inputContainer}>
+                <SymbolView
+                  name={{ ios: 'person', android: 'person', web: 'person' }}
+                  size={18}
+                  tintColor={colors.placeholder}
+                  style={styles.leadingIcon}
+                />
+                <TextInput
+                  accessibilityLabel="Full Name"
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Your name"
+                  placeholderTextColor={colors.placeholder}
+                  selectionColor={colors.navy}
+                  autoCapitalize="words"
+                  autoComplete="name"
+                  style={styles.input}
+                />
+              </View>
+            </View>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Email</Text>
+              <View style={styles.inputContainer}>
+                <SymbolView
+                  name={{ ios: 'envelope', android: 'mail', web: 'mail' }}
+                  size={18}
+                  tintColor={colors.placeholder}
+                  style={styles.leadingIcon}
+                />
+                <TextInput
+                  accessibilityLabel="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="name@example.com"
+                  placeholderTextColor={colors.placeholder}
+                  selectionColor={colors.navy}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="email"
+                  style={styles.input}
+                />
+              </View>
+            </View>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Password</Text>
+              <View style={[styles.inputContainer, styles.passwordInputContainer]}>
+                <SymbolView
+                  name={{ ios: 'lock', android: 'lock', web: 'lock' }}
+                  size={18}
+                  tintColor={colors.placeholder}
+                  style={styles.leadingIcon}
+                />
+                <TextInput
+                  accessibilityLabel="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Enter password"
+                  placeholderTextColor={colors.placeholder}
+                  selectionColor={colors.navy}
+                  secureTextEntry={!isPasswordVisible}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="new-password"
+                  style={styles.input}
+                />
+                <Pressable
+                  accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => setIsPasswordVisible((visible) => !visible)}
+                  style={({ pressed }) => [
+                    styles.passwordToggle,
+                    pressed && styles.passwordTogglePressed,
+                  ]}>
+                  <SymbolView
+                    name={{
+                      ios: isPasswordVisible ? 'eye' : 'eye.slash',
+                      android: isPasswordVisible ? 'visibility' : 'visibility_off',
+                      web: isPasswordVisible ? 'visibility' : 'visibility_off',
+                    }}
+                    size={18}
+                    tintColor={colors.placeholder}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -98,11 +207,71 @@ const styles = StyleSheet.create({
   },
   surface: {
     flex: 1,
-    paddingTop: 28,
-    paddingHorizontal: 24,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     backgroundColor: colors.surface,
+  },
+  formScroll: {
+    flex: 1,
+  },
+  formContent: {
+    flexGrow: 1,
+    paddingTop: 28,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+  },
+  form: {
+    marginTop: 8,
+  },
+  fieldGroup: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    marginBottom: 6,
+    color: colors.fieldLabel,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  inputContainer: {
+    height: 48,
+    paddingLeft: 14,
+    paddingRight: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+  },
+  leadingIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    height: 46,
+    padding: 0,
+    borderWidth: 0,
+    color: colors.fieldText,
+    backgroundColor: 'transparent',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+    textAlignVertical: 'center',
+  },
+  passwordInputContainer: {
+    paddingRight: 2,
+  },
+  passwordToggle: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  passwordTogglePressed: {
+    opacity: 0.6,
   },
   title: {
     color: colors.title,
