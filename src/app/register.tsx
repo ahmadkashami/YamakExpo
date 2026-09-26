@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   Keyboard,
@@ -24,6 +25,7 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 
+import { ApiError, registerUser, type RegisterResponse } from '@/api';
 import {
   defaultCountry,
   getAllowedCountries,
@@ -39,6 +41,9 @@ const countries = getAllowedCountries();
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MINIMUM_NAME_LENGTH = 3;
 const MINIMUM_PASSWORD_LENGTH = 8;
+const TERMS_ERROR_MESSAGE = 'You must agree to the Terms and Privacy Policy';
+const NETWORK_ERROR_MESSAGE = 'Unable to connect to the server. Please try again.';
+const GENERIC_SIGNUP_ERROR_MESSAGE = 'Unable to create your account. Please try again.';
 
 function getNameError(name: string): string | null {
   const value = name.trim();
@@ -101,6 +106,18 @@ function getPhoneValidation(phone: string, isoCode: CountryCode): PhoneValidatio
   return { error: null, e164: parsedPhone.number };
 }
 
+function getTermsError(isAgreed: boolean): string | null {
+  return isAgreed ? null : TERMS_ERROR_MESSAGE;
+}
+
+function getSignupErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    return error.kind === 'network' ? NETWORK_ERROR_MESSAGE : error.message;
+  }
+
+  return GENERIC_SIGNUP_ERROR_MESSAGE;
+}
+
 function FieldError({ message }: { message: string | null }) {
   if (message === null) {
     return null;
@@ -133,12 +150,16 @@ export default function RegisterScreen() {
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [termsTouched, setTermsTouched] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
+  const [signupResult, setSignupResult] = useState<RegisterResponse | null>(null);
+  const isSubmittingRef = useRef(false);
   const callingCode = getCallingCode(selectedCountry.isoCode);
 
   const nameError = nameTouched ? getNameError(name) : null;
   const emailError = emailTouched ? getEmailError(email) : null;
   const passwordError = passwordTouched ? getPasswordError(password) : null;
-  const termsError = termsTouched && !isAgreed ? 'You must agree to the Terms and Privacy Policy' : null;
+  const termsError = termsTouched ? getTermsError(isAgreed) : null;
 
   const phoneValidation = useMemo(
     () => getPhoneValidation(phone, selectedCountry.isoCode),
@@ -178,6 +199,53 @@ export default function RegisterScreen() {
 
   function openPrivacyPolicy() {
     void Linking.openURL('https://yamak-kw.com/privacy');
+  }
+
+  function handleSubmitPress() {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
+    setNameTouched(true);
+    setEmailTouched(true);
+    setPasswordTouched(true);
+    setPhoneTouched(true);
+    setTermsTouched(true);
+    setSignupError(null);
+
+    const nextErrors = [
+      getNameError(name),
+      getEmailError(email),
+      getPasswordError(password),
+      phoneValidation.error,
+      getTermsError(isAgreed),
+    ];
+    const e164 = phoneValidation.e164;
+    const isFormValid = nextErrors.every((error) => error === null);
+
+    if (!isFormValid || e164 === null) {
+      return;
+    }
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
+    void (async () => {
+      try {
+        const response = await registerUser({ name, email, password, phone: e164 });
+
+        if (response.success && response.data?.user !== undefined) {
+          setSignupResult(response);
+        } else {
+          setSignupError(GENERIC_SIGNUP_ERROR_MESSAGE);
+        }
+      } catch (error) {
+        setSignupError(getSignupErrorMessage(error));
+      } finally {
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+      }
+    })();
   }
 
   return (
@@ -475,6 +543,37 @@ export default function RegisterScreen() {
               </Text>
             </View>
             <FieldError message={termsError} />
+            <View style={styles.submitRow}>
+              <FieldError message={signupError} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Sign up"
+                accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }}
+                disabled={isSubmitting}
+                onPress={handleSubmitPress}
+                style={({ pressed }) => [
+                  styles.submitButton,
+                  pressed && styles.submitButtonPressed,
+                  isSubmitting && styles.submitButtonSubmitting,
+                ]}>
+                {isSubmitting ? (
+                  <ActivityIndicator color={colors.brandText} size="small" />
+                ) : (
+                  <>
+                    <Text style={styles.submitButtonLabel}>Sign up</Text>
+                    <SymbolView
+                      name={{
+                        ios: 'arrow.right',
+                        android: 'arrow_forward',
+                        web: 'arrow_right',
+                      }}
+                      size={12}
+                      tintColor={colors.brandText}
+                    />
+                  </>
+                )}
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -836,6 +935,32 @@ const styles = StyleSheet.create({
     color: colors.title,
     fontWeight: fontWeight.semibold,
     textDecorationLine: 'underline',
+  },
+  submitRow: {
+    marginTop: spacing.md,
+  },
+  submitButton: {
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.navy,
+    boxShadow: `0px 4px 14px 0px ${colors.scrim}`,
+  },
+  submitButtonPressed: {
+    opacity: 0.7,
+  },
+  submitButtonSubmitting: {
+    opacity: 0.75,
+  },
+  submitButtonLabel: {
+    ...typography.body,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.6,
+    color: colors.brandText,
   },
   countryModalBackdrop: {
     flex: 1,
