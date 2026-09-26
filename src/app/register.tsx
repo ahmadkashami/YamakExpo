@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
@@ -25,7 +26,7 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 
-import { ApiError, registerUser, type RegisterResponse } from '@/api';
+import { ApiError, registerUser } from '@/api';
 import {
   defaultCountry,
   getAllowedCountries,
@@ -152,8 +153,8 @@ export default function RegisterScreen() {
   const [termsTouched, setTermsTouched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
-  const [signupResult, setSignupResult] = useState<RegisterResponse | null>(null);
   const isSubmittingRef = useRef(false);
+  const router = useRouter();
   const callingCode = getCallingCode(selectedCountry.isoCode);
 
   const nameError = nameTouched ? getNameError(name) : null;
@@ -235,7 +236,7 @@ export default function RegisterScreen() {
         const response = await registerUser({ name, email, password, phone: e164 });
 
         if (response.success && response.data?.user !== undefined) {
-          setSignupResult(response);
+          router.push({ pathname: '/email-otp', params: { email } });
         } else {
           setSignupError(GENERIC_SIGNUP_ERROR_MESSAGE);
         }
