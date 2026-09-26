@@ -27,3 +27,21 @@ export type RegisterResponse = {
 export function registerUser(payload: RegisterRequest): Promise<RegisterResponse> {
   return apiPost<RegisterResponse, RegisterRequest>('auth/signup', payload);
 }
+
+export type VerifyEmailOtpRequest = {
+  email: string;
+  code: string;
+};
+
+export type VerifyEmailOtpResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    user?: RegisteredUser;
+    accessToken?: string;
+  } | null;
+};
+
+export function verifyEmailOtp(payload: VerifyEmailOtpRequest): Promise<VerifyEmailOtpResponse> {
+  return apiPost<VerifyEmailOtpResponse, VerifyEmailOtpRequest>('auth/verify-email', payload);
+}

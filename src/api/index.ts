@@ -1,8 +1,11 @@
 export {
   registerUser,
+  verifyEmailOtp,
   type RegisteredUser,
   type RegisterRequest,
   type RegisterResponse,
+  type VerifyEmailOtpRequest,
+  type VerifyEmailOtpResponse,
 } from './auth';
 export { ApiError, extractBackendMessage, type ApiErrorKind } from './api-error';
 export { API_BASE_URL, buildApiUrl, resolveApiBaseUrl } from './config';
