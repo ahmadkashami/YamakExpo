@@ -1,3 +1,5 @@
+import { getAccessToken } from '@/auth/auth-storage';
+
 import { ApiError, extractBackendMessage } from './api-error';
 import { buildApiUrl } from './config';
 
@@ -12,10 +14,12 @@ export interface ApiRequestOptions<TBody> {
 
 function buildRequestHeaders<TBody>(
   options: ApiRequestOptions<TBody>,
+  accessToken: string | null,
 ): Record<string, string> {
   return {
     Accept: 'application/json',
     ...(options.body === undefined ? null : { 'Content-Type': 'application/json' }),
+    ...(accessToken === null ? null : { Authorization: `Bearer ${accessToken}` }),
     ...options.headers,
   };
 }
@@ -37,12 +41,13 @@ export async function apiRequest<TResponse, TBody = never>(
 ): Promise<TResponse> {
   const { method = 'GET', body, headers, signal } = options;
   const url = buildApiUrl(path);
+  const accessToken = await getAccessToken();
 
   let response: Response;
   try {
     response = await fetch(url, {
       method,
-      headers: buildRequestHeaders(options),
+      headers: buildRequestHeaders(options, accessToken),
       ...(body === undefined ? null : { body: JSON.stringify(body) }),
       ...(signal === undefined ? null : { signal }),
     });
