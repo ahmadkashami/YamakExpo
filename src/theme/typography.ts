@@ -22,6 +22,12 @@ export const typography = {
     lineHeight: 20,
     fontWeight: fontWeight.medium,
   },
+  buttonLabel: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.6,
+  },
   label: {
     fontSize: 12,
     lineHeight: 16,

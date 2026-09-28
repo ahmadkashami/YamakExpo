@@ -18,7 +18,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError, verifyEmailOtp } from '@/api';
 import { useAuth } from '@/auth';
-import { colors, fontWeight, radius, spacing, typography } from '@/theme';
+import {
+  colors,
+  fontWeight,
+  interactionOpacity,
+  radius,
+  spacing,
+  typography,
+} from '@/theme';
 
 const appLogo = require('@/assets/images/appLogo.png');
 
@@ -542,15 +549,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tagline,
   },
   verifyButtonPressed: {
-    opacity: 0.7,
+    opacity: interactionOpacity.pressed,
   },
   verifyButtonSubmitting: {
-    opacity: 0.75,
+    opacity: interactionOpacity.submitting,
   },
   verifyButtonLabel: {
-    ...typography.body,
-    fontWeight: fontWeight.bold,
-    letterSpacing: 0.6,
+    ...typography.buttonLabel,
     color: colors.brandText,
   },
   verifyButtonLabelDisabled: {

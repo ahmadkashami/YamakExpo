@@ -3,7 +3,14 @@ import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { getCallingCode, type Country } from '@/data/allowed-countries';
-import { colors, fontWeight, radius, spacing, typography } from '@/theme';
+import {
+  colors,
+  fontWeight,
+  interactionOpacity,
+  radius,
+  spacing,
+  typography,
+} from '@/theme';
 
 type CountrySelectorModalProps = {
   visible: boolean;
@@ -228,7 +235,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.countrySelected,
   },
   countryOptionPressed: {
-    opacity: 0.7,
+    opacity: interactionOpacity.pressed,
   },
   countryOptionFlag: {
     fontSize: 24,

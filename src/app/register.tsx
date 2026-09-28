@@ -25,7 +25,14 @@ import {
   getCallingCode,
   type Country,
 } from '@/data/allowed-countries';
-import { colors, fontWeight, radius, spacing, typography } from '@/theme';
+import {
+  colors,
+  fontWeight,
+  interactionOpacity,
+  radius,
+  spacing,
+  typography,
+} from '@/theme';
 
 const countries = getAllowedCountries();
 
@@ -594,7 +601,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.phonePrefix,
   },
   callingCodePrefixPressed: {
-    opacity: 0.7,
+    opacity: interactionOpacity.pressed,
   },
   phoneInputContainerInvalid: {
     borderColor: colors.error,
@@ -669,15 +676,13 @@ const styles = StyleSheet.create({
     boxShadow: `0px 4px 14px 0px ${colors.scrim}`,
   },
   submitButtonPressed: {
-    opacity: 0.7,
+    opacity: interactionOpacity.pressed,
   },
   submitButtonSubmitting: {
-    opacity: 0.75,
+    opacity: interactionOpacity.submitting,
   },
   submitButtonLabel: {
-    ...typography.body,
-    fontWeight: fontWeight.bold,
-    letterSpacing: 0.6,
+    ...typography.buttonLabel,
     color: colors.brandText,
   },
   title: {
