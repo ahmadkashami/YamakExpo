@@ -221,10 +221,10 @@ export default function RegisterScreen() {
       phoneValidation.error,
       getTermsError(isAgreed),
     ];
-    const e164 = phoneValidation.e164;
+    const e164Phone = phoneValidation.e164; // Phone number normalized to the international E.164 format, e.g. +96555551234
     const isFormValid = nextErrors.every((error) => error === null);
 
-    if (!isFormValid || e164 === null) {
+    if (!isFormValid || e164Phone === null) {
       return;
     }
 
@@ -233,7 +233,7 @@ export default function RegisterScreen() {
 
     void (async () => {
       try {
-        const response = await registerUser({ name, email, password, phone: e164 });
+        const response = await registerUser({ name, email, password, phone: e164Phone });
 
         if (response.success && response.data?.user !== undefined) {
           router.push({ pathname: '/email-otp', params: { email } });
