@@ -8,6 +8,7 @@ export {
   type VerifyEmailOtpResponse,
 } from './auth';
 export { ApiError, extractBackendMessage, type ApiErrorKind } from './api-error';
+export { getAdds, type Add, type AddsMetaData, type AddsResponse } from './adds';
 export {
   getServices,
   type Service,
