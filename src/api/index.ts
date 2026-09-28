@@ -8,6 +8,14 @@ export {
   type VerifyEmailOtpResponse,
 } from './auth';
 export { ApiError, extractBackendMessage, type ApiErrorKind } from './api-error';
+export {
+  getServices,
+  type Service,
+  type ServiceLanguage,
+  type ServiceName,
+  type ServicesMetaData,
+  type ServicesResponse,
+} from './services';
 export { API_BASE_URL, buildApiUrl, resolveApiBaseUrl } from './config';
 export {
   apiDelete,
