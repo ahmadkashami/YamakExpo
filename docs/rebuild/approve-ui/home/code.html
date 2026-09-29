@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Yamak · Roadside Assistance Kuwait</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration for Yamak Brand Tokens -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#081C31',
+              navyLight: '#153359',
+              gold: '#E9A319',
+              goldDark: '#C78810',
+              goldSoft: '#FEF8EA',
+              accent: '#2563EB',
+              surface: '#F8FAFC',
+              slateText: '#1E293B',
+              muted: '#64748B'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 4px 20px -2px rgba(11, 42, 74, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
+            'nav': '0 -4px 20px rgba(0, 0, 0, 0.06)'
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom App Styling -->
+<style data-purpose="custom-scrollbars">
+    /* Subtle horizontal scroll hiding */
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style data-purpose="radar-effects">
+    /* Radar Map live pulsing animation */
+    @keyframes radar-pulse {
+      0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+      50% {
+        transform: scale(1.6);
+        opacity: 0.2;
+      }
+      100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+    .ping-circle {
+      animation: radar-pulse 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+  </style>
+<!-- END: Custom App Styling -->
+</head>
+<body class="bg-slate-100 flex justify-center items-start min-h-screen font-sans antialiased text-slate-800 select-none pb-12 pt-0 sm:pt-6">
+<!-- BEGIN: Mobile iOS Frame Simulation -->
+<div class="w-full max-w-[420px] bg-slate-50 min-h-screen shadow-2xl relative overflow-hidden sm:rounded-[44px] sm:border-[8px] sm:border-slate-800 flex flex-col" data-purpose="mobile-device-container">
+<!-- BEGIN: iOS Status Bar -->
+<header class="w-full bg-[#081C31] text-white px-7 pt-3 pb-1 flex justify-between items-center text-xs tracking-tight z-50" data-purpose="status-bar">
+<span class="font-semibold text-sm">9:41</span>
+<div class="flex items-center gap-1.5">
+<!-- Signal strength bars -->
+<svg class="w-4 h-3.5 fill-current" viewbox="0 0 24 24">
+<path d="M2 17h3v4H2v-4zm5-4h3v8H7v-8zm5-4h3v12h-3V9zm5-5h3v17h-3V4z"></path>
+</svg>
+<!-- 5G Badge -->
+<span class="text-[10px] font-bold">5G</span>
+<!-- Battery Icon -->
+<div class="w-6 h-3 border border-white/80 rounded-sm p-[1.5px] flex items-center">
+<div class="h-full w-4 bg-emerald-400 rounded-2xs"></div>
+</div>
+</div>
+</header>
+<!-- END: iOS Status Bar -->
+<!-- BEGIN: Main Header with Official Logo -->
+<section class="bg-gradient-to-b from-[#081C31] via-[#0B2A4A] to-[#153359] text-white px-5 pt-3 pb-6 rounded-b-[28px] shadow-lg" data-purpose="top-navigation-header">
+<div class="flex justify-between items-center">
+<!-- Hamburger Menu Button -->
+<button aria-label="Menu" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/15 active:scale-95 transition flex items-center justify-center border border-white/10" type="button">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<!-- Brand Identity Pill with Official Logo -->
+<div class="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15">
+<div class="w-7 h-7 rounded-full bg-white flex items-center justify-center p-1 shadow-sm">
+<img alt="Yamak Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSImvPTLzFXSbV8Se97E3y3T4Vl7XPmD-d4oLCf8cb7b7N5YuMQAvN3pZa997AU8Z-XXU9sRvNLtmPj72Zr5FUAx6Ax6BgMkpiILl5HvBICuhVYeu3C03EhwBN-f4CVqXbGfq0UIM502QAkB69_-Lrg6ZR_RRYof-SeuiMIA41ZZzfAnxdg0BTOwOgvpoQ9UviRBWFvqHZpOpXrU49e-Fiyip_fOrPgLFyocKIqQ2a9t0m6qUgg6S2pLgdq1ZBMQfaNg"/>
+</div>
+<div class="flex flex-col items-start leading-none pr-1">
+<span class="text-sm font-black tracking-wide text-white flex items-center gap-1.5">
+              YAMAK <span class="text-[#E9A319] text-xs font-bold font-mono">| يَمَك</span>
+</span>
+<span class="text-[9px] text-slate-300 font-medium">Kuwait Road Mobility</span>
+</div>
+</div>
+<!-- Notification Bell with Active Badge -->
+<button aria-label="Notifications" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/15 active:scale-95 transition flex items-center justify-center relative border border-white/10" type="button">
+<svg class="w-5 h-5 text-[#E9A319]" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2a6 6 0 0 0-6 6v3.586l-.707.707A1 1 0 0 0 5 13h14a1 1 0 0 0 .707-1.707L19 11.586V8a6 6 0 0 0-6-6zm0 20a3 3 0 0 0 2.83-2h-5.66A3 3 0 0 0 12 22z"></path>
+</svg>
+<span class="absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-[10px] font-bold text-white flex items-center justify-center rounded-full border-2 border-[#0B2A4A]">3</span>
+</button>
+</div>
+<!-- Quick Greeting / Tagline -->
+<div class="mt-4 px-1">
+<p class="text-xs text-amber-300/90 font-medium">Fast, transparent roadside assistance</p>
+<h1 class="text-lg font-bold text-white tracking-tight mt-0.5">Need help on Kuwait roads?</h1>
+</div>
+<!-- Floating Modern Search Bar -->
+<div class="mt-3.5 relative">
+<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+<svg class="w-4 h-4 text-brand-gold" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24">
+<circle cx="11" cy="11" r="7"></circle>
+<path d="m21 21-4.3-4.3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<input class="w-full pl-10 pr-10 py-2.5 bg-white text-slate-800 placeholder-slate-400 text-xs font-medium rounded-2xl shadow-md border-0 focus:ring-2 focus:ring-[#E9A319] transition" placeholder="Search winches, battery boost, tire help..." type="text"/>
+<button class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+</section>
+<!-- END: Main Header -->
+<!-- BEGIN: Scrollable Content View -->
+<main class="flex-1 overflow-y-auto px-4 pt-3 pb-24 space-y-4" data-purpose="screen-content">
+<!-- BEGIN: Non-Profit Facilitator Trust Banner -->
+<section class="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/60 rounded-2xl p-3.5 border border-emerald-200/80 shadow-sm relative" data-purpose="trust-facilitator-banner">
+<div class="flex items-start gap-2.5">
+<div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24">
+<path d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<h2 class="text-xs font-bold text-emerald-900 flex items-center gap-1">
+                Non-Profit Facilitator Platform
+              </h2>
+<span class="text-[9px] bg-emerald-200/70 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">Zero Commission</span>
+</div>
+<p class="text-[11px] text-emerald-800/90 leading-tight mt-1 font-normal">
+              Direct connection with independent providers. You agree on rates and terms directly with the driver—no middleman or platform fees.
+            </p>
+</div>
+</div>
+</section>
+<!-- END: Non-Profit Facilitator Trust Banner -->
+<!-- BEGIN: Road Services Grid -->
+<section data-purpose="services-grid-section">
+<div class="flex justify-between items-center mb-2.5 px-0.5">
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-3.5 bg-[#E9A319] rounded-full"></div>
+<h3 class="text-sm font-bold text-brand-navy tracking-tight">Road services</h3>
+</div>
+<button class="text-xs font-semibold text-brand-navyLight hover:text-[#E9A319] flex items-center gap-0.5">
+            See all
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+<!-- 6 Core Services Grid -->
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Towing & Winch -->
+<div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-300 transition flex items-center gap-3 active:bg-amber-50/40 cursor-pointer">
+<div class="w-11 h-11 rounded-xl bg-orange-100/70 flex items-center justify-center text-xl flex-shrink-0 shadow-inner">
+              🛻
+            </div>
+<div>
+<p class="text-xs font-bold text-slate-800 leading-tight">Tow service</p>
+<p class="text-[10px] text-slate-400 font-medium mt-0.5 font-sans">سطحة وونش</p>
+</div>
+</div>
+<!-- Road help / General Repair -->
+<div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-300 transition flex items-center gap-3 active:bg-amber-50/40 cursor-pointer">
+<div class="w-11 h-11 rounded-xl bg-blue-100/70 flex items-center justify-center text-xl flex-shrink-0 shadow-inner">
+              🚙
+            </div>
+<div>
+<p class="text-xs font-bold text-slate-800 leading-tight">Road help</p>
+<p class="text-[10px] text-slate-400 font-medium mt-0.5 font-sans">مساعدة سريعة</p>
+</div>
+</div>
+<!-- Fuel Delivery -->
+<div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-300 transition flex items-center gap-3 active:bg-amber-50/40 cursor-pointer">
+<div class="w-11 h-11 rounded-xl bg-rose-100/70 flex items-center justify-center text-xl flex-shrink-0 shadow-inner">
+              ⛽
+            </div>
+<div>
+<p class="text-xs font-bold text-slate-800 leading-tight">Fuel delivery</p>
+<p class="text-[10px] text-slate-400 font-medium mt-0.5 font-sans">توصيل بنزين</p>
+</div>
+</div>
+<!-- Battery Boost -->
+<div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-300 transition flex items-center gap-3 active:bg-amber-50/40 cursor-pointer">
+<div class="w-11 h-11 rounded-xl bg-emerald-100/70 flex items-center justify-center text-xl flex-shrink-0 shadow-inner">
+              🔋
+            </div>
+<div>
+<p class="text-xs font-bold text-slate-800 leading-tight">Battery boost</p>
+<p class="text-[10px] text-slate-400 font-medium mt-0.5 font-sans">تبديل واشتراك</p>
+</div>
+</div>
+<!-- Tire Service -->
+<div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-300 transition flex items-center gap-3 active:bg-amber-50/40 cursor-pointer">
+<div class="w-11 h-11 rounded-xl bg-amber-100/70 flex items-center justify-center text-xl flex-shrink-0 shadow-inner">
+              🛞
+            </div>
+<div>
+<p class="text-xs font-bold text-slate-800 leading-tight">Tire repair</p>
+<p class="text-[10px] text-slate-400 font-medium mt-0.5 font-sans">بنشر وإطارات</p>
+</div>
+</div>
+<!-- Car Lockout / Mobile Wash -->
+<div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-300 transition flex items-center gap-3 active:bg-amber-50/40 cursor-pointer">
+<div class="w-11 h-11 rounded-xl bg-purple-100/70 flex items-center justify-center text-xl flex-shrink-0 shadow-inner">
+              🔑
+            </div>
+<div>
+<p class="text-xs font-bold text-slate-800 leading-tight">Key lockout</p>
+<p class="text-[10px] text-slate-400 font-medium mt-0.5 font-sans">فتح أقفال</p>
+</div>
+</div>
+</div>
+<p class="text-[10px] text-slate-400 mt-2 px-1">Independent verified providers throughout Kuwait Governorates.</p>
+</section>
+<!-- END: Road Services Grid -->
+<!-- BEGIN: Live Radar Map Preview (from Image 4 Context) -->
+<section class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm" data-purpose="live-map-radar-card">
+<div class="p-3 pb-2 flex justify-between items-center">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+</span>
+<h3 class="text-xs font-bold text-brand-navy">Nearby on radar</h3>
+</div>
+<p class="text-[10px] text-slate-500">Kuwait City &amp; Salmiya zone</p>
+</div>
+<span class="text-[10px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-full border border-blue-100">
+            ~14 min avg
+          </span>
+</div>
+<!-- Stylized Map Display Container -->
+<div class="h-36 bg-gradient-to-tr from-sky-100 via-blue-50 to-slate-200 relative overflow-hidden flex items-center justify-center border-y border-slate-100">
+<!-- Background Road Vector Grid Representation -->
+<svg class="absolute inset-0 w-full h-full opacity-40" xmlns="http://www.w3.org/2000/svg">
+<path d="M-20 60 Q 150 40 400 80" fill="none" stroke="#93C5FD" stroke-width="4"></path>
+<path d="M50 0 Q 120 100 200 160" fill="none" stroke="#CBD5E1" stroke-width="3"></path>
+<path d="M220 0 L 260 160" fill="none" stroke="#E2E8F0" stroke-width="5"></path>
+<path d="M-10 120 L 400 110" fill="none" stroke="#93C5FD" stroke-dasharray="6,4" stroke-width="2"></path>
+<circle cx="210" cy="70" fill="none" r="40" stroke="#BAE6FD" stroke-width="1.5"></circle>
+</svg>
+<!-- Waterline indicator (Arabian Gulf Coast) -->
+<div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-sky-200/50 pointer-events-none"></div>
+<!-- Pulsing Map Pin 1 (Center Driver) -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+<div class="relative flex items-center justify-center">
+<span class="ping-circle absolute w-7 h-7 rounded-full bg-rose-500 opacity-60"></span>
+<div class="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-lg border-2 border-white text-xs">
+                📍
+              </div>
+</div>
+<div class="mt-1 bg-white/95 backdrop-blur-sm px-2.5 py-0.5 rounded-full shadow text-[10px] font-bold text-slate-800 border border-slate-100">
+              Your location
+            </div>
+</div>
+<!-- Nearby Tow Winch Marker 1 -->
+<div class="absolute top-6 left-12 bg-white/95 px-2 py-0.5 rounded-lg shadow-sm border border-slate-200 flex items-center gap-1">
+<span class="text-xs">🛻</span>
+<span class="text-[9px] font-bold text-slate-700">Winch · 1.2 km</span>
+</div>
+<!-- Nearby Battery Van Marker 2 -->
+<div class="absolute bottom-5 right-8 bg-white/95 px-2 py-0.5 rounded-lg shadow-sm border border-slate-200 flex items-center gap-1">
+<span class="text-xs">🔋</span>
+<span class="text-[9px] font-bold text-emerald-700">Battery · 800m</span>
+</div>
+</div>
+<!-- Card Map Footer Action -->
+<div class="p-2.5 bg-slate-50/70 flex items-center justify-between">
+<p class="text-[11px] font-medium text-slate-600">
+<strong class="text-slate-900">12 active</strong> recovery units ready
+          </p>
+<button class="bg-[#0B2A4A] text-white hover:bg-slate-800 text-[11px] font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1">
+<span>Explore Map</span>
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+</section>
+<!-- END: Live Radar Map Preview -->
+<!-- BEGIN: Community Offers & Announcements (Image 2/3 style) -->
+<section class="bg-[#FDF7E6] border border-[#F1E0B3] rounded-2xl p-4 shadow-sm relative overflow-hidden" data-purpose="announcements-banner">
+<div class="flex justify-between items-start">
+<div class="pr-2">
+<span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded-md">
+              Community Notice
+            </span>
+<h3 class="text-sm font-black text-slate-800 mt-1.5">Kuwait Road Assistance Support</h3>
+<p class="text-xs text-slate-600 mt-1 leading-snug font-normal">
+              Direct peer driver connect. If you require urgent towing on the 6th Ring Road or Fahaheel Express, reach drivers directly with no middleman margins.
+            </p>
+<div class="mt-3 flex items-center gap-2">
+<button class="bg-[#E9A319] hover:bg-[#D49112] text-slate-950 font-bold text-[11px] px-3.5 py-1.5 rounded-lg shadow-sm">
+                View Guidelines
+              </button>
+<span class="text-[10px] text-slate-400">Direct agreement basis</span>
+</div>
+</div>
+<!-- Badge Icon -->
+<div class="w-12 h-12 rounded-2xl bg-amber-200/50 flex-shrink-0 flex items-center justify-center text-2xl border border-amber-300/40">
+            🤝
+          </div>
+</div>
+</section>
+<!-- END: Community Offers & Announcements -->
+<!-- BEGIN: Top Vehicles & Recovery Fleets (from Image 1/2) -->
+<section data-purpose="vehicles-fleet-section">
+<div class="flex justify-between items-center mb-2 px-0.5">
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-3.5 bg-[#E9A319] rounded-full"></div>
+<h3 class="text-sm font-bold text-brand-navy tracking-tight">Top vehicles &amp; recovery</h3>
+</div>
+<button class="text-xs font-semibold text-brand-navyLight hover:text-[#E9A319] flex items-center gap-0.5">
+            See all
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+<!-- Horizontal Scroll Cards -->
+<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
+<!-- Vehicle Card 1: Toyota Prado -->
+<div class="min-w-[170px] bg-white rounded-2xl border border-slate-200 p-2.5 shadow-sm flex flex-col justify-between">
+<div class="h-20 bg-slate-100 rounded-xl relative overflow-hidden flex items-center justify-center">
+<span class="text-3xl">🚙</span>
+<span class="absolute top-1.5 left-1.5 bg-blue-900/80 text-white font-mono text-[9px] px-1.5 py-0.5 rounded">2021</span>
+<span class="absolute top-1.5 right-1.5 text-xs text-amber-500">★ 4.9</span>
+</div>
+<div class="mt-2">
+<h4 class="text-xs font-bold text-brand-navy">Toyota Prado</h4>
+<p class="text-[10px] text-slate-400">Heavy Recovery · Kuwait City</p>
+<div class="mt-2 pt-1.5 border-t border-slate-100 flex items-baseline justify-between">
+<div>
+<span class="text-xs font-black text-brand-navyLight">12.500</span>
+<span class="text-[9px] font-bold text-[#E9A319]">KWD</span>
+</div>
+<span class="text-[9px] text-slate-400 font-medium">Direct rate</span>
+</div>
+</div>
+</div>
+<!-- Vehicle Card 2: Nissan Patrol -->
+<div class="min-w-[170px] bg-white rounded-2xl border border-slate-200 p-2.5 shadow-sm flex flex-col justify-between">
+<div class="h-20 bg-slate-100 rounded-xl relative overflow-hidden flex items-center justify-center">
+<span class="text-3xl">🛻</span>
+<span class="absolute top-1.5 left-1.5 bg-blue-900/80 text-white font-mono text-[9px] px-1.5 py-0.5 rounded">2022</span>
+<span class="absolute top-1.5 right-1.5 text-xs text-amber-500">★ 4.8</span>
+</div>
+<div class="mt-2">
+<h4 class="text-xs font-bold text-brand-navy">Nissan Patrol</h4>
+<p class="text-[10px] text-slate-400">Desert &amp; Dune Tow · Salmiya</p>
+<div class="mt-2 pt-1.5 border-t border-slate-100 flex items-baseline justify-between">
+<div>
+<span class="text-xs font-black text-brand-navyLight">15.800</span>
+<span class="text-[9px] font-bold text-[#E9A319]">KWD</span>
+</div>
+<span class="text-[9px] text-slate-400 font-medium">Direct rate</span>
+</div>
+</div>
+</div>
+<!-- Vehicle Card 3: Flatbed Tow Truck -->
+<div class="min-w-[170px] bg-white rounded-2xl border border-slate-200 p-2.5 shadow-sm flex flex-col justify-between">
+<div class="h-20 bg-slate-100 rounded-xl relative overflow-hidden flex items-center justify-center">
+<span class="text-3xl">🚛</span>
+<span class="absolute top-1.5 left-1.5 bg-blue-900/80 text-white font-mono text-[9px] px-1.5 py-0.5 rounded">2024</span>
+<span class="absolute top-1.5 right-1.5 text-xs text-amber-500">★ 5.0</span>
+</div>
+<div class="mt-2">
+<h4 class="text-xs font-bold text-brand-navy">Hydraulic Flatbed</h4>
+<p class="text-[10px] text-slate-400">Low-clearance · Shuwaikh</p>
+<div class="mt-2 pt-1.5 border-t border-slate-100 flex items-baseline justify-between">
+<div>
+<span class="text-xs font-black text-brand-navyLight">10.000</span>
+<span class="text-[9px] font-bold text-[#E9A319]">KWD</span>
+</div>
+<span class="text-[9px] text-slate-400 font-medium">Direct rate</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Top Vehicles & Recovery Fleets -->
+</main>
+<!-- END: Scrollable Content View -->
+<!-- BEGIN: Bottom Tab Navigation (Faithful to Yamak Prototype) -->
+<nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 pb-6 flex justify-around items-center shadow-nav z-40" data-purpose="bottom-tab-navigation">
+<!-- Home Tab (Active) -->
+<button class="flex flex-col items-center group cursor-pointer">
+<!-- Active Gold indicator dot -->
+<span class="w-1.5 h-1.5 bg-[#E9A319] rounded-full mb-1"></span>
+<div class="text-[#0B2A4A] group-hover:scale-105 transition">
+<svg class="w-5 h-5 fill-[#0B2A4A]" viewbox="0 0 24 24">
+<path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"></path>
+</svg>
+</div>
+<span class="text-[11px] font-bold text-[#0B2A4A] mt-0.5">Home</span>
+</button>
+<!-- Map / Radar Tab -->
+<button class="flex flex-col items-center group text-slate-400 hover:text-slate-700 cursor-pointer pt-2.5">
+<svg class="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934a1.12 1.12 0 01-1.006 0L9.503 3.314a1.125 1.125 0 00-1.006 0L3.622 5.75A1.125 1.125 0 003 6.756v11.424c0 .836.88 1.38 1.628 1.006l3.869-1.934a1.12 1.12 0 011.006 0l4.994 2.497c.317.158.69.158 1.006 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[11px] font-medium mt-0.5">Map</span>
+</button>
+<!-- Services Directory Tab -->
+<button class="flex flex-col items-center group text-slate-400 hover:text-slate-700 cursor-pointer pt-2.5">
+<svg class="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[11px] font-medium mt-0.5">Services</span>
+</button>
+<!-- Profile Tab -->
+<button class="flex flex-col items-center group text-slate-400 hover:text-slate-700 cursor-pointer pt-2.5">
+<svg class="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+</svg>
+<span class="text-[11px] font-medium mt-0.5">Profile</span>
+</button>
+</nav>
+<!-- END: Bottom Tab Navigation -->
+<!-- BEGIN: iOS Bottom Home Bar Indicator -->
+<div class="absolute bottom-1 inset-x-0 flex justify-center pointer-events-none z-50" data-purpose="home-bar">
+<div class="w-32 h-1 bg-slate-900/30 rounded-full"></div>
+</div>
+<!-- END: iOS Bottom Home Bar Indicator -->
+</div>
+<!-- END: Mobile Device Container -->
+</body></html>
