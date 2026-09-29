@@ -135,3 +135,39 @@ export function getVehicles(params: VehiclesQueryParams = {}): Promise<VehiclesR
     hasLatitude && hasLongitude ? `?latitude=${params.latitude}&longitude=${params.longitude}` : '';
   return apiGet<VehiclesResponse>(`vehicles${query}`);
 }
+
+/**
+ * `GET /services/{service}/vehicles` — public (route-model-bound; unknown
+ * service → 404), filter `work_status='online'` + `current_driver_id IS NOT
+ * NULL` scoped to the service via `whereHas`, eager loads, optional Euclidean
+ * `distance` sort, **no pagination**.
+ *
+ * CRITICAL envelope difference vs `GET /vehicles`: here `data` is a **bare
+ * array** (`response()->success($vehicles)`, asserted by `MobileParityTest`
+ * via `data.0.*`), NOT `{ list, metaData }` — the legacy Map screen's
+ * `vehicelsList?.list` read never populated markers because of exactly this.
+ */
+export type VehiclesByServiceResponse = {
+  success: boolean;
+  message: string;
+  data: Vehicle[] | null;
+  errors: null;
+};
+
+/**
+ * Fetches the online vehicles of one service for the Map screen. The optional
+ * user coordinates follow the same finite-PAIR rule as `getVehicles` (never a
+ * lone coordinate, never a non-finite value) and only improve the backend's
+ * nearest-first ordering — the backend `distance` is Euclidean degrees and is
+ * never rendered by the Map.
+ */
+export function getVehiclesByService(
+  serviceId: number,
+  params: VehiclesQueryParams = {},
+): Promise<VehiclesByServiceResponse> {
+  const hasLatitude = typeof params.latitude === 'number' && Number.isFinite(params.latitude);
+  const hasLongitude = typeof params.longitude === 'number' && Number.isFinite(params.longitude);
+  const query =
+    hasLatitude && hasLongitude ? `?latitude=${params.latitude}&longitude=${params.longitude}` : '';
+  return apiGet<VehiclesByServiceResponse>(`services/${serviceId}/vehicles${query}`);
+}

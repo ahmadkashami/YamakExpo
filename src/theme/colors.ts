@@ -1,6 +1,12 @@
 export const colors = {
   navy: '#0C1C33',
   gold: '#FBBF24',
+  /** New-ui `--brand-700` — primary CTA / app bar action colour. */
+  primary: '#15406F',
+  /** New-ui `--gold-50` — gold tint container background (permission card). */
+  goldTint: '#FDF7E6',
+  /** New-ui `--gold-100` — gold tint container border. */
+  goldTintBorder: '#FBEED4',
   wordmark: '#E9A319',
   routeGold: '#F4A817',
   routeBlue: '#38BDF8',

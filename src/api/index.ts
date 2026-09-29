@@ -19,11 +19,13 @@ export {
 } from './services';
 export {
   getVehicles,
+  getVehiclesByService,
   type BranchResource,
   type CompanyResource,
   type DriverResource,
   type Vehicle,
   type VehicleGeoLocation,
+  type VehiclesByServiceResponse,
   type VehiclesMetaData,
   type VehiclesQueryParams,
   type VehiclesResponse,
