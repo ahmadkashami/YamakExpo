@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import type { Service, ServiceLanguage } from '@/api';
+import { ApiErrorRow } from '@/components/home/ApiErrorRow';
 import { ServiceItem } from '@/components/home/ServiceItem';
 import { useServices } from '@/hooks/use-services';
 import { colors, fontWeight, radius, spacing, typography } from '@/theme';
@@ -67,14 +68,7 @@ export function ServicesList({
       <View style={styles.headerRow}>
         <Text style={styles.title}>Services</Text>
       </View>
-      {error === null ? null : (
-        <View style={styles.errorRow}>
-          <Text style={styles.errorText}>{error.message}</Text>
-          <Pressable accessibilityRole="button" onPress={refetch} style={styles.retryButton}>
-            <Text style={styles.retryLabel}>Retry</Text>
-          </Pressable>
-        </View>
-      )}
+      {error === null ? null : <ApiErrorRow message={error.message} onRetry={refetch} />}
       {/* Empty result keeps the legacy behaviour: header visible, nothing below. */}
       <FlatList
         data={services}
@@ -127,29 +121,6 @@ const styles = StyleSheet.create({
     // supplies the size and the weight is set here.
     ...typography.subtitle,
     fontWeight: fontWeight.medium,
-  },
-  errorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  errorText: {
-    ...typography.error,
-    flexShrink: 1,
-    color: colors.error,
-  },
-  retryButton: {
-    marginLeft: spacing.sm,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  retryLabel: {
-    ...typography.label,
-    color: colors.title,
   },
   skeletonItem: {
     marginHorizontal: spacing.sm,

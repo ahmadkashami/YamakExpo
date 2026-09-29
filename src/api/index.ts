@@ -17,6 +17,17 @@ export {
   type ServicesMetaData,
   type ServicesResponse,
 } from './services';
+export {
+  getVehicles,
+  type BranchResource,
+  type CompanyResource,
+  type DriverResource,
+  type Vehicle,
+  type VehicleGeoLocation,
+  type VehiclesMetaData,
+  type VehiclesQueryParams,
+  type VehiclesResponse,
+} from './vehicles';
 export { API_BASE_URL, buildApiUrl, resolveApiBaseUrl } from './config';
 export {
   apiDelete,
