@@ -57,8 +57,8 @@ function isSurfacingBackendMessage(message: string): boolean {
   if (/[\r\n]/.test(trimmed)) {
     return false; // multi-line stack/dumps
   }
-  if (/(SQLSTATE|No connection could be made|Connection refused|Exception|Stack ?trace| at [A-Za-z]:\\| at \/|#[0-9]+ [^ ]+\.php)/i.test(trimmed)) {
-    return false; // framework debug artifacts (SQLSTATE, exceptions, frames)
+  if (/(SQLSTATE|No connection could be made|Connection refused|No query results for model|Exception|Stack ?trace| at [A-Za-z]:\\| at \/|#[0-9]+ [^ ]+\.php)/i.test(trimmed)) {
+    return false; // framework debug artifacts (SQLSTATE, model-binding, exceptions, frames)
   }
   return true;
 }

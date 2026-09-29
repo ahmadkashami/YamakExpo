@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Vehicle } from '@/api';
@@ -13,9 +13,16 @@ export type VehiclesListProps = {
   /** Legacy defaulted to a horizontal row of cars. */
   horizontal?: boolean;
   /**
+   * Vehicle Details reuses this list for "Other Vehicles": pass the current
+   * vehicle's id to exclude it from the row (legacy `VehiclesList
+   * selectedId={_id}` semantics).
+   */
+  excludeId?: number;
+  /**
    * Legacy pressed a car to the Vehicle Details screen (and "View All" to the
-   * All-Vehicles screen); neither route exists yet, so both targets are
-   * reported upward instead of navigating to routes that are not there.
+   * All-Vehicles screen). The details route now exists — consumers push
+   * `/vehicle/{id}` here; "View All" still has no route, so that affordance
+   * only appears once a handler is supplied.
    */
   onVehiclePress?: (vehicle: Vehicle) => void;
   onViewAllPress?: () => void;
@@ -30,11 +37,17 @@ export type VehiclesListProps = {
 export function VehiclesList({
   title,
   horizontal = true,
+  excludeId,
   onVehiclePress,
   onViewAllPress,
   onRefetchReady,
 }: VehiclesListProps) {
   const { vehicles, isLoading, error, refetch, coordsUsed } = useVehicles();
+
+  const data = useMemo(
+    () => (excludeId === undefined ? vehicles : vehicles.filter((vehicle) => vehicle.id !== excludeId)),
+    [vehicles, excludeId],
+  );
 
   useEffect(() => {
     onRefetchReady?.(refetch);
@@ -68,7 +81,7 @@ export function VehiclesList({
       {error === null ? null : <ApiErrorRow message={error.message} onRetry={refetch} />}
       {/* Empty result keeps the legacy behaviour: header visible, nothing below. */}
       <FlatList
-        data={vehicles}
+        data={data}
         horizontal={horizontal}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}

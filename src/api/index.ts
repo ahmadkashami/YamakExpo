@@ -18,6 +18,7 @@ export {
   type ServicesResponse,
 } from './services';
 export {
+  getVehicleById,
   getVehicles,
   getVehiclesByService,
   type BranchResource,
@@ -25,6 +26,7 @@ export {
   type DriverResource,
   type Vehicle,
   type VehicleGeoLocation,
+  type VehicleResponse,
   type VehiclesByServiceResponse,
   type VehiclesMetaData,
   type VehiclesQueryParams,

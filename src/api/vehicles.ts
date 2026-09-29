@@ -171,3 +171,27 @@ export function getVehiclesByService(
     hasLatitude && hasLongitude ? `?latitude=${params.latitude}&longitude=${params.longitude}` : '';
   return apiGet<VehiclesByServiceResponse>(`services/${serviceId}/vehicles${query}`);
 }
+
+/**
+ * `GET /vehicles/{id}` — public (route-model bound, same resource as the list).
+ *
+ * STEP 5A proof: the detail route reuses `vehicleResource()`, so there is NO
+ * separate detail type — the response `data` is the same `Vehicle` shape.
+ *
+ * VERIFIED BACKEND FACT: an unknown id returns HTTP 500 with the Laravel
+ * ModelNotFoundException text, NOT a 404. The client sanitises that text via
+ * `extractBackendMessage` (which rejects "No query results for model") and
+ * never surfaces model-binding internals; the caller only sees a generic
+ * "Request failed with status 500" + Retry.
+ */
+export type VehicleResponse = {
+  success: boolean;
+  message: string;
+  data: Vehicle | null;
+  errors: null;
+};
+
+/** Callers must pass a pre-validated positive integer; never NaN/abc. */
+export function getVehicleById(id: number): Promise<VehicleResponse> {
+  return apiGet<VehicleResponse>(`vehicles/${id}`);
+}

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Toyota Land Cruiser 2020 - Vehicle Details | Yamak</title>
+<!-- Tailwind CSS CDN with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            yamakNavy: '#0B2A4A',
+            yamakNavyDark: '#071b30',
+            yamakGold: '#E9A319',
+            yamakGoldLight: '#FFF6E5',
+            yamakGreen: '#128C7E',
+            surfaceMuted: '#F6F8FB'
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Segoe UI"', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="app-shell">
+    /* Prevent bouncy rubberbanding and simulate iOS viewport */
+    body {
+      background-color: #ECEFF4;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style data-purpose="toast-animations">
+    @keyframes slideInFade {
+      0% {
+        opacity: 0;
+        transform: translateY(16px) scale(0.96);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .toast-anim {
+      animation: slideInFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="flex items-center justify-center min-h-screen p-0 sm:p-4 text-slate-800 antialiased">
+<!-- BEGIN: MobileDeviceFrame -->
+<div class="relative w-full max-w-[430px] h-[100dvh] sm:h-[890px] bg-white sm:rounded-[44px] shadow-2xl overflow-hidden flex flex-col border sm:border-slate-800/10">
+<!-- BEGIN: MobileStatusBar -->
+<header class="w-full pt-3 px-6 pb-2 flex justify-between items-center text-slate-900 bg-white z-20 shrink-0" data-purpose="ios-status-bar">
+<span class="text-sm font-semibold tracking-tight">9:41</span>
+<!-- Notch / Dynamic Island cutout simulation for realism -->
+<div class="hidden sm:block w-28 h-5 bg-black rounded-full mx-auto -mt-2"></div>
+<div class="flex items-center space-x-2 text-xs">
+<svg class="w-4 h-4 fill-current" viewbox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.83-1.83C9.15 19.64 10.51 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+<span class="font-semibold text-[11px] tracking-wide">5G</span>
+<!-- Battery Icon -->
+<div class="w-5 h-2.5 border border-slate-700 rounded-sm p-0.5 flex items-center">
+<div class="h-full bg-slate-900 w-3/4 rounded-2xs"></div>
+</div>
+</div>
+</header>
+<!-- END: MobileStatusBar -->
+<!-- BEGIN: TopNavigationBar -->
+<nav class="w-full px-4 py-2.5 bg-white border-b border-slate-100 flex items-center justify-between z-20 shrink-0" data-purpose="top-app-bar">
+<button aria-label="Go back" class="p-2 -ml-2 rounded-full active:bg-slate-100 text-slate-700 hover:text-slate-950 transition" type="button">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<h1 class="text-base font-bold text-slate-900 tracking-tight">Vehicle details</h1>
+<div class="flex items-center space-x-1 -mr-1">
+<!-- Toggle Favorite Icon -->
+<button aria-label="Save to favourites" class="p-2 rounded-full active:bg-slate-100 text-slate-700 transition" id="navFavoriteBtn" type="button">
+<svg class="w-5 h-5 fill-none stroke-current" id="navFavoriteIcon" stroke-width="2" viewbox="0 0 24 24">
+<path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<!-- Share Icon -->
+<button aria-label="Share listing" class="p-2 rounded-full active:bg-slate-100 text-slate-700 transition" type="button">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+</nav>
+<!-- END: TopNavigationBar -->
+<!-- BEGIN: ScrollableContent -->
+<main class="flex-1 overflow-y-auto custom-scrollbar px-4 pt-3 pb-28 space-y-4 bg-[#F8FAFC]" data-purpose="scrollable-detail-container">
+<!-- BEGIN: HeroImageShowcase -->
+<section class="relative rounded-2xl overflow-hidden bg-slate-200 aspect-[16/10] shadow-sm border border-slate-100" data-purpose="vehicle-hero-gallery">
+<img alt="Toyota Land Cruiser 2020 GXR V6 Pearl White parked in Kuwait" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgV7ZfdG3xFA60xnaCaEY3lb0_5MO3tPpXHO6OB-9fSZoJwlEIqSiN3hsV2IERieROuxwvDrMYtvAjsICF91_YTlKK83QXvhkT5b29bGZNygRGR2RWE1x12_OoNEV-e2Xd8YGVziHz62nmw8VImIUVGHtJt5efPzw1d5xGE7FOJ6I7TenITKLbZjAl9NXs8VHSL0iB4dSZ6cPeF7a6mskBHrCQeFIyI_-UKulEPxVypZ_hTOHqs9AP"/>
+<!-- Overlay Status Pill -->
+<div class="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm flex items-center space-x-1.5 border border-white/60">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span class="text-xs font-semibold text-slate-800">Available</span>
+</div>
+<!-- Badges on right: Gallery counter -->
+<div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-full text-white text-[11px] font-medium tracking-wide flex items-center space-x-1">
+<svg class="w-3.5 h-3.5 opacity-90" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>1 / 6 photos</span>
+</div>
+<!-- Verified Direct Tag -->
+<div class="absolute bottom-3 left-3 bg-yamakNavy/90 backdrop-blur-md px-2.5 py-1 rounded-full text-amber-300 text-[11px] font-semibold flex items-center space-x-1">
+<svg class="w-3 h-3 text-amber-400" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fill-rule="evenodd"></path>
+</svg>
+<span>Verified Listing</span>
+</div>
+</section>
+<!-- END: HeroImageShowcase -->
+<!-- BEGIN: TitleAndPriceSection -->
+<section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/80" data-purpose="vehicle-header-info">
+<div class="flex items-start justify-between gap-2">
+<div>
+<span class="inline-block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">SUV · 4WD</span>
+<h2 class="text-xl font-extrabold text-slate-900 tracking-tight leading-tight">Toyota Land Cruiser 2020</h2>
+<p class="text-xs font-medium text-slate-500 mt-0.5 flex items-center">
+<svg class="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+              Kuwait City · Shuwaikh Industrial
+            </p>
+</div>
+</div>
+<!-- Price display and badge -->
+<div class="mt-3.5 pt-3 border-t border-slate-100 flex items-baseline justify-between">
+<div>
+<span class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Fixed Price</span>
+<div class="flex items-baseline space-x-1.5">
+<span class="text-2xl font-black text-yamakNavy tracking-tight">KWD 14,900</span>
+</div>
+</div>
+<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+            Direct Provider Rate
+          </span>
+</div>
+<!-- Yamak 0% Commission Notice -->
+<div class="mt-3 p-2.5 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 flex items-start space-x-2">
+<svg class="w-4 h-4 text-yamakGold shrink-0 mt-0.5" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" fill-rule="evenodd"></path>
+</svg>
+<div class="text-[11px] text-amber-950 leading-relaxed">
+<span class="font-bold">Yamak 0% Commission:</span> Yamak is a non-profit facilitator. No platform surcharges or broker fees apply. Negotiate &amp; pay the independent seller directly.
+          </div>
+</div>
+</section>
+<!-- END: TitleAndPriceSection -->
+<!-- BEGIN: KeySpecificationsCard -->
+<section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/80" data-purpose="specifications-summary">
+<div class="flex items-center justify-between mb-3">
+<h3 class="text-sm font-bold text-slate-900 tracking-tight">Specifications</h3>
+<span class="text-[11px] font-medium text-slate-400">GCC Specifications</span>
+</div>
+<!-- Grid of spec chips -->
+<div class="grid grid-cols-2 gap-2.5 text-xs">
+<!-- Year -->
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-slate-400 font-medium block text-[10px] uppercase">Year</span>
+<span class="text-slate-800 font-bold text-sm">2020</span>
+</div>
+<!-- Model -->
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-slate-400 font-medium block text-[10px] uppercase">Model / Trim</span>
+<span class="text-slate-800 font-bold text-sm">GXR V6</span>
+</div>
+<!-- Mileage -->
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-slate-400 font-medium block text-[10px] uppercase">Mileage</span>
+<span class="text-slate-800 font-bold text-sm">62,000 km</span>
+</div>
+<!-- Engine -->
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-slate-400 font-medium block text-[10px] uppercase">Engine</span>
+<span class="text-slate-800 font-bold text-sm">4.0 L V6</span>
+</div>
+<!-- Transmission -->
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-slate-400 font-medium block text-[10px] uppercase">Drive &amp; Gear</span>
+<span class="text-slate-800 font-semibold">Automatic 4WD</span>
+</div>
+<!-- Fuel -->
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-slate-400 font-medium block text-[10px] uppercase">Fuel Type</span>
+<span class="text-slate-800 font-semibold">Petrol</span>
+</div>
+<!-- Color -->
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-slate-400 font-medium block text-[10px] uppercase">Exterior / Interior</span>
+<span class="text-slate-800 font-semibold">White / Beige</span>
+</div>
+<!-- Condition -->
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-slate-400 font-medium block text-[10px] uppercase">Inspection</span>
+<span class="text-emerald-700 font-semibold">Dealer Certified</span>
+</div>
+</div>
+<p class="text-[10px] text-slate-400 mt-2 text-center">Verified against Kuwait Ministry of Interior records.</p>
+</section>
+<!-- END: KeySpecificationsCard -->
+<!-- BEGIN: VehicleDescription -->
+<section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/80" data-purpose="vehicle-description">
+<h3 class="text-sm font-bold text-slate-900 mb-2">Vehicle Overview</h3>
+<p class="text-xs text-slate-600 leading-relaxed">
+          Pristine condition Kuwait agency-maintained Toyota Land Cruiser 2020 GXR V6. Regular service history at Al-Sayer. Single owner, zero accident history. Original paint with premium nano-ceramic coating applied.
+        </p>
+<!-- Feature chips -->
+<div class="mt-3 flex flex-wrap gap-1.5">
+<span class="px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-medium rounded-md">Sunroof</span>
+<span class="px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-medium rounded-md">Cool Box</span>
+<span class="px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-medium rounded-md">Rear Camera</span>
+<span class="px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-medium rounded-md">Parking Sensors</span>
+<span class="px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-medium rounded-md">Keyless Push Start</span>
+<span class="px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-medium rounded-md">Cruise Control</span>
+</div>
+</section>
+<!-- END: VehicleDescription -->
+<!-- BEGIN: ProviderProfileCard -->
+<section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100/80" data-purpose="provider-card">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-3">
+<!-- Provider Avatar -->
+<div class="w-12 h-12 rounded-full bg-yamakNavy text-white flex items-center justify-center font-bold text-lg ring-2 ring-yamakGold/30">
+              Y
+            </div>
+<div>
+<div class="flex items-center space-x-1.5">
+<h4 class="text-sm font-bold text-slate-900">Yamak Provider</h4>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                  ✓ Verified
+                </span>
+</div>
+<p class="text-xs text-slate-500">Abu Fahad Motors · Kuwait</p>
+<div class="flex items-center space-x-1 mt-0.5 text-xs text-amber-500">
+<span>★ 4.9</span>
+<span class="text-slate-400 text-[11px]">(42 completed transactions)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+<span class="flex items-center">
+<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5"></span>
+            Responds in &lt; 15 mins
+          </span>
+<span class="font-medium text-slate-600">Member since 2021</span>
+</div>
+</section>
+<!-- END: ProviderProfileCard -->
+</main>
+<!-- END: ScrollableContent -->
+<!-- BEGIN: FeedbackToast -->
+<!-- Positioned right above bottom persistent toolbar -->
+<aside class="absolute bottom-20 left-4 right-4 z-30 transition-all duration-300 transform pointer-events-none opacity-0 translate-y-3" data-purpose="status-notification" id="favoriteToast">
+<div class="bg-emerald-800 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center justify-between text-xs font-semibold backdrop-blur-sm">
+<div class="flex items-center space-x-2">
+<svg class="w-4 h-4 text-emerald-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span id="toastMessage">Added to your favourites (demo)</span>
+</div>
+<span class="text-[10px] uppercase font-bold tracking-wider text-emerald-200">Saved</span>
+</div>
+</aside>
+<!-- END: FeedbackToast -->
+<!-- BEGIN: PersistentBottomBar -->
+<footer class="absolute bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-slate-100 z-30 flex items-center gap-2" data-purpose="floating-action-footer">
+<!-- WhatsApp Quick Inquiry Action -->
+<button aria-label="Inquire via WhatsApp" class="p-3.5 rounded-xl border border-slate-200 text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100 active:scale-95 transition flex items-center justify-center shrink-0" id="whatsappBtn" type="button">
+<svg class="w-5 h-5 fill-current" viewbox="0 0 24 24">
+<path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 01-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.63c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.24-.74-.66-1.24-1.48-1.39-1.73-.14-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.72 4.31 3.81.6.26 1.07.42 1.44.54.61.19 1.16.16 1.6.1.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.12-.22-.19-.47-.32z"></path>
+</svg>
+</button>
+<!-- Primary Call Provider CTA Button -->
+<button class="flex-1 bg-yamakNavy active:bg-yamakNavyDark text-white py-3.5 px-4 rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-yamakNavy/20 hover:shadow-xl active:scale-[0.99] transition flex items-center justify-center space-x-2" id="callProviderBtn" type="button">
+<svg class="w-4 h-4 text-yamakGold" fill="currentColor" viewbox="0 0 20 20">
+<path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 4V3z"></path>
+</svg>
+<span class="text-white">Call provider</span>
+</button>
+</footer>
+<!-- END: PersistentBottomBar -->
+</div>
+<!-- END: MobileDeviceFrame -->
+<!-- BEGIN: InteractiveHandlers -->
+<script data-purpose="toggle-favorite-interaction">
+    document.addEventListener('DOMContentLoaded', () => {
+      const favoriteBtn = document.getElementById('navFavoriteBtn');
+      const favoriteIcon = document.getElementById('navFavoriteIcon');
+      const toast = document.getElementById('favoriteToast');
+      const toastMessage = document.getElementById('toastMessage');
+      let isFavorited = false;
+      let toastTimer = null;
+
+      function triggerToast(text) {
+        toastMessage.textContent = text;
+        toast.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none');
+        toast.classList.add('opacity-100', 'translate-y-0');
+
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+          toast.classList.remove('opacity-100', 'translate-y-0');
+        }, 2800);
+      }
+
+      favoriteBtn.addEventListener('click', () => {
+        isFavorited = !isFavorited;
+        if (isFavorited) {
+          favoriteIcon.classList.remove('fill-none', 'text-slate-700');
+          favoriteIcon.classList.add('fill-red-500', 'text-red-500', 'stroke-red-500');
+          triggerToast('✓ Added to your favourites (demo)');
+        } else {
+          favoriteIcon.classList.remove('fill-red-500', 'text-red-500', 'stroke-red-500');
+          favoriteIcon.classList.add('fill-none', 'text-slate-700');
+          triggerToast('Removed from favourites');
+        }
+      });
+
+      // Call Provider Trigger feedback
+      const callBtn = document.getElementById('callProviderBtn');
+      callBtn.addEventListener('click', () => {
+        triggerToast('Initiating secure direct call...');
+      });
+
+      // WhatsApp Trigger feedback
+      const waBtn = document.getElementById('whatsappBtn');
+      waBtn.addEventListener('click', () => {
+        triggerToast('Opening direct chat with Abu Fahad...');
+      });
+    });
+  </script>
+<!-- END: InteractiveHandlers -->
+</body></html><!-- MISSING_IMAGES:
+- Hero image of a Toyota Land Cruiser 2020 Pearl White SUV in Kuwait
+-->

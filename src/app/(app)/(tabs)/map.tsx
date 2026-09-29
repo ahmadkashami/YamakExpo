@@ -119,12 +119,15 @@ export default function MapScreen() {
     [router],
   );
 
-  const handleVehiclePress = useCallback((vehicle: Vehicle) => {
-    // Vehicle Details route does not exist yet — selection is local-only, never
-    // navigates to an invented route. Wired to the marker callback; the future
-    // `VehicleDetail` navigation plugs in here.
-    setSelectedVehicleId(vehicle.id);
-  }, []);
+  const handleVehiclePress = useCallback(
+    (vehicle: Vehicle) => {
+      // Marker press now opens Vehicle Details directly (approved wiring);
+      // the local selected-state still updates first for the visual cue.
+      setSelectedVehicleId(vehicle.id);
+      router.push({ pathname: '/vehicle/[id]', params: { id: String(vehicle.id) } });
+    },
+    [router],
+  );
 
   const insets = useSafeAreaInsets();
 

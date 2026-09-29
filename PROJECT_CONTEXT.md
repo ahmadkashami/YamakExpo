@@ -248,13 +248,241 @@ These product/business requirements were explicitly instructed as REQUIRED for f
   - **BACK:** returned to the preview with the radar card fully re-rendered.
   - 0 ReactNativeJS errors, 0 FATAL/AndroidRuntime/TypeError/Invariant lines in logcat across every run. (A dev-only "SafeAreaView is deprecated" WARNING came from the temporary preview surface's `SafeAreaView`; it disappeared with the preview route and is not a product issue.)
 
+## Vehicle Details — STEP 5A ANALYSIS (read-only, verified 2026-09-29)
+No product code changed; only this file. Legacy screen, data flow, backend contract (live-verified), design status, business-model check, defects, and the recommended architecture are recorded here.
+
+### Legacy screen + navigation
+- **Screen:** `yamak-mobile/src/screens/VehiclesDetailsScreen.tsx` (263 lines). Registered name `ScreenNames.Vehicle_Details_Screen = "VehicleDetail"`. Registered **only** in `HomeStackNAvigator` (the Home tab's stack, `headerShown:false`) — NOT in the Map tab or drawer.
+- **Route param:** `{ _id }` — the string vehicle id ONLY. The legacy screen NEVER receives a full vehicle object; it fetches by id (option B, not A).
+- **All entry points (grep across legacy `src` — exactly 2 call sites):**
+  1. Home `VehicleItem` card/"View" press → `navigator.push("VehicleDetail", { _id: item._id })` (Home stack — works; the bottom "other vehicles" `VehiclesList selectedId={_id}` renders the SAME `VehicleItem`, so those cards also push details).
+  2. Map marker press (`components/map/Map.tsx:95`) → `navigation.navigate("VehicleDetail", { _id: item._id })` from the **Map tab** — but `VehicleDetail` exists only in the Home stack ⇒ **unhandled action / dead entry in legacy** (recorded as 4A defect #3; the rebuild must register the route above the tabs).
+  - No Search/All-Vehicles/Favorites entry point exists (grep confirms no other call sites).
+
+### Screen section breakdown (what is ACTUALLY present, top→bottom)
+1. `VehicelsDetailsPh` — `react-content-loader/native` skeleton (extra legacy dep), 4 blocks (250 image, 150, 150×5 horizontal cards, 100, 200 List) while `isFetchingData`.
+2. GoBackButton (top-left).
+3. Image header: `vehicle.iconMap` 250×250 `resizeMode="contain"` on white, thin bottom border.
+4. Company name: `vehicle.company.name[currentLanguage]`, centered, primary colour, capitalized.
+5. **"Driver"** section: white card — 80px circled avatar (`currentDriver.photo` with a hardcoded Cloudinary fallback URL `https://res.cloudinary.com/db9nm5unr/…/pngwing.com_blkll6.png`), `Name : {currentDriver.name}`, `Status : {t("Online")}` — **hardcoded Online, `workStatus` is commented out**; legacy phone row is commented out.
+6. **"AvailableServices"** + `AvailableServiceList`: horizontal 150×150 white cards (service logo 80×80 + localised name); tap toggles pick (secondary-colour border/text); `pickedServices` state feeds the order POST.
+7. **"ShareWithUS"** (`ShareWithus.tsx`): 6 icon buttons — X/twitter, Messenger, WhatsApp, SMS, mail, copy — that share the **YAMAK app link** (`yamak.page.link/app`), NOT the vehicle (vehicle-independent branding share).
+8. `YourSaftyMatter.tsx`: 4 safety bullets — meet in public, check/inspect, **never pay anything in advance**, never go alone.
+9. `VehiclesList selectedId={_id}` — the shared Home vehicles list rendered beneath.
+10. Fixed bottom bar (60px, border-top): **WhatsApp "Order Now"** + **Call** buttons (both `minWidth:160`, height 40, WhatsApp-green `secondary`), each with an inline spent-loader.
+- **ABSENT (verified):** no favorite, no rating, no price/rate, no gallery, no vehicle location UI, no distance, no map, no ETA, no provider/company phone row, no description, no model/year display (modelName unused by the screen).
+
+### Legacy data flow
+- Mount effect `[]` → `getVehicleById(_id)` (`src/apis/vehicles.api.ts` → `makeApiCall({url:"/vehicles/{id}", method:"get"})`) → returns the **envelope `data`** (single Vehicle resource) → local `vehicle` state; errors are `console.log` only (silent). No store, no refetch, no cache. `_id` change never refetches (stale-param weakness).
+- **Order request (WhatsApp/Call handlers):** both call `sendOrderRequests({ driverId: driver?._id, services: pickedServices, userId: user?._id, platform: "mobile", payload: { userLocation, mobileType: Platform.OS, button: "whatsapp"|"call" } })` (`POST /requests`), then WhatsApp → `Linking.openURL('whatsapp://send?text=' + message + '&phone=' + driverPhone)`; Call → `await wait(1222)` then `Linking.openURL('tel:' + driverPhone)`. `driverPhone = vehicle?.currentDriver?.phoneNum`.
+
+### Backend contract (live-verified)
+- **`GET /api/mobile/v1/vehicles/{vehicle}`** — `routes/api_mobile.php:50`, **public** (before the `auth:sanctum` group at line 53). `Mobile\VehicleController::show`: route-model-bound `Vehicle $vehicle`, eager `branch, company, services, drivers, currentDriver`; same `vehicleResource` as the list → envelope `{ success, message, data: <Vehicle>, errors: null }`. **No `distance`/coords params** (index-only feature).
+- **LIVE:** `/vehicles/3` and `/vehicles/6` → HTTP 200, full resource (see the existing `Vehicle` type — the show body is byte-identical to a list item). Unknown `999999` AND non-numeric `abc` → **HTTP 500** `{ success:false, message:"No query results for model [App\Models\Vehicle] …", data:null, errors:null }` — NOT 404. (This corrects the 4A static assumption that mobile route-model binding 404s: live behaviour here is 500. The `services/{service}/vehicles` sibling was still untested live in 4A and should be re-checked before it is relied on.)
+- Live nullability examples: vehicle 3 — `labelNumber`/`modelName` = `""`, `iconMap` = full Cloudinary HTTPS URL, `currentDriver` = Majd (`phoneNum "+96555925404"`, `photo` + `email` present), `geoLocation` valid `[48.0555014, 29.2383392]`. Missing vehicle coords coerce to `(0,0)` (resource), so details must use `isUsableVehicleGeo`-style guarding for anything geo-related.
+- **`POST /api/mobile/v1/requests`** — `apiResource('requests')` at line 51, ALSO **public/unauthenticated** (before the auth group). `Mobile\RequestController::store` validates: `driverId` required+exists:drivers, `userId` required+exists:app_users, `services` nullable array of service ids, `platform`/`status` nullable. **Any unknown field is silently dropped — the legacy `payload` (userLocation/mobileType/button) never reaches the model** (verified in `store`; it is not even reflected in `requestResource`). Creates `ServiceRequest`, syncs services, emails the driver (`UserRequestOrderMail`), responds `{ success, message, data: requestResource, errors }` (requestResource = `id,_id,platform,services[],userId,user?,driverId,driver?,status,createdAt`).
+- **LIVE probe (heads-up):** a no-auth POST of `{driverId:3,userId:1,services:[1]}` returned **200 and CREATED dev row `requests id=8`** (2026-09-29 18:03:31) + emailed the driver. Everything is public; a stray dev order-request row exists — the user may want to purge it. A subsequent public `GET /requests` listed it first.
+- **Favorites: ABSENT** — no favorites routes anywhere in the backend (grep of `routes/`), none in legacy Vehicle Details.
+
+### Approved UI status
+- **NO APPROVED DESIGN FOUND** — `docs/rebuild/approve-ui/` holds only `register/`, `home/`, `map/`; there is no vehicle-details approved folder.
+- **NO APPROVED DESIGN — ONLY PROVISIONAL NEW-UI EXISTS:** `docs/rebuild/new-ui/main/vehicle-details/index.html` (banner "PROPOSED — requires approval"). Its numbers are DEMO ONLY (`KWD 14,900` price, `62,000 km`, Year/Model/Mileage/Engine rows, "Kuwait City · Demo", "Verified" provider, ♡ favourite demo toast, "Added to your favourites (demo)") and have NO backend counterpart. Do NOT treat as product data or build from it as-is.
+
+### Design vs function vs backend matrix
+| Provisional-new-ui element | Legacy functionality | Backend support | Verdict |
+| --- | --- | --- | --- |
+| Vehicle image (single placeholder) | `iconMap` 250×250 | `icon_map` (nullable, single URL) | SUPPORTED (single image; no gallery) |
+| Title "Toyota Land Cruiser 2020" | `company.name[currentLanguage]` | company.name `{en,ar}`; `modelName` unused | PARTIAL (use company name; modelName exists but legacy never shows it) |
+| Year / Model / Mileage / Engine rows | none | none beyond `model_name` | UNSUPPORTED |
+| `KWD 14,900` price | none | none | UNSUPPORTED + BUSINESS CONFLICT (YAMAK sets no prices) |
+| "● Available" pill | hardcoded `t("Online")` | `workStatus` in resource | PARTIAL (wire to `workStatus`, never hardcode) |
+| "Kuwait City · Demo" location | none on screen | `geoLocation.coordinates` `[lon,lat]` | UNSUPPORTED (no detail-screen location UI in legacy) |
+| Provider card + "✓ Verified" badge | Driver card (photo/name/Status) | `currentDriver` resource | Driver card SUPPORTED; **"Verified" UNSUPPORTED** (no verification field; implies a quality guarantee) |
+| "📞 Call provider" | Call button `tel:` | `currentDriver.phoneNum` (nullable) | SUPPORTED |
+| "🗺️ View on map" | none in details | vehicle geo + existing `/map` | UNCLEAR — design-only; needs a decision (no legacy behaviour to port) |
+| ♡ Favourite | none | none | UNSUPPORTED |
+| ↗ Share | ShareWithus (shares the YAMAK app link, not the vehicle) | n/a | PARTIAL (app-link share is legacy-real, vehicle-share is not) |
+| — (legacy-only) Available Services picker + WhatsApp "Order Now" | AvailableServiceList + `POST /requests` + `whatsapp://` | SUPPORTED (public endpoint) | SUPPORTED — the real legacy CTA |
+| — (legacy-only) Safety tips (incl. "never pay in advance") | YourSaftyMatter | n/a | SUPPORTED (static copy, business-aligned) |
+| — (legacy-only) Other-vehicles row | `VehiclesList selectedId={_id}` | `GET /vehicles` | SUPPORTED (already rebuilt; press callback exists) |
+- Every "UNSUPPORTED" design row must NOT become product functionality; record, do not invent.
+
+### Business-model check (non-profit facilitator)
+- Legacy details copy is **clean**: no price, no booking/payment, no platform-fee, no guarantee language; the safety block's "never pay anything in advance" matches the approved non-profit framing; contact is direct to the driver.
+- Provisional UI **conflicts**: `KWD 14,900` implies a selling marketplace and YAMAK "setting prices"; "✓ Verified" implies an unsupported quality guarantee. Both must be rejected or reworded.
+- Supporting fact already in the approved Map reference: "Yamak: 100% Free Facilitator • No Commission • Pay Driver Directly".
+- The public/unauthenticated order POST + the silent-dropped `payload` are backend facts to raise (not fix here).
+
+### Verified legacy defects (do NOT port)
+1. `payload {userLocation, mobileType, button}` sent to `POST /requests` is **silently dropped** by the backend (not validated, not stored, absent from `requestResource`).
+2. WhatsApp URL built with a raw message → **spaces/`---` never URL-encoded** (`whatsapp://send?text=${msg}&phone=${phone}`) — needs `encodeURIComponent`; may fail on Android intents.
+3. **No null guard** on `driverPhone` → `tel:undefined` / `phone=undefined` (driver.phoneNum is nullable).
+4. Call handler `await wait(1222)` magic sleep; both handlers ignore the POST response; the "services must be selected" guard is **commented out** → an empty-selection request + `[  ]` message is still sent.
+5. Fetch effect deps `[]` — `_id` change never refetches; promise rejection is `console.log`-only.
+6. `Status : Online` hardcoded (workStatus commented out).
+7. Dead imports/code: `showMessage` (flash-message), the commented WhatsApp-in-Call block, commented legend rows.
+8. Skeleton depends on `react-content-loader/native` (extra dep) — the rebuild uses the established block-skeleton pattern.
+9. Hardcoded Cloudinary fallback avatar URL; 80px avatar renders empty if `photo` missing AND the fallback is ever unpublished.
+10. Legacy Map→details navigation was dead (route above tabs fixes this — see below).
+
+### Recommended rebuild architecture (evidence-based; NOT implemented)
+- **Route: `src/app/(app)/vehicle/[id].tsx` — ABOVE the `(tabs)` group** in the `(app)` Stack so BOTH Home cards (`onVehiclePress` — the prop already exists on `VehicleItem`/`VehiclesList`) and Map markers push it. Matches the 4A routing decision ("registered above the tabs"); `/vehicle/{id}` is deep-link-safe.
+- **Data: route id only → `useVehicleDetails(id)` → `getVehicleById(id)` = `apiGet('vehicles/'+id)`.** No location dependency (show takes no coords); reuse the requestId/stale-guard + `ApiError` pattern from `use-vehicles`/`use-map-vehicles` minus the location wait. Convert the string param to a number and guard NaN.
+- **Files (justified):** extend `src/api/vehicles.ts` with `getVehicleById` + a `VehicleResponse` envelope type (NO new `VehicleDetails` type — the show resource is identical to the list `Vehicle`); `src/hooks/use-vehicle-details.ts`; `src/api/requests.ts` (`createOrderRequest` typed to the POST /requests contract, public); screen `src/app/(app)/vehicle/[id].tsx`; detail components under `src/components/vehicle-details/` (reuse `ApiErrorRow`, `VehicleItem`, theme tokens; the legacy WhatsApp-green buttons need a theme decision — `colors.secondary`/whatsapp-green does NOT exist yet; only `gold`, `primary`, `goldTint*`).
+- **Contact:** `tel:` + `whatsapp://` via `Linking`, **with `encodeURIComponent` on the message** and a null-phone guard (disable/hide when `currentDriver?.phoneNum` is null) — ported feature, fixed defects.
+- **Business content:** keep only SUPPORTED rows; no price, no verified badge, no year/mileage/engine; keep the safety copy and the app-link share (decide whether vehicle-specific share is wanted — none existed).
+- **Implementation blockers (recorded):** (1) **no approved vehicle-details design** — a build cannot start on the provisional demo HTML alone; an `approve-ui`-style reference or explicit UI decision is required; (2) Home entry is gated by the missing authenticated Home shell (Map entry already exists), so details may ship from Map first; (3) `POST /requests` public + payload-drop are backend facts for product/backend, not fixable in a frontend-only slice; (4) the standing baseline tsc error is unaffected.
+
+### New learning concepts (list only — review before implementation)
+- Expo Router **dynamic route** `[id]` + typed `useLocalSearchParams` (string → number coercion, NaN guard).
+- Single-resource **detail fetching by route id** (replaces "pass the full object" — legacy chose id-fetching, keep it).
+- **Deep-link-safe screen** above the tabs (both Home and Map push `/vehicle/{id}`).
+- External **`Linking`**: `tel:`/`whatsapp://` URL schemes + `encodeURIComponent` + Android intent failure handling.
+- **Image fallback strategy** (iconMap null; driver avatar fallback must not be a hardcoded legacy URL).
+- Learning review for 5A = the matrix discipline (design element ≠ product functionality) + live-verifying 4A's untested 404 assumption.
+
+## Vehicle Details — STEP 5B APPROVED UI REVIEW (read-only, 2026-09-29)
+No product code changed; only this file. The approved design (`docs/rebuild/approve-ui/VehiclesDetails`) was fully inspected and every element mapped against verified legacy behavior + the live-verified backend resource, then business-model filtered into the final implementation spec below. **Design review FINISHED; implementation NOT STARTED; learning review still NOT COMPLETE.**
+
+### Approved files inspected
+- `docs/rebuild/approve-ui/VehiclesDetails/code.html` — 354 lines, read in full (source of all element text quoted below).
+- `docs/rebuild/approve-ui/VehiclesDetails/screen.png` — visual reference; renders the same structure as `code.html`.
+- No other assets. The hero `<img>` is a **missing placeholder** — the file ends with `<!-- MISSING_IMAGES: Hero image of a Toyota Land Cruiser 2020 Pearl White SUV in Kuwait -->`. Even the hero photo is mock scaffolding, not a shipped asset.
+
+### Nature of the approved design (flagged)
+The approved visual is a **used-vehicle classifieds / marketplace listing** ("Toyota Land Cruiser 2020", Fixed Price `KWD 14,900`, a specifications grid, sale prose, ratings/transactions, "Verify" badges) — NOT a roadside-recovery contact screen. It conflicts with the product on nearly every content row. Per the rules (approved design controls **appearance**, not product **functionality**; price/verified/favorite rules below), the *layout* is adoptable but virtually all *content* is demo/marketplace data with no backend counterpart. Recorded prominently for the user's awareness; every element is classified individually below.
+
+### Visual section breakdown (exact, top→bottom from code.html)
+1. iOS status-bar mock (9:41 / 5G / battery) — device chrome, not a product element.
+2. **Top app bar** — back button; title "Vehicle details"; ♡ "Save to favourites"; share "Share listing".
+3. **Hero image showcase** — 16/10 rounded hero image; "● Available" emerald pulse pill (top-left); "1 / 6 photos" counter (bottom-right); "Verified Listing" navy/amber badge (bottom-left).
+4. **Title & price card** — eyebrow "SUV · 4WD"; h2 "Toyota Land Cruiser 2020"; location line "Kuwait City · Shuwaikh Industrial" with pin; "Fixed Price" + "KWD 14,900"; emerald badge "Direct Provider Rate"; amber notice "Yamak 0% Commission: Yamak is a non-profit facilitator. No platform surcharges or broker fees apply. Negotiate & pay the independent **seller** directly."
+5. **Specifications card** — "Specifications" + "GCC Specifications"; 2-col grid: Year 2020 / Model·Trim GXR V6 / Mileage 62,000 km / Engine 4.0 L V6 / Drive & Gear Automatic 4WD / Fuel Petrol / Exterior·Interior White·Beige / Inspection "Dealer Certified"; footer "Verified against Kuwait Ministry of Interior records."
+6. **Vehicle Overview** — marketplace sale prose ("…Single owner, zero accident history. … Al-Sayer…") + feature chips (Sunroof, Cool Box, Rear Camera, Parking Sensors, Keyless Push Start, Cruise Control).
+7. **Provider profile card** — "Y" initial avatar (gold ring) / "Yamak Provider" / "✓ Verified" / "Abu Fahad Motors · Kuwait" / "★ 4.9 (42 completed transactions)" / "Responds in < 15 mins" / "Member since 2021".
+8. **Feedback toast** — "✓ Added to your favourites (demo)" / "Saved" — explicitly demo, JS-driven.
+9. **Persistent bottom bar** — WhatsApp quick-inquiry icon (aria "Inquire via WhatsApp") + navy "Call provider" button (gold phone icon). JS toasts: "Initiating secure direct call..." / "Opening direct chat with Abu Fahad...".
+- **ABSENT from the approved design:** services picker, services chips, safety block, other-vehicles row, map / "View on map", review list. Bottom bar has NO "Order Now" (good — "Call provider" is already neutral facilitator language).
+
+### Final mapping matrix (A=SUPPORTED · B=SUPPORTED WITH ADAPTATION · C=UNSUPPORTED — REMOVE · D=NEEDS USER DECISION)
+| Approved element | Legacy support | Backend support | Class | Exact reason |
+| --- | --- | --- | --- | --- |
+| Back button + app-bar | router back | n/a | A | standard stack navigation; localisable title |
+| ♡ Save to favourites | none | none (no favorites routes anywhere) | C | Rule 6 — no flow/route/legacy behavior; no local-only favorite state |
+| Share listing | ShareWithus shares the YAMAK app link, NOT the vehicle | n/a | B | keep action = legacy app-link share; vehicle deep-link share becomes technically possible once `[id]` exists (scope = D) |
+| Hero image 16/10 | `iconMap` 250×250 | `icon_map` single nullable URL | B | single hero image from iconMap + safe local fallback; NOT a gallery |
+| "● Available" pill | hardcoded "Online" (defect — don't port) | `workStatus` | B | wire truthfully to workStatus (verify its value set at build); never hardcode |
+| "1 / 6 photos" counter | none | no gallery field | C | Rule 17 — gallery unsupported; single image only |
+| "Verified Listing" badge | none | no verification field | C | Rule 5 — no verified mechanism; implies a quality guarantee |
+| Eyebrow "SUV · 4WD" | none | none | C | no vehicle-type field; don't invent |
+| Title "Toyota Land Cruiser 2020" | `company.name[currentLanguage]` | `modelName` (may be "") · company.name {en,ar} | B | modelName if non-empty else company.name; never append a year |
+| Location line + pin | none on details | geoLocation `[lon,lat]` only; no address source / no reverse-geocode built | D | Rule 13 — needs user decision (drop, or add geocoding / map CTA later); never render degree coords as an address or "km" |
+| "Fixed Price" label | none | none | C | Rule 4 — no price field |
+| "KWD 14,900" | none | none | C | Rule 4 — invented price + business conflict (YAMAK sets no prices) |
+| "Direct Provider Rate" badge | none | none | C | price-/rate-implying; no rate field |
+| "Yamak 0% Commission… pay the seller directly" notice | legacy "never pay anything in advance" (aligned) | n/a | B | KEEP the non-profit facilitator notice but reword to the already-approved map-audience framing "100% Free Facilitator • No Commission • Pay Driver Directly"; replace "seller"→"driver/provider"; avoid "0% commission" phrasing that implies a commission exists |
+| Specifications grid (Year/Trim/Mileage/Engine/Drive/Fuel/Color/Inspection) | none | none beyond `model_name` | C | Rule 7 — no vehicle fields; do not invent year/mileage/engine etc. |
+| "Verified against Kuwait Ministry of Interior records." | none | none | C | Rule 5 — no verification mechanism; implies an official records guarantee |
+| Vehicle Overview prose + feature chips | none | no description field | C | fictional inventory/sale copy; no backend counterpart |
+| Provider avatar "Y" | driver photo + hardcoded Cloudinary fallback (defect, don't port) | `currentDriver.photo` nullable | B | initials-based avatar fallback (the approved design itself is the fallback pattern); photo when present |
+| Provider name "Yamak Provider" | Driver name row | `currentDriver.name` nullable | B | driver name; null-guard all driver fields |
+| "✓ Verified" provider badge | none | none | C | Rule 5 — no verified mechanism |
+| "Abu Fahad Motors · Kuwait" | company name only | company.name · branch.name | B | company.name + branch.name when present; drop "· Kuwait" (no region field) |
+| "★ 4.9 (42 completed transactions)" | none | none | C | no rating field; YAMAK brokers no transactions (non-profit facilitator) |
+| "Responds in < 15 mins" | none | no response-time field | C | Rule 3 — guaranteed response time conflicts |
+| "Member since 2021" | none (driver has createdAt) | driver.createdAt exists | C | a "member since" tenure badge implies a platform membership YAMAK does not run — drop (don't repurpose createdAt) |
+| Favorite toast "(demo)" | none | none | C | demo-only + favorite unsupported |
+| WhatsApp quick-inquiry (bottom bar) | WhatsApp "Order Now" → `POST /requests` → `whatsapp://` | `currentDriver.phoneNum` nullable; `POST /requests` public (payload silently dropped) | B | keep icon CTA; build on `whatsapp://` via Linking with `encodeURIComponent` + null-phone guard; POST wiring = D (rule 12) |
+| "Call provider" (bottom bar) | Call → `POST /requests` → `tel:` | `phoneNum` nullable | B | approve wording "Call provider" (neutral, facilitator-aligned); null-guard; POST wiring = D |
+| Services picker — ABSENT in approved UI | AvailableServiceList → pickedServices → POST | `vehicle.services[]` exists | D | Rule 10/12 — read-only chips from services[] are displayable (B), but the picker + POST wiring defer to the backend/security decision |
+| Safety block — ABSENT in approved UI | YourSaftyMatter (4 bullets incl. "never pay anything in advance") | n/a | D/keep | legacy-supported, business-aligned; approved design omits it — don't force into the approved appearance |
+| Other-vehicles row — ABSENT in approved UI | `VehiclesList selectedId={_id}` | `GET /vehicles` | D/keep | Rule 16 — not in approved design; don't force (already rebuilt on Home) |
+| Palette: navy #0B2A4A / gold #E9A319 / emerald #128C7E | legacy WhatsApp-green `secondary` | theme: primary #15406F · gold #FBBF24 · no secondary | D | 5C token decision: approved navy is darker than theme primary and approved gold darker than theme gold; needs a mapping decision (5A already flagged missing secondary) |
+
+### Request API concern (rule 12 — DO NOT implement yet)
+`POST /requests` remains **functionally available but public/unauthenticated**, creates a real DB row, and emails the driver; `payload` is silently dropped (5A live-verified). Classification: **FUNCTIONALLY AVAILABLE BUT REQUIRES BACKEND/SECURITY DECISION.** Open questions (backend-owner, not fixable here): (a) should the order POST stay part of the Vehicle Details rebuild at all; (b) should contact initially work WITHOUT the POST (recommended: yes — `tel:`/`whatsapp://` only, so the first build creates no order rows and sends no driver emails, with the endpoint added back once auth/payload is decided); (c) should the endpoint require auth; (d) should `payload`/button/`userLocation` be persisted. Pending: purge stray dev row `requests id=8`.
+
+### Route / architecture confirmation (rule 18)
+Unchanged by the approved design: **`src/app/(app)/vehicle/[id].tsx` above `(tabs)`** in the `(app)` Stack (deep-link-safe; Home `VehicleItem` cards and Map markers both push it). The approved screen is a plain pushed detail page (back button top-left, bottom action bar) — no modal/tab requirement, so nothing about the 5A recommendation changes.
+
+### Final approved implementation spec (source for step 5C)
+- **KEEP EXACTLY:** app-bar structure (back + "Vehicle details" title); hero image slot (rounded, ~16/10, full-width); white rounded-card language on `#F8FAFC` with the persistent bottom bar (WhatsApp icon + navy "Call provider"); provider-card layout skeleton (avatar + name + subtitle) and its initials-avatar fallback pattern; neutral CTA wording — "Call provider", "Inquire via WhatsApp"; **NO "Order Now"**.
+- **KEEP WITH ADAPTATION:** availability pill ← vehicle.workStatus (verify value set; never hardcode); title ← `modelName` ‖ `company.name[currentLanguage]` (no year); provider card ← currentDriver (photo→initials fallback, name, company+branch name; all null-safe); WhatsApp/Call CTAs ← `Linking` `whatsapp://`/`tel:` with `encodeURIComponent` + null-phone guard (POST wiring deferred); non-profit notice ← approved "100% Free Facilitator • No Commission • Pay Driver Directly" wording (no "seller"/"0% commission"); share ← legacy app-link share (deep-link scope = decision); optional read-only `vehicle.services[]` chips.
+- **REMOVE:** entire price/rate UI (Fixed Price, KWD 14,900, Direct Provider Rate); specifications grid + "GCC Specifications"; "Verified Listing", "✓ Verified", "Dealer Certified", "Verified against Kuwait Ministry of Interior records"; ★ 4.9 / "(42 completed transactions)"; "Responds in < 15 mins"; "Member since 2021"; ♡ favourite + demo toast + its JS; gallery "1 / 6 photos"; eyebrow "SUV · 4WD"; Vehicle Overview prose + feature chips; location line (no data source — see D).
+- **DEFER / NEEDS DECISION:** location line display (D — no address/geocode source today); POST /requests wiring + auth + payload persistence (rule 12; recommend no-POST contact initially); services chips vs picker (D); share payload scope — app link vs vehicle deep link (D); theme-token mapping for approved navy/gold/emerald (D); safety block + other-vehicles row (legacy-supported, absent from approved design — include in 5C only if the screen keeps legacy sections).
+
+### Learning review status (still NOT complete — mandatory gate before implementation)
+Covered so far: dynamic route `[id]` (5A). Remaining NEW concepts for the mandatory review (list only, NOT taught yet): route-param string→number coercion + NaN guard; external `Linking` safety (`tel:`/`whatsapp://` + Android intent failure); `encodeURIComponent` of the WhatsApp message; nullable contact handling (phoneNum/photo/name/currentDriver); image fallback strategy (iconMap null, initials avatar, no hardcoded legacy URLs); API 500-vs-404 behavior (live: missing model → 500, not 404); plus 5B additions — element-level data-provenance discipline (design numbers are never product data) and availability-status value mapping (workStatus → display string). 4C's review (demo-claims removal, approve-ui home/map authorities, consistency check, verification method) also still pending.
+
+## Vehicle Details — STEP 5C IMPLEMENTATION (delivered & runtime-verified, 2026-09-29)
+
+### Verdict
+**VEHICLE DETAILS STEP 5C PASS** — implemented per the approved 5C plan, `npx tsc --noEmit` reports ONLY the pre-existing baseline error, `git diff --check` clean (exit 0), and live Android-emulator runtime verification passed all executable checks. Commit: **NOT YET** (standing rule). Learning review: **COMPLETE**. No new native dependencies, no full Android build, no commit.
+
+### What shipped
+- **Route:** `src/app/(app)/vehicle/[id].tsx` — the approved details screen in the `(app)` Stack above `(tabs)` (no auth gate in `(app)/_layout.tsx`); strict `parseVehicleId` (`Number`/`Number.isInteger`/`>0`) — `/vehicle/abc` never becomes `/vehicles/NaN`.
+- **API:** `src/api/vehicles.ts` → `VehicleResponse` + `getVehicleById(id)` (public `GET /vehicles/{id}`; route-model-bound; live 500-on-missing documented); exported via `src/api/index.ts`.
+- **Hook:** `src/hooks/use-vehicle-details.ts` — fetch-one with stale-response guard + loading/error/refetch; NO location logic (the screen primes the shared provider once, Map-style, when `status==='unknown'` — proven on cold deep-link entry by the permission prompt + Other-Vehicles distances).
+- **Components:** `src/components/vehicle-details/` → `icons.tsx` (approved vector paths traced 1:1 from `approve-ui/VehiclesDetails/code.html`, no asset copies), `VehicleStatusPill.tsx`, `DriverAvatar.tsx` (photo→initials fallback), `SafetyCard.tsx`, `ContactBar.tsx` (persistent footer).
+- **Shared util:** `src/components/home/VehiclesList.tsx` — new `excludeId?: number` prop (legacy `selectedId` filter semantics).
+- **Wiring:** `src/app/(app)/(tabs)/map.tsx` marker press now `router.push({ pathname: '/vehicle/[id]', params: { id } })` (typed-routes-safe object form).
+- **Theme:** `src/theme/colors.ts` += `navyDeep #0B2A4A`, `navyDeepDark #071B30`, `success #10B981`, `successText #047857`, `successTint #ECFDF5`. Approved gold `#E9A319` reuses the existing `wordmark`; screen bg `#F8FAFC` reuses `phonePrefix`; no second design system.
+- **Sanitizer:** `src/api/api-error.ts` reject-regex += `No query results for model` — the Laravel model-binding 500 text can never leak to a user.
+
+### Approved design mapped (business-aligned — no marketplace elements)
+- Title = `modelName` → `company.name.en` → neutral "Vehicle" (verified live: vehicle 3 empty `modelName` → "Yamak"; vehicle 6 `modelName="suzuki"` → "suzuki"). Subtitle = `company.name · branch.name`.
+- Availability = `vehicle.workStatus`; verified backend enum is `online|offline` only → `online` = "Available" (emerald dot), everything else = neutral slate "Unavailable". No invented enum cases.
+- Hero = single `iconMap` remote image → local emoji placeholder (🛻 on slate). No legacy hardcoded Cloudinary fallback.
+- Provider card = `currentDriver` (nullable): name, photo→initials avatar, phone, company+branch line. CTA wording "Call provider" / "Inquire via WhatsApp" — never "Order Now".
+- Services = READ-ONLY chips (omitted when empty) + `TODO(VehicleDetails)` for the selectable picker once POST/auth is decided.
+- Safety = business-aligned card (communicate directly, confirm details before work, don't pay in advance, YAMAK is a free facilitator/connector) — legacy buyer/seller bullets replaced.
+- Share = legacy app-link share via the native share sheet (`yamak.page.link/app`) + `TODO(VehicleDetails)` for a vehicle deep link.
+- Other Vehicles = shared `VehiclesList` with `excludeId={currentId}` (proven live: exactly ONE card — vehicle 3 excluded, vehicle 6 shown).
+- Non-profit notice retained, facilitator wording (free, no middleman/platform fees, agree directly with provider).
+- Location line: NOT deleted from the plan — deferred behind `TODO(VehicleDetails)` (no backend address; reverse geocoding pending); no fake text, no raw lat/lng.
+- REMOVED (unsupported): price/KWD, verified/dealer/MOI claims, rating/transactions, response-time/member-since, year/engine/mileage specs, ♥ favorite+toast, gallery counter, demo eyebrow/sale prose.
+
+### Contact (tel + WhatsApp ONLY; no POST /requests)
+Whitespace-stripped phone; `tel:<phone>`; `whatsapp://send?phone=<digits>&text=<encoded>` with `https://wa.me/<digits>?text=<encoded>` fallback — `Linking.canOpenURL` + try/catch, graceful app-not-installed path. Null phone → both actions disabled (`disabled`, never `tel:undefined`, never a bad URL). `TODO(VehicleDetails)` marks where `POST /requests` returns after auth/payload is finalized. Grep confirms zero `POST /requests` usage; live `GET /requests` still shows count 8 (no new rows; `id=8` untouched).
+
+### Navigation (both back paths runtime-verified)
+- `canGoBack() ? back() : replace('/map')` — deep-link entry (no history) → `/map`; pushed from Other-Vehicles → returns to the previous details screen.
+- Map markers + Other-Vehicles cards push the strict object form (typed-routes-safe).
+
+### Runtime verification (Android emulator + Expo Go + live backend, 2026-09-29)
+Method: TEMP `src/app/index.tsx` redirect hook (documented 4C technique — **REVERTED**, `git diff --quiet src/app/index.tsx` exit 0) + `pm clear` + exp:// launch; screenshots + OCR + pixel probes.
+- `/vehicle/3` (200 OK): hero renders the MiniVan image (band/pixel proof), emerald "Available" pill (`#10B981` exact-match probe: 169 px at the pill), title "Yamak", subtitle "Yamak-b1", notice, provider card (Majd / Yamak-b1 / +96555925404), Services chip "Car Wash", 4 safety bullets, Other Vehicles row with ONE card (vehicle 3 excluded), navy "Call provider" + WhatsApp-tint footer.
+- Call → Android dialer opened with +965 559 25404. WhatsApp → `canOpenURL('whatsapp://')` false (app not installed) → wa.me fallback opened with the exact encoded message ("Hello from the YAMAK app. I need your help with: Car Wash.").
+- Share → native share sheet, message "Download the YAMAK app now: yamak.page.link/app".
+- Back (deep-link) → `/map`; Other-Vehicles card → push `/vehicle/6` (suzuki / Wensh AlMajed · صباح الاحمد / +96550338090 / Wench) → back → `/vehicle/3`.
+- `/vehicle/abc` → invalid-link state, no request, no location prompt (prime skips invalid ids), "Go back" → `/map`.
+- `/vehicle/999999` → HTTP 500 → generic "Request failed with status 500" + Retry — `No query results for model [App\Models\Vehicle]` sanitized (verified on screen); Retry re-fetches and stays generic.
+- No price / Verified / favourite / KWD text in any state (OCR sweep).
+- Environment note: Expo Go's dev-mode floating "Tools" button overlapped the app-bar Share control (dragged aside to verify); dev-only artifact, absent in a production build. Hero-image fallback + avatar-initials fallback are code-verified only (all online vehicles currently carry `iconMap` + reachable photos).
+
+### Static verification
+- `npx tsc --noEmit`: exactly ONE error — pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` TS2322 (reported separately, NOT introduced, NOT fixed). Zero errors across the new route/components/hook/API edits.
+- `git diff --check` clean; `git status --short`: modified = PROJECT_CONTEXT.md, api-error.ts, api/index.ts, api/vehicles.ts, map.tsx, home/VehiclesList.tsx, theme/colors.ts; untracked = docs/rebuild/approve-ui/VehiclesDetails/ (user), src/app/(app)/vehicle/, src/components/vehicle-details/, src/hooks/use-vehicle-details.ts. `src/app/index.tsx` back at the committed `/register` redirect.
+- No `console.*`, no `any`, no new native deps (react-native-svg already present), no bulk asset copies.
+
+### Commit & cleanup status
+- Commit: **NOT YET** (standing rule — working tree only).
+- Learning review: **COMPLETE** (all 4C/5A/5B concepts applied in shipped code — see below).
+- `requests id=8` (5A no-auth probe stray row): left ON the backend, UNCHANGED, no new rows created by 5C; the user's purge decision remains pending.
+
+### Learning review status (COMPLETE)
+route-param string→number coercion + NaN guard (parseVehicleId); external `Linking` safety (`tel:`/`whatsapp://`, intent failure, wa.me fallback); `encodeURIComponent` of the WhatsApp message; nullable contact handling (phoneNum/photo/name/currentDriver); image fallback strategy (iconMap → emoji placeholder, photo → initials, no hardcoded legacy URLs); API 500-vs-404 reality (frontend-only generic sanitized state); 5B element-level data-provenance (design numbers are never product data — enforced by removal); availability value mapping (`workStatus` → display); 4C demo-claims neutralization + approve-ui authority honored for the details screen; theme-token mapping decision applied (minimal justified additions on existing semantic tokens).
+
 ## Next Approved Step
 - **Slice 3B (location foundation + Vehicles) delivered and runtime-verified** (see the architecture section above and the Verification entries). Nothing from 3B is mounted by any production screen yet (the Map consumes `useUserLocation()` via the shared provider).
 - **Step 4A (Map + ViewMap analysis) + Google Maps native config audit (both read-only) delivered** — verified facts and decisions recorded above. Step 4A's two original blockers were resolved for this slice: the `/map` route (deep-linkable, no Home shell) was explicitly approved, and `react-native-maps@1.27.2` was approved via `npx expo install` (bundled in Expo Go — no key needed there).
 - **Home slice 4B (Map tab) delivered and runtime-verified** — see the dedicated section and Verification entries above. `/map` now exists as a real screen; marker press remains local-selection-only by design (Vehicle Details still has no route). A real shared bug surfaced by live-verification (raw Laravel SQLSTATE leaked through `ApiError.message`) was fixed in `src/api/api-error.ts` (sanitizer) — see the section above.
 - **Home slice 4C (ViewMap CTA) reconciled to the latest approved rules and delivered** — the radar card per the user-dropped `approve-ui/home` reference; prototype demo statistics neutralized (decorative examples, not product data); `approve-ui/map` recorded as the Map visual authority + consistency reference; final-Home business-information requirements recorded (NOT implemented). `ViewMap.tsx` is the only product file; its navy "Explore Map" button targets the real `/map` route with no serviceId, verified live before and after neutralization.
-- **MANDATORY LEARNING REVIEW — NOT COMPLETE:** the learning review for this 4C reconciliation (demo-claims removal rule, approve-ui home/map authorities, map-consistency check, verification method) must be completed and approved before any further step begins. STEP 4C is NOT advanced beyond this review.
-- **Recommended subsequent order (AFTER the mandatory learning review):** **`VehiclesDetailsScreen`** (next marker-press target: `GET /vehicles/{id}` + WhatsApp/Call order-request POST) → a **Map-UI consistency slice** (align the existing `/map` screen with `approve-ui/map` now that it is the Map visual authority — document/verify only) → then the authenticated Home shell with tabs when the landing decision lands (the finished sections + 4B's shared `UserLocationProvider` all mount there).
+- **Vehicle Details STEP 5A (read-only analysis) delivered** — see the dedicated section above: legacy screen + all entry points, section breakdown, data flow, backend contract (live-verified `GET /vehicles/{id}` public; live-verified public `POST /requests` — plus a live-found 500-on-missing-model and a stray dev `requests` row id 8 from the no-auth probe), NO approved vehicle-details design (provisional new-ui is demo-only), design↔function↔backend matrix, business-model conflicts, verified legacy defects not to port, recommended `(app)/vehicle/[id]` architecture, and the new learning concepts. **Analysis only — implementation NOT started.**
+- **Vehicle Details STEP 5B (approved-UI review) delivered** — see the dedicated section above: approved files inspected (`approve-ui/VehiclesDetails/code.html` + `screen.png`, hero image is a missing placeholder), the approved design identified as a **used-car marketplace listing** (business-model/topic mismatch flagged), full element mapping matrix (A/B/C/D), business-model filtering (price/verified/favorite rules applied), request/contact API concern (rule 12), route architecture confirmed unchanged (`(app)/vehicle/[id]` above tabs), final implementation spec (KEEP EXACTLY / WITH ADAPTATION / REMOVE / DEFER), and the remaining learning concepts, incl. the element-level data-provenance rule and the theme-token decision (approved navy/gold/emerald vs current theme primary/gold, no secondary). The user-supplied `docs/rebuild/approve-ui/VehiclesDetails/` folder is untracked. **Design review FINISHED — implementation NOT started.**
+- **MANDATORY LEARNING REVIEW — COMPLETE:** all 4C/5A/5B concepts were applied in shipped 5C code and verified (see the 5C section above) — route-param coercion + NaN guard, external `Linking` safety + wa.me fallback, `encodeURIComponent`, nullable-contact handling, image-fallback strategy, the live 500-vs-404 sanitization, element-level data-provenance (design numbers are never product data), availability value mapping, and the approved-UI/theme-token discipline. No review gate remains.
+- **Vehicle Details STEP 5C (implementation) delivered and runtime-verified** — see the dedicated section above. Route, API, hook, components, theme tokens, sanitizer update, Map marker wiring, and `VehiclesList.excludeId` all shipped. Live emulator verification covered the happy path, invalid id, missing vehicle (500 sanitized), both back paths, Call dialer, wa.me fallback, Share sheet, Other-Vehicles exclusion + cross-push, and the zero-`POST /requests` guarantee. Commit: **NOT YET**.
+- **Recommended subsequent order:** a **Map-UI consistency slice** (align the existing `/map` screen with `approve-ui/map` now that it is the Map visual authority — document/verify only) → then the authenticated Home shell with tabs when the landing decision lands (the finished sections + 4B's shared `UserLocationProvider` all mount there). Any future vehicle-details additions (services picker, location line via reverse geocoding, vehicle deep-link share, and the `POST /requests` restoration behind auth/payload decisions) are tracked by `TODO(VehicleDetails)` markers — do NOT restore `POST /requests` until auth + payload persistence are decided.
 - Blocked separately (unchanged): the unauthenticated landing decision (`/register` vs a future `/login`) gates the `/home` route and the authenticated tree. Never send `limit: 0`; send `limit` only if a future decision calls for it (default 10 matches legacy).
 - Deferred: none outstanding from 3B/4B — the `ApiErrorRow` extraction (3B) and the `api-error.ts` sanitizer (4B) are both complete.
-- Baseline (unchanged, reported separately, deliberately not fixed): `src/components/app-tabs.web.tsx(27,38)` `Type '"/explore"'` TS2322 under `npx tsc --noEmit`. Git state at 4C reconciliation delivery: `YamakExpoNew` HEAD `66d933d` (= STEP 4B committed); uncommitted/untracked = `src/components/home/ViewMap.tsx` (the 4C deliverable) + `docs/rebuild/approve-ui/{home,map}/` (user-dropped approved references, left in place). **Commit status: NOT YET. Learning review status: NOT COMPLETE.** No commit was made (standing rule).
+- Baseline (unchanged, reported separately, deliberately not fixed): `src/components/app-tabs.web.tsx(27,38)` `Type '"/explore"'` TS2322 under `npx tsc --noEmit`. Git state at 5C delivery: `YamakExpoNew` HEAD still `e86929e` (`feat(home): add approved map preview CTA` — the user's 4C commit; 5A–5C were NOT committed). **5C modified** `PROJECT_CONTEXT.md`, `src/api/api-error.ts`, `src/api/index.ts`, `src/api/vehicles.ts`, `src/app/(app)/(tabs)/map.tsx`, `src/components/home/VehiclesList.tsx`, `src/theme/colors.ts`; **untracked** = `docs/rebuild/approve-ui/VehiclesDetails/` (user-provided), `src/app/(app)/vehicle/` (new route), `src/components/vehicle-details/` (new components), `src/hooks/use-vehicle-details.ts` (new hook). `src/app/index.tsx` reverted byte-for-byte to the committed `/register` redirect. Commit status: **NOT YET**. Learning review status: **COMPLETE**. `npx tsc --noEmit` = ONLY the baseline error; `git diff --check` clean; no dependency installed, no build, no commit (standing rule). NOTE: the live no-auth `POST /requests` probe (STEP 5A) created dev row `requests id=8` on the backend — STILL PRESENT, untouched by 5C (contact-only design created no request rows; count still 8), flagged for the user to purge.

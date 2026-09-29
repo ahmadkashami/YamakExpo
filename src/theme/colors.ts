@@ -7,6 +7,20 @@ export const colors = {
   goldTint: '#FDF7E6',
   /** New-ui `--gold-100` — gold tint container border. */
   goldTintBorder: '#FBEED4',
+  /**
+   * Approve-ui `yamakNavy` `#0B2A4A` (Vehicle Details CTA + provider avatar).
+   * Darker than the auth brand `navy` and the `primary` CTA; also the exact
+   * navy of the approved Home radar-card button.
+   */
+  navyDeep: '#0B2A4A',
+  /** Approve-ui `yamakNavyDark` `#071B30` — pressed state for `navyDeep`. */
+  navyDeepDark: '#071B30',
+  /** Emerald-500 — availability/live dots (approve-ui + Map radar dot). */
+  success: '#10B981',
+  /** Emerald-700 — WhatsApp icon / positive emphasis text. */
+  successText: '#047857',
+  /** Emerald-50 — WhatsApp quick-inquiry button tint. */
+  successTint: '#ECFDF5',
   wordmark: '#E9A319',
   routeGold: '#F4A817',
   routeBlue: '#38BDF8',
