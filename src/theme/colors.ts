@@ -21,6 +21,12 @@ export const colors = {
   successText: '#047857',
   /** Emerald-50 — WhatsApp quick-inquiry button tint. */
   successTint: '#ECFDF5',
+  /** Approve-ui amber-500 — Map service-chip border / AR-label accent. */
+  amber: '#F59E0B',
+  /** Approve-ui user-marker blue-600 — "You are here" dot. */
+  userMarker: '#2563EB',
+  /** Approve-ui blue-500/25 — user-marker pulse-ring tint. */
+  userMarkerPulse: 'rgba(59, 130, 246, 0.25)',
   wordmark: '#E9A319',
   routeGold: '#F4A817',
   routeBlue: '#38BDF8',

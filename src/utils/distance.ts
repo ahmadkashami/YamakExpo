@@ -38,6 +38,22 @@ export function haversineDistanceKm(from: GeoCoordinate, to: GeoCoordinate): num
 }
 
 /**
+ * Formats a true Haversine distance (km) for display. Never formats the
+ * backend's Euclidean `distance` field; never emits `0 km` / `NaN km` /
+ * `unknown km` (sub-100 m values collapse to `<0.1 km`). Callers omit the
+ * label entirely when the user has no valid position.
+ */
+export function formatDistanceKm(km: number): string | null {
+  if (!Number.isFinite(km) || km < 0) {
+    return null;
+  }
+  if (km < 0.1) {
+    return '<0.1 km';
+  }
+  return `${km.toFixed(1)} km`;
+}
+
+/**
  * Guard for a vehicle's `geoLocation`. The backend resource coerces missing
  * coordinates to `(0, 0)`, which is meaningless for a distance — so a vehicle
  * at exactly `(0, 0)` (or with non-finite values) is treated as having no

@@ -79,7 +79,20 @@ export function UserLocationProvider({ children }: { children: ReactNode }) {
   // (e.g. an explicit refresh path), matching the per-slice requestIdRef guard.
   const requestIdRef = useRef(0);
 
-  const requestLocation = useCallback(async () => {
+  /**
+   * True while a resolution is actually running — see `requestLocation`.
+   *
+   * NOT the same thing as `status === 'resolving'`: that is React state (one
+   * render late, and cleared by the provider's own transitions), whereas this
+   * is the synchronous admission flag for the public entry point.
+   */
+  const resolvingRef = useRef(false);
+
+  /**
+   * The single resolution pipeline: permission → bounded position read.
+   * Every path into a location attempt goes through here.
+   */
+  const resolveLocation = useCallback(async () => {
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
 
@@ -88,9 +101,19 @@ export function UserLocationProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     // 1. Foreground permission (no background access, no geofencing).
+    //
+    //    Re-check the CURRENT permission before asking again: a cold launch
+    //    with the permission already granted must resolve straight through to
+    //    the position step instead of re-entering the OS prompt path. This is
+    //    also what keeps a granted-but-no-fix cycle truthful — `timed-out` /
+    //    `unavailable` can only ever be reached AFTER the permission check
+    //    succeeded, so those states can never be mistaken for a denial.
     let permission: Location.LocationPermissionResponse;
     try {
-      permission = await Location.requestForegroundPermissionsAsync();
+      permission = await Location.getForegroundPermissionsAsync();
+      if (permission.status !== Location.PermissionStatus.GRANTED) {
+        permission = await Location.requestForegroundPermissionsAsync();
+      }
     } catch (cause) {
       if (requestId !== requestIdRef.current) {
         return;
@@ -142,6 +165,32 @@ export function UserLocationProvider({ children }: { children: ReactNode }) {
         setError(cause instanceof Error ? cause.message : 'Location could not be determined');
       }
       setCoords(null);
+    }
+  }, []);
+
+  /**
+   * Public entry point. Admits at most ONE resolution at a time.
+   *
+   * `requestIdRef` only decides which result WINS, so N overlapping calls would
+   * still start N native `getCurrentPositionAsync` requests and N grace timers.
+   * `resolvingRef` removes that at the source, instead of relying on every
+   * caller staying perfectly guarded against a re-run of its mount effect.
+   *
+   * A retry issued AFTER the previous attempt settled is always admitted (the
+   * flag clears in the `finally` that ends the request), and `requestIdRef` is
+   * deliberately untouched by the early return, so the in-flight request keeps
+   * its id and can still apply its result.
+   */
+  const requestLocation = useCallback(async () => {
+    if (resolvingRef.current) {
+      return;
+    }
+    resolvingRef.current = true;
+
+    try {
+      await resolveLocation();
+    } finally {
+      resolvingRef.current = false;
     }
   }, []);
 

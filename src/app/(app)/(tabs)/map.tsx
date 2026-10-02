@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,12 +7,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Service, Vehicle } from '@/api';
 import { ApiErrorRow } from '@/components/home/ApiErrorRow';
 import { EnableLocationCard } from '@/components/map/EnableLocationCard';
+import { MapControls, type MapType } from '@/components/map/MapControls';
 import { MapServiceChips } from '@/components/map/MapServiceChips';
+import { MicroBanner } from '@/components/map/MicroBanner';
 import { UserLocationMarker, VehicleMarker } from '@/components/map/MapMarkers';
 import { useMapVehicles } from '@/hooks/use-map-vehicles';
 import { useServices } from '@/hooks/use-services';
 import { useUserLocation } from '@/location';
 import { colors, radius, spacing } from '@/theme';
+import { haversineDistanceKm } from '@/utils/distance';
+import { vehicleMarkerCoordinate } from '@/utils/vehicle-marker';
 
 /**
  * Kuwait default framing. This is ONLY the uncontrolled `initialRegion` — the
@@ -79,6 +83,10 @@ export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
 
+  // Layers/Traffic are LOCAL to this screen (no global store, not persisted).
+  const [mapType, setMapType] = useState<MapType>('standard');
+  const [trafficEnabled, setTrafficEnabled] = useState(false);
+
   // One explicit location request on first open (the shared provider never
   // auto-requests — mounting any screen must not prompt). The approved
   // prototype's demo state IS the permission card, which this surfaces.
@@ -121,13 +129,61 @@ export default function MapScreen() {
 
   const handleVehiclePress = useCallback(
     (vehicle: Vehicle) => {
-      // Marker press now opens Vehicle Details directly (approved wiring);
-      // the local selected-state still updates first for the visual cue.
+      // Marker press opens Vehicle Details DIRECTLY (approved wiring; no
+      // bottom sheet, no intermediate callout). The local selected-state still
+      // updates first for the gold selection visual.
       setSelectedVehicleId(vehicle.id);
       router.push({ pathname: '/vehicle/[id]', params: { id: String(vehicle.id) } });
     },
     [router],
   );
+
+  const cycleMapType = useCallback(() => {
+    setMapType((current) =>
+      current === 'standard' ? 'satellite' : current === 'satellite' ? 'hybrid' : 'standard',
+    );
+  }, []);
+
+  const toggleTraffic = useCallback(() => {
+    setTrafficEnabled((current) => !current);
+  }, []);
+
+  // Manual Recenter: re-animates to the current frozen user coordinates. The
+  // map stays otherwise uncontrolled (no controlled-region lock) and this
+  // control NEVER requests permission — without coords it is simply disabled.
+  const handleRecenter = useCallback(() => {
+    if (userCoords === null) {
+      return;
+    }
+    mapRef.current?.animateToRegion(
+      {
+        latitude: userCoords.latitude,
+        longitude: userCoords.longitude,
+        latitudeDelta: USER_CENTERED_DELTA,
+        longitudeDelta: USER_CENTERED_DELTA,
+      },
+      500,
+    );
+  }, [userCoords]);
+
+  // True Haversine distances in km from the frozen user position to each
+  // vehicle — computed ONLY when both coordinate pairs are valid. The backend
+  // `distance` field (Euclidean degrees) is neither read nor rendered. Markers
+  // already skip unusable vehicle coords, so `null` here only means the user
+  // has no valid position (the distance label is then omitted).
+  const vehicleDistances = useMemo(() => {
+    const distances: Record<number, number | null> = {};
+    for (const vehicle of vehicles) {
+      if (userCoords === null) {
+        distances[vehicle.id] = null;
+        continue;
+      }
+      const coordinate = vehicleMarkerCoordinate(vehicle);
+      distances[vehicle.id] =
+        coordinate === null ? null : haversineDistanceKm(userCoords, coordinate);
+    }
+    return distances;
+  }, [vehicles, userCoords]);
 
   const insets = useSafeAreaInsets();
 
@@ -164,6 +220,8 @@ export default function MapScreen() {
           style={StyleSheet.absoluteFill}
           provider={PROVIDER_GOOGLE}
           initialRegion={KUWAIT_INITIAL_REGION}
+          mapType={mapType}
+          showsTraffic={trafficEnabled}
           loadingEnabled
           loadingBackgroundColor={colors.surface}
           toolbarEnabled={false}
@@ -176,10 +234,25 @@ export default function MapScreen() {
               key={vehicle.id}
               vehicle={vehicle}
               isActive={vehicle.id === selectedVehicleId}
+              distanceKm={vehicleDistances[vehicle.id] ?? null}
               onPress={handleVehiclePress}
             />
           ))}
         </MapView>
+
+        {/* Approved micro-banner — static facilitator copy; `pointerEvents="none"`
+            so the pill never blocks map pan/zoom beneath it. */}
+        <MicroBanner />
+
+        {/* Approved map controls: Recenter · Layers · Traffic (local state only). */}
+        <MapControls
+          onRecenter={handleRecenter}
+          recenterDisabled={userCoords === null}
+          mapType={mapType}
+          onCycleMapType={cycleMapType}
+          trafficEnabled={trafficEnabled}
+          onToggleTraffic={toggleTraffic}
+        />
 
         {/* Lightweight vehicles loading state (no selected service → no overlay). */}
         {vehiclesLoading ? (
@@ -198,7 +271,14 @@ export default function MapScreen() {
         {/* Approved permission / location-off card (prototype `card.gold`). */}
         {locationStatus !== 'available' ? (
           <View style={styles.locationWrap}>
-            <EnableLocationCard onEnable={() => void requestLocation()} />
+            <EnableLocationCard
+              status={locationStatus}
+              // Disable the action while a request is in flight: the provider
+              // admits one resolution at a time, so extra presses would be
+              // dropped anyway. Keeps the card honest about what a tap does.
+              busy={locationStatus === 'resolving'}
+              onEnable={() => void requestLocation()}
+            />
             <Text style={styles.caption}>Marker/tap → vehicle details.</Text>
           </View>
         ) : null}
@@ -281,7 +361,8 @@ const styles = StyleSheet.create({
   },
   errorCard: {
     position: 'absolute',
-    top: spacing.md,
+    // Below the micro-banner and the controls column so they never overlap.
+    top: 104,
     left: spacing.md,
     right: spacing.md,
     backgroundColor: colors.surface,

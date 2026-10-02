@@ -1,29 +1,28 @@
-import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, Text } from 'react-native';
 
-import type { Service, ServiceLanguage } from '@/api';
-import { colors, interactionOpacity, typography } from '@/theme';
+import type { Service } from '@/api';
+import { colors, interactionOpacity } from '@/theme';
 
 /**
- * Legacy Map chip shape (80×80 circle, 4pt border, active fills gold with white
- * text) reproduced with new-ui tokens. The prototype does not specify chips, so
- * this keeps the verified legacy chip *intent* without copying its styling
- * defects (it was fine; the surrounding Map code was what was broken).
+ * Approved Map service chips (`approve-ui/map`): 64 px circles with a 3 px
+ * amber border, a logo icon, and the real EN + AR names on SEPARATE lines
+ * (never concatenated — each line renders inside its own direction). Selected
+ * chips get the product Gold fill. All content is real `Service` data; when
+ * `logo` is null a safe emoji glyph is shown (no new assets).
  */
-const CHIP_DIAMETER = 80;
-const CHIP_BORDER_WIDTH = 4;
+const CHIP_DIAMETER = 64;
+const CHIP_BORDER_WIDTH = 3;
 
 export type MapServiceChipsProps = {
   services: Service[];
   selectedServiceId: number | null;
   onSelect: (service: Service) => void;
-  language?: ServiceLanguage;
 };
 
 export function MapServiceChips({
   services,
   selectedServiceId,
   onSelect,
-  language = 'en',
 }: MapServiceChipsProps) {
   return (
     <FlatList
@@ -36,7 +35,7 @@ export function MapServiceChips({
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
-            accessibilityLabel={item.name.en}
+            accessibilityLabel={`${item.name.en} — ${item.name.ar}`}
             onPress={() => onSelect(item)}
             style={({ pressed }) => [
               styles.chip,
@@ -44,11 +43,24 @@ export function MapServiceChips({
               pressed && styles.pressed,
             ]}
           >
+            {item.logo === null ? (
+              <Text style={styles.logoFallback}>🛠️</Text>
+            ) : (
+              <Image source={{ uri: item.logo }} style={styles.logo} resizeMode="contain" />
+            )}
             <Text
-              numberOfLines={2}
-              style={[styles.label, isSelected && styles.labelSelected]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              style={[styles.labelEn, isSelected && styles.labelSelected]}
             >
-              {item.name[language]}
+              {item.name.en}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[styles.labelAr, isSelected && styles.labelSelected]}
+            >
+              {item.name.ar}
             </Text>
           </Pressable>
         );
@@ -69,25 +81,44 @@ const styles = StyleSheet.create({
     height: CHIP_DIAMETER,
     borderRadius: CHIP_DIAMETER / 2,
     borderWidth: CHIP_BORDER_WIDTH,
-    borderColor: colors.gold,
+    borderColor: colors.amber,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 6,
+    paddingHorizontal: 4,
+    marginHorizontal: 5,
+    overflow: 'hidden',
   },
   chipSelected: {
+    borderColor: colors.gold,
     backgroundColor: colors.gold,
   },
   pressed: {
     opacity: interactionOpacity.pressed,
   },
-  label: {
-    ...typography.caption,
-    fontWeight: '700',
+  logo: {
+    width: 20,
+    height: 20,
+    marginBottom: 1,
+  },
+  logoFallback: {
+    fontSize: 18,
+    lineHeight: 20,
+    marginBottom: 1,
+  },
+  labelEn: {
+    fontSize: 9,
+    fontWeight: '800',
     textAlign: 'center',
-    textTransform: 'capitalize',
-    paddingHorizontal: 4,
     color: colors.title,
+    marginTop: 2,
+  },
+  labelAr: {
+    fontSize: 8,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: colors.amber,
+    marginTop: 1,
   },
   labelSelected: {
     color: colors.surface,

@@ -482,7 +482,292 @@ route-param string→number coercion + NaN guard (parseVehicleId); external `Lin
 - **Vehicle Details STEP 5B (approved-UI review) delivered** — see the dedicated section above: approved files inspected (`approve-ui/VehiclesDetails/code.html` + `screen.png`, hero image is a missing placeholder), the approved design identified as a **used-car marketplace listing** (business-model/topic mismatch flagged), full element mapping matrix (A/B/C/D), business-model filtering (price/verified/favorite rules applied), request/contact API concern (rule 12), route architecture confirmed unchanged (`(app)/vehicle/[id]` above tabs), final implementation spec (KEEP EXACTLY / WITH ADAPTATION / REMOVE / DEFER), and the remaining learning concepts, incl. the element-level data-provenance rule and the theme-token decision (approved navy/gold/emerald vs current theme primary/gold, no secondary). The user-supplied `docs/rebuild/approve-ui/VehiclesDetails/` folder is untracked. **Design review FINISHED — implementation NOT started.**
 - **MANDATORY LEARNING REVIEW — COMPLETE:** all 4C/5A/5B concepts were applied in shipped 5C code and verified (see the 5C section above) — route-param coercion + NaN guard, external `Linking` safety + wa.me fallback, `encodeURIComponent`, nullable-contact handling, image-fallback strategy, the live 500-vs-404 sanitization, element-level data-provenance (design numbers are never product data), availability value mapping, and the approved-UI/theme-token discipline. No review gate remains.
 - **Vehicle Details STEP 5C (implementation) delivered and runtime-verified** — see the dedicated section above. Route, API, hook, components, theme tokens, sanitizer update, Map marker wiring, and `VehiclesList.excludeId` all shipped. Live emulator verification covered the happy path, invalid id, missing vehicle (500 sanitized), both back paths, Call dialer, wa.me fallback, Share sheet, Other-Vehicles exclusion + cross-push, and the zero-`POST /requests` guarantee. Commit: **NOT YET**.
-- **Recommended subsequent order:** a **Map-UI consistency slice** (align the existing `/map` screen with `approve-ui/map` now that it is the Map visual authority — document/verify only) → then the authenticated Home shell with tabs when the landing decision lands (the finished sections + 4B's shared `UserLocationProvider` all mount there). Any future vehicle-details additions (services picker, location line via reverse geocoding, vehicle deep-link share, and the `POST /requests` restoration behind auth/payload decisions) are tracked by `TODO(VehicleDetails)` markers — do NOT restore `POST /requests` until auth + payload persistence are decided.
+- **STEP 6A (Map approved-UI consistency review, read-only) delivered** — see the dedicated section above. Approved files inspected, full section breakdown, consistency matrix, design-only elements rejected, business-model/ETA/distance filtering, and the implementation spec (KEEP AS-IS / RESTYLE / ADD / DO NOT ADD / DEFER / NEEDS USER DECISION) recorded. Verdict: **MAP APPROVED UI CONSISTENCY REVIEW COMPLETE**. Implementation NOT STARTED, no commit.
+- **Recommended subsequent order:** the **Map-UI alignment implementation slice** (restyle the existing `/map` screen per the 6A spec: chips, pins, user marker, micro-banner, recenter control) → then the authenticated Home shell with tabs when the landing decision lands (the finished sections + 4B's shared `UserLocationProvider` all mount there). Any future vehicle-details additions (services picker, location line via reverse geocoding, vehicle deep-link share, and the `POST /requests` restoration behind auth/payload decisions) are tracked by `TODO(VehicleDetails)` markers — do NOT restore `POST /requests` until auth + payload persistence are decided.
 - Blocked separately (unchanged): the unauthenticated landing decision (`/register` vs a future `/login`) gates the `/home` route and the authenticated tree. Never send `limit: 0`; send `limit` only if a future decision calls for it (default 10 matches legacy).
 - Deferred: none outstanding from 3B/4B — the `ApiErrorRow` extraction (3B) and the `api-error.ts` sanitizer (4B) are both complete.
-- Baseline (unchanged, reported separately, deliberately not fixed): `src/components/app-tabs.web.tsx(27,38)` `Type '"/explore"'` TS2322 under `npx tsc --noEmit`. Git state at 5C delivery: `YamakExpoNew` HEAD still `e86929e` (`feat(home): add approved map preview CTA` — the user's 4C commit; 5A–5C were NOT committed). **5C modified** `PROJECT_CONTEXT.md`, `src/api/api-error.ts`, `src/api/index.ts`, `src/api/vehicles.ts`, `src/app/(app)/(tabs)/map.tsx`, `src/components/home/VehiclesList.tsx`, `src/theme/colors.ts`; **untracked** = `docs/rebuild/approve-ui/VehiclesDetails/` (user-provided), `src/app/(app)/vehicle/` (new route), `src/components/vehicle-details/` (new components), `src/hooks/use-vehicle-details.ts` (new hook). `src/app/index.tsx` reverted byte-for-byte to the committed `/register` redirect. Commit status: **NOT YET**. Learning review status: **COMPLETE**. `npx tsc --noEmit` = ONLY the baseline error; `git diff --check` clean; no dependency installed, no build, no commit (standing rule). NOTE: the live no-auth `POST /requests` probe (STEP 5A) created dev row `requests id=8` on the backend — STILL PRESENT, untouched by 5C (contact-only design created no request rows; count still 8), flagged for the user to purge.
+- Baseline (unchanged, reported separately, deliberately not fixed): `src/components/app-tabs.web.tsx(27,38)` `Type '"/explore"'` TS2322 under `npx tsc --noEmit`. Git state at 6A review (2026-09-29): HEAD `f87aa1a feat(vehicle): implement vehicle details screen` — the user committed the 5C tree; `git status --short` CLEAN at pre-flight (the 5C modified/untracked list above is the historical 5C-delivery record). `src/app/index.tsx` remains byte-identical to the committed `/register` redirect. Commit status: 5C was committed as `f87aa1a`; STEP 6A is analysis-only and adds nothing. Learning review status: **COMPLETE**. `npx tsc --noEmit` = ONLY the baseline error; `git diff --check` clean; no dependency installed, no build, no commit (standing rule). NOTE: the live no-auth `POST /requests` probe (STEP 5A) created dev row `requests id=8` on the backend — STILL PRESENT, untouched by 5C (contact-only design created no request rows; count still 8), flagged for the user to purge.
+
+## Map — Approved UI Consistency Review (STEP 6A, read-only)
+
+**Verdict: MAP APPROVED UI CONSISTENCY REVIEW COMPLETE.** Implementation NOT STARTED. Only `PROJECT_CONTEXT.md` modified; no commit, no build, no dependency change.
+
+### Files inspected
+- Approved: `docs/rebuild/approve-ui/map/code.html` (371 lines) + `screen.png` (no assets folder). Mock palette: `yamakNavy #081C31`, `yamakDarkBlue #0B2A4A`, `yamakGold #E9A319`, `yamakLightGold #FFF6E5`, `yamakGoldHover #D39113`, `yamakMuted #64748B`, `yamakBg #F8FAFC`; shadows `card/pin/floating` = rgba(8,28,49,…).
+- Current implementation: `src/app/(app)/(tabs)/map.tsx` (full), `src/components/map/{MapMarkers,MapServiceChips,EnableLocationCard}.tsx` (full), `src/hooks/use-map-vehicles.ts`, `src/utils/vehicle-marker.ts`, `src/theme/*`, `src/api/services.ts`.
+- Legacy reference (functional only): `yamak-mobile/src/components/map/Map.tsx` — broken region lock, `geoMetry` typo, dead marker navigation; nothing real left to port beyond what 4B already covered.
+- Continuity: `docs/rebuild/approve-ui/VehiclesDetails/code.html` + `src/components/vehicle-details/*`.
+
+### Approved map section breakdown (code.html)
+1. Device status bar (9:41 / 5G / battery) — chrome, not app UI.
+2. App bar: hamburger · "Map" (bold slate-800) · bell with RED dot badge; `border-b slate-100` + soft shadow.
+3. Map surface: warm grid `#f1ede3` + decorative SVG (bay water, coastline, 4th/5th/6th Ring + Route 30/40 strokes, area-text badges KUWAIT CITY/SALMIYA/HAWALLY/SHUWAIKH IND./6TH RING RD).
+4. Micro-banner (top-center pill, `bg-white/95`, amber border): emerald pulse dot + "**Yamak:** 100% Free Facilitator • No Commission • Pay Driver Directly" (gold "Yamak:", navy text).
+5. Map-controls column (top-right, 3× white rounded-xl cards): Recenter (navy), Layers (slate-700), Traffic (emerald-600).
+6. User marker: blue-600 dot (w-6, white ring) + inner white dot + blue-500/25 pulse ring (2.2 s) + navy "You are here" tooltip.
+7. One ACTIVE pin: navy callout card (gold hairline) — gold "★ 4.9 • GMC Winch", emerald "ETA 8m" badge, "Abu Fahad Recovery", "6th Ring Rd" + gold "1.4 km"; below it a gold pin `w-10 rounded-2xl ring-4 gold/30 white border` + navy winch icon + white triangle tail.
+8. Four SECONDARY pins: white `w-8 rounded-xl` + service-colored 2 px border (gold winch / sky tire / amber battery / red fuel / emerald lock) + colored icons; white/95 availability pill above (emerald dot + "14m/6m/4m/12m"); tiny white label below ("Nissan Patrol / Tire Fix / Jumpstart / Fuel Run / Key Unlock").
+9. Google attribution (native watermark).
+10. Service chips (bottom scroll row, `hide-scrollbar`): 5 × `w-16 h-16` (64 px) circles, white bg, `border-3 amber-500`, gold/amber 20 px SVG icon, 9 px extrabold EN label + 8 px amber AR label (Wench/سطحة · Flat Tires/بنشر · Flat Battery/شحن · Unlock/أقفال · Fuel Run/بنزين). No distinct selected state in the mock.
+11. Selected-provider bottom sheet: drag handle; navy avatar w/ gold winch icon + emerald online dot; "Abu Fahad Recovery" + amber "★ 4.9"; subtitle "سطحة الفهد • GMC Sierra • 1.4 km away"; round slate-100 Call + emerald-600 WhatsApp pill.
+12. Bottom nav: Home / Map (active, gold dot) / Services / Profile (+ iOS home-indicator pill — chrome).
+
+### Current implementation baseline (verified in code)
+Route param `serviceId` (strict integer parser; route param canonical, local mirror, NO global store); app bar ☰ · "Map" · 🔔 (emoji glyphs, no badge); real Google MapView (PROVIDER_GOOGLE, uncontrolled Kuwait `initialRegion`, one-time `animateToRegion` on the first user fix, `loadingEnabled`, `toolbarEnabled=false`, `showsUserLocation=false`, map tap clears selection); user marker = `primary` circle + white dot (no pulse/label); vehicle markers = gold circular badge (40 px / 48 px active, real `iconMap` image, `tracksViewChanges` while active), marker press → `setSelectedVehicleId` + push `/vehicle/[id]`; `EnableLocationCard` gold-tint permission card + "Marker/tap → vehicle details." caption; gold loading badge; `ApiErrorRow` error card (top) + Retry; chips footer 80 px circle / 4 px gold border / text-only EN / gold-fill selected; load/error states for both services and vehicles. No banner, controls, sheet, or tabs.
+
+### Final consistency matrix
+Classified A=match, B=present+restyle, C=add, D=unsupported/do-not-add, E=legacy-missing (none found), F=needs user decision.
+| # | Approved element | Current | Backend | Class | Reason |
+|---|---|---|---|---|---|
+| 1 | App-bar layout (menu/title/bell) | matches (emoji glyphs) | n/a | A (cosmetic B) | Geometry matches; swap emoji → SVG icons is cosmetic |
+| 2 | Bell red-dot badge | absent (intentional) | none | D | No notifications system; badge would be fake data |
+| 3 | Map canvas (grid+SVG mock) | real Google MapView | real geo | A | Real map is superior; grid pattern + area-text badges are decorative mock only |
+| 4 | Free-facilitator micro-banner | absent | business copy | C | Approved + truthful ("100% Free Facilitator • No Commission • Pay Driver Directly") |
+| 5 | Recenter / Layers / Traffic controls | one-time auto-recenter only | props exist | C (recenter) / DEFER (layers/traffic) | `animateToRegion`, `mapType`, `trafficEnabled` all supported RNM |
+| 6 | User marker blue-600 + pulse + "You are here" | primary circle, none | user coords | B | Restyle; single representation kept (`showsUserLocation=false`) |
+| 7 | Active gold pin + white ring | gold circle (48 px) | — | B | Round → rounded-square + ring; cosmetic |
+| 8 | Secondary white pins + service-color border | all-gold badges | `iconMap` | B | Restyle; icon = real `iconMap` or service glyph fallback |
+| 9 | Marker availability pill (emerald dot) | none | `workStatus` online | C (dot only) | Emerald dot truthful when `online`; TIME text is design-only |
+| 10 | Marker ETA (14m/6m/ETA 8m) | none | none | D | Unsupported data — never derive from degree `distance` |
+| 11 | Marker distance (1.4 km/900m) | none | Euclidean only | D (now) / supportable (Haversine) later | Truthful only via user-location Haversine; defer + user decision |
+| 12 | Rating "★ 4.9" | none | none | D | Unsupported + business-model conflict (no rating system) |
+| 13 | Fake provider labels (Nissan Patrol…) | none | driver names exists | DEFER | Real labels would be driver names; not needed now |
+| 14 | Callout card (name/road/km) | none (→ details) | partial | DEFER | Details screen already covers; no canvas duplicate |
+| 15 | Chip shape (64 px, amber border, icon, EN+AR) | 80 px, 4 px gold border, EN only | `Service.name.{en,ar}` + nullable `logo` | B | Restyle geometry + bilingual; icon from real `logo` or glyph |
+| 16 | Chip selected state | gold-fill (distinct) | — | A | Mock has no selected state; current distinct state is correct |
+| 17 | Bottom sheet | direct nav to details | `currentDriver` | F/DEFER | Details screen supersedes it; optional preview = user decision |
+| 18 | Bottom tabs (Home/Map/Services/Profile) | none (route tree = (tabs)/map only) | — | FUTURE | Home shell not assembled; deferred |
+| 19 | Loading/error/empty + permission states | badge / errorCard / gold card | real | KEEP | No approved counterpart (mock pre-grants); states are real functionality |
+| 20 | Location-card wording/placement | gold card bottom | — | KEEP | Truthful; matches 4B prototype; optional restyle later |
+
+### Unsupported design-only elements (DO NOT implement as real data)
+Rating "★ 4.9"; ETAs ("14m/6m/4m/12m/ETA 8m"); distances ("1.4 km/900m"); demo provider names ("Abu Fahad Recovery / Nissan Patrol / Tire Fix / Jumpstart / Fuel Run / Key Unlock"); subtitle "سطحة الفهد • GMC Sierra • … away"; bell red-dot badge; decorative SVG map backdrop + area-text badges (the real MapView replaces the mock canvas); mock `tel/wa.me` numbers.
+
+### Business-model filtering
+No pricing, no ETA/completion guarantees, no rating claims, no commission-pricing language anywhere. The banner copy is allowed and truthful ("100% Free Facilitator • No Commission • Pay Driver Directly"). All fake demo values above were rejected at the design level.
+
+### Key decisions
+- **ETA — UNSUPPORTED, DO NOT ADD as live data.** Backend has no ETA field; never derive from Euclidean degree `distance`. A neutral non-quantified pill is possible later ONLY after user approval.
+- **Distance — never show backend `distance`.** Haversine from user coords + `geoLocation.coordinates` IS technically supportable for a future slice (`distance.ts` geo helpers already exist); NOT implemented here; user decision.
+- **Provider marker visual** — idle: white rounded-square pin + service-color border + `iconMap` icon; active: gold rounded-square + white ring. Emerald availability dot ONLY when `workStatus === 'online'`. No time/distance/rating. Callout deferred (details screen).
+- **Marker press / details** — KEEP direct navigation to `/vehicle/{id}` (approved + works). Bottom sheet = an optional pre-navigation preview; NOT needed because details already provides Call/WhatsApp; user decision to add later.
+- **Service chips** — KEEP behavior (selected → fetch vehicles; no selection → no request; no global store). RESTYLE to approved 64 px circle / amber-500 3 px border / icon (real `Service.logo`, nullable, or glyph fallback) + EN + AR.
+- **Location / permission card** — KEEP `EnableLocationCard` unchanged (mock pre-grants everything, so there is no approved counterpart). No duplicate location flow; the Map never calls expo-location directly.
+- **User marker** — RESTYLE to blue-600 dot + white inner + pulse ring + "You are here" tooltip; `showsUserLocation=false` retained (one representation only).
+- **Camera / controls** — KEEP uncontrolled camera + one-time auto-recenter; ADD a recenter button in the alignment slice; layers (`mapType`) and traffic (`trafficEnabled`) optional. No controlled-region lock ever.
+- **Error / empty states** — KEEP behavior (loading badge, `ApiErrorRow` + Retry, chip footer load/error handling); optional restyle to the approved white/95 pill language; behavior unchanged.
+
+### Map ↔ Vehicle Details visual continuity
+Shared tokens already: `navyDeep #0B2A4A` ≈ map `yamakDarkBlue` (details CTA/avatar and map dark blue); `wordmark #E9A319` = both golds; `success #10B981`/`successText #047857` = emerald dots/texts. Divergences to note: the map mock uses a distinct `#081C31` navy (banner text/callout/user tooltip) — a 3rd navy; recommend reusing `navyDeep` to single-source. WhatsApp/emerald CTA color differs across mocks (map `emerald-600 #059669`, details mock `#128C7E`, shipped details uses the `success` family) — standardise one emerald CTA semantic. Chip amber `#F59E0B` and user blue `#2563EB` are not tokens yet. Pin radius (rounded-xl ≈ `radius.md`; sheet rounded-t-2xl ≈ `radius.lg`) and the navy-avatar-with-gold-emblem + emerald-dot pattern already align between the Map sheet and the details `DriverAvatar`.
+
+### Theme-token audit
+- Already present: `wordmark #E9A319` (= approved gold), `navyDeep #0B2A4A` (= approved dark blue/details navy), `navyDeepDark #071B30`, `success / successText / successTint` (emerald family — added by 5C), `gold #FBBF24`, `goldTint #FDF7E6`, `goldTintBorder #FBEED4`, `primary #15406F`, slate scale (title/subtitle/fieldText/border/placeholder).
+- Added by 5C: `navyDeep`, `navyDeepDark`, `success`, `successText`, `successTint`.
+- Not yet tokens (candidates for the alignment slice): amber-500 `#F59E0B` (chip borders/secondary text), blue-600 `#2563EB` + pulse `rgba(59,130,246,0.25)` (user marker), emerald-600 `#059669` (if a single emerald CTA is standardised), and a shared shadow color (hardcoded `#0C1E34` repeats in map/vehicle-details styles).
+- No duplicates: colours live in the single `theme/colors.ts`; only shadow hexes repeat in styles.
+
+### Legacy / current functions that MUST remain (all already present, verified)
+No-selected-service valid state; selected → `GET /services/{id}/vehicles`; self-fetching chips; permission/off states; one-time user recenter; invalid-coordinate filtering; marker press → details; single user marker; `ApiErrorRow` sanitisation. **No legacy/current function is missing from the approved design** → no E rows, nothing to resurrect.
+
+### Final implementation spec (drives the NEXT map-UI alignment slice)
+- **KEEP AS-IS:** route-param `serviceId` + local state + no global store; uncontrolled camera + one-time recenter; loading badge; error card + Retry; permission card + caption; marker press → `/vehicle/[id]`; `iconMap` pins; single user marker; chip-footer load/error states; `ApiErrorRow` sanitisation.
+- **RESTYLE:** service chips → 64 px circle, amber-500 3 px border, icon (real logo or glyph) + EN + AR; vehicle pins → white rounded-square + service-color border (idle) / gold rounded-square + white ring (active); user marker → blue-600 + pulse + "You are here"; app-bar glyphs → SVG icons (cosmetic).
+- **ADD:** free-facilitator micro-banner (approved copy); recenter control button (layers/traffic optional).
+- **DO NOT ADD:** rating, ETA/times, km distances, fake marker labels, red notification badge, decorative area-text overlays, fake callout values.
+- **KEEP LEGACY FUNCTION + REDESIGN:** none outstanding (verified — all real functions already live on the current Map).
+- **DEFER:** bottom sheet (unless user decides), marker name/availability sublabels, true Haversine distance, traffic/layers toggles, SVG-in-app-bar.
+- **NEEDS USER DECISION:** bottom sheet vs direct navigation; neutral non-quantified pill instead of ETA (if any wanted); app-bar icon source; the exact navy for callout surfaces (`#081C31` vs `navyDeep`); when Haversine distance may be introduced.
+
+### Learning review status
+**COMPLETE for this review (analysis only).** Genuinely NEW concepts for the alignment slice: absolute-positioned overlay composition over MapView (banner/control column) incl. `pointerEvents` so overlays never swallow map gestures; marker visual-state animation (pulse ring, layered ring, callout anchoring) + `tracksViewChanges` implications for animated marker content; bilingual EN/AR chip content inside a 64 px circular container; `mapType` / `trafficEnabled` layer props (react-native-maps) if the controls land; semantic token single-sourcing across the Map and Vehicle Details screens. NOT new (already learned in 3B/4B): MapView, Marker, route param/local state, stale-request protection, `initialRegion`, PROVIDER_GOOGLE, the location state machine.
+
+### Implementation status
+**NOT STARTED** — this step was analysis-only; no product code changed.
+
+### Verification
+- Pre-flight: `git status --short` = CLEAN; `git log -3 --oneline` = `f87aa1a feat(vehicle): implement vehicle details screen`, `e86929e`, `66d933d` (expected commit matched).
+- Post-record: `git diff --check` clean; `git diff --stat` = `PROJECT_CONTEXT.md` only; `git status --short` = ` M PROJECT_CONTEXT.md`.
+- `npx tsc --noEmit` NOT run (no product code changed in this review). No build, no dependency install, no commit (standing rule).
+
+## Map - STEP 6B APPROVED UI ALIGNMENT (implemented, runtime-verified in Expo Go, 2026-09-29)
+
+### Verdict
+**MAP STEP 6B = CODE COMPLETE + STATICALLY CLEAN; RUNTIME VERIFICATION = PARTIALLY BLOCKED BY AN UPSTREAM ENVIRONMENT BUG** (react-native-maps in Expo Go SDK 57 / Android new architecture renders NO MapView children and ignores `mapType`/`showsTraffic` prop updates — see "Environment blocker" below). All state/UX that does not depend on native map children was runtime-verified. No commit (standing rule). Next slice must go through the learning review.
+
+### What shipped (all per the 6A final implementation spec)
+- `src/components/map/MicroBanner.tsx` (NEW): static approved pill — emerald dot + EXACT copy `Yamak: 100% Free Facilitator • No Commission • Pay Driver Directly`; `pointerEvents="none"` so it never blocks map gestures.
+- `src/components/map/MapControls.tsx` (NEW): Recenter · Layers · Traffic column (local state only, `pointerEvents="box-none"`). Recenter re-animates only, disabled without coords, NEVER re-prompts. Layers cycles standard→satellite→hybrid with `STD/SAT/HYB` label chip. Traffic toggles `showsTraffic` with emerald-on/grey-off traffic-light glyph + emerald border when ON. Pure `react-native-svg` icons (already installed).
+- `src/components/map/MapServiceChips.tsx` (RESTYLED): 64 pt circular chips, 3 px amber-500 border, real service `logo` image (🛠️ fallback), EN + AR bilingual labels; gold-fill + white ring selection.
+- `src/components/map/MapMarkers.tsx` (RESTYLED): vehicle pin → white rounded-square + wordmark border, gold pin + white ring when selected; emerald **online dot ONLY when `workStatus === 'online'`**; distance pill shows real **Haversine** km (`haversineDistanceKm`, never the backend Euclidean `distance`), omitted when the user has no coordinates, `formatDistanceKm` guarantees `<0.1 km` or `N.N km`, never `0/NaN/unknown`. User marker → blue-600 dot + white core + infinite pulse ring (`Animated.loop`, native driver, stopped on unmount) + navy "You are here" tooltip; `showsUserLocation=false` kept (single user representation).
+- `src/theme/colors.ts` (ADDED ONLY): `amber #F59E0B`, `userMarker #2563EB`, `userMarkerPulse rgba(59,130,246,0.25)`. No other tokens changed.
+- `src/utils/distance.ts` (ADDED): `formatDistanceKm` (Haversine-only formatting policy).
+- `src/app/(app)/(tabs)/map.tsx`: wires micro-banner, controls, `mapType`/`showsTraffic` local state, `vehicleDistances` (Haversine from the frozen user position), error card dropped below the banner (`top: 104`).
+- NOT ported (per spec): ETA, ratings, demo km/names/availability, red notification badge, bottom sheet, fake SVG map canvas, callout sublabels.
+
+### Runtime verification matrix (Expo Go 57.0.9 / SDK 57 / Android emulator-5554 / live backend; emulator GPS 29.238298,48.055500)
+- PASS — Micro-banner exact copy: a11y tree string `Yamak: 100% Free Facilitator • No Commission • Pay Driver Directly` (char-for-char).
+- PASS — 7 services render, EN + AR split text (Wench/سطحه … Oil Change/غيار زيت; 7th chip scrolls off-screen horizontally as designed); accessibility labels `Car Wash — غسيل سيارة` etc.
+- PASS — Chip selection gold-fill: tap Wench → gold `#FBBF24` cluster at that chip; tap Car Wash → gold moved to chip 5; works in granted AND denied location states.
+- PASS — App bar: Menu ☰ | title "Map" | bell 🔔 (content-desc "Open menu"/"Notifications"/"Map").
+- PASS — `GET /services/5/vehicles` returned 1 vehicle (service state debug: `vehicles=1 loading=false err=none`) and empty services (Flat Battery) surface NO error card.
+- PASS — Permission grant path (dialog → "While using the app" → card disappears) and deny path (dialog → "Don't allow" → card shows with exact approved copy `📍 Enable location` / `Allow location access to see road services near you.` / `Enable location` + caption `Marker/tap → vehicle details.`).
+- PASS — Controls a11y: "Recenter map", `Map layers. Current: standard|satellite`, "Traffic layer". Traffic tap: local state verified via pixel probe (grey dots → amber/green/red dots; 492 emerald px emerald border; 0 grey) AND a11y one `checkable=true checked=true` node. Layers tap: `SAT`→`HYB`→`STD` label chip + a11y current-mapType label (local state works).
+- PASS — `index.tsx` reverted to `<Redirect href="/register" />`, byte-identical to HEAD (boots the register screen).
+
+### Environment blocker (upstream, NOT a 6B code defect) — marker & basemap-layer visuals NOT verifiable in Expo Go
+react-native-maps on **Expo Go SDK 57 (RN 0.86 / New Architecture / Fabric)** on Android renders only the Google basemap: **no MapView children paint** and **`mapType`/`showsTraffic` prop updates never reach the native map**.
+- Evidence: a bare SDK default `<Marker>` (no custom child) produces zero pixels; temporarily-added `<Circle>`/`<Polyline>` also produce zero pixels (basemap tiles, Google attribution, RN overlays outside the map all render fine); basemap average brightness is identical (235.3) across standard/satellite/hybrid while the `SAT/HYB` labels prove local state flips; `tracksViewChanges` on/off changes nothing; React Compiler experiment ruled out (same result with `reactCompiler` temporarily disabled and restored).
+- Known upstream: react-native-maps marker-regression family on Android New Architecture (e.g. react-native-maps#5836 — RN 0.81 + maps 1.26.x: "Map itself renders fine — only markers fail", even default markers; #5909 — Expo 57 pairing: custom markers visible again only on **1.28.2 in a DEV BUILD**). Expo Go bundles its own native maps binary, so the node_modules JS version (1.27.2) can NOT change the native renderer in Expo Go.
+- Consequence: user marker + pulse, vehicle pins, online dots, distance pills, marker→`/vehicle/[id]` tap, and the satellite/traffic basemap themselves could NOT be visually confirmed in Expo Go. Their CODE is complete, tsc-clean, and wired exactly per the approved spec; the Haversine math was independently recomputed (user@emulatorGPS → v3 = 0.0046 km ⇒ `<0.1 km`; v6 = 49.54 km ⇒ `49.5 km`).
+- Recommended options for the user (NOT taken — outside slice rules): (a) approve a one-off `expo run:android` dev-build verification with `react-native-maps@1.28.2` (matches the #5909 "Expo 57 works" report), or (b) accept the visual items as code-verified-only and proceed.
+- NOTE: Expo Go's floating dev "Tools" button overlaps the top-of-column Recenter control on screen (~(1002,470)) — dev-only overlay, not a product defect; the emerald/grey traffic state shows the same control works when tapped below it.
+
+### tracksViewChanges approach (trade-off recorded)
+Vehicle markers: `tracksViewChanges={isActive}` (unchanged baseline policy). User marker: `tracksViewChanges` (true) because its child animates every frame; it is ONE marker, so the re-snapshot cost is acceptable; if marker rendering is ever fixed in a dev build this setting should be re-validated for battery/scroll cost.
+
+### Static verification
+- `npx tsc --noEmit` → ONLY the acknowledged baseline error `src/components/app-tabs.web.tsx(27,38)` TS2322 `"/explore"` (untouched, per rule).
+- `git diff --check` clean; `git status --short` = `M PROJECT_CONTEXT.md`, `M src/app/(app)/(tabs)/map.tsx`, `M src/components/map/MapMarkers.tsx`, `M src/components/map/MapServiceChips.tsx`, `M src/theme/colors.ts`, `M src/utils/distance.ts`, `?? src/components/map/MapControls.tsx`, `?? src/components/map/MicroBanner.tsx`. `src/app/index.tsx` NOT in the diff (byte-identical to HEAD).
+- No backend changes; no dependency installs; no `expo run:android`; no commit.
+
+### Learning review status
+**NOT COMPLETE** — the mandatory learning-review gate before the next step. Candidate items to review: upstream react-native-maps New-Architecture marker/overlay regression and the Expo-Go-bundled-native constraint; `mapType`/`showsTraffic` Fabric prop-delivery limits; the dev-build-vs-Expo-Go verification boundary; `tracksViewChanges` re-snapshot cost vs an always-animating single marker; when/how to propose the 1.28.2 + `expo run:android` verification path.
+
+## DEV BUILD PREPARATION — APPLICATION IDENTIFIERS (configured, verified & revised 2026-09-30)
+
+### Verdict
+**IDENTIFIERS UPDATE PASS** — permanent application identifiers set in `app.json` and confirmed resolved by `npx expo config --type public` exactly as configured: `android.package = com.yamak.assist`, `ios.bundleIdentifier = com.yamak.assist`. The earlier `com.yamak.app` decision is **SUPERSEDED**. No Maps config, no `react-native-maps` plugin, no Google Maps keys created, no dependency/build/prebuild/commit (standing rules). Google Maps configuration is the NEXT step, not started.
+
+### Facts (verified only)
+- **Yamak Expo is a NEW standalone app** destined for Google Play and the Apple App Store — distinct from the legacy `com.yamak.mobapp` / `com.yamak.mobstaging` / `com.yamak.mobdev` flavors. **Legacy identifiers must NOT be reused.**
+- **FINAL application identifiers** (supersede the earlier `com.yamak.app` values; minimal structural edit, all other Expo config byte-preserved):
+  - `android.package = "com.yamak.assist"`
+  - `ios.bundleIdentifier = "com.yamak.assist"`
+- Resolved config check: `npx expo config --type public` → `android.package = com.yamak.assist`, `ios.bundleIdentifier = com.yamak.assist` (exact match). Effective `sdkVersion` remains 57.0.0.
+- Plugins unchanged (expo-router, expo-splash-screen, expo-secure-store, expo-location) — **no `react-native-maps` plugin**, no `android.googleMapsApiKey`, no Google Maps configuration, **no Google Maps API keys created/configured anywhere** (verified again in the credentials audit last step: plugin deps are absent, `.env`/`.env.example` carry no map-key references).
+- `package.json` NOT touched by this task. NOTE: it carries a PRE-EXISTING uncommitted `name` edit (`yamakexponew` → `Yamak`, mtime 2026-09-30 18:23) whose origin is unknown; it is the npm package name only (not the Android applicationId) and was flagged separately in the dev-build readiness audit.
+- `react-native-maps` **1.28.2 version decision = STILL PENDING** (SDK 57 pins 1.27.2; 1.28.2 is the externally-reported Fabric marker fix, needs the external/controlled verification).
+- build / prebuild / `expo run:android` = **NOT RUN**.
+- `git diff --check` clean (exit 0); `git diff -- app.json` = only the two identifier values changed (`com.yamak.app` → `com.yamak.assist`); commit = **NOT YET**.
+
+### Next step (COMPLETED below — see the section that follows)
+Google Maps native configuration (env-driven `react-native-maps` config plugin) is now DONE — see **GOOGLE MAPS NATIVE CONFIGURATION** below. The pending decision remains the `react-native-maps` 1.28.2 dev-build verification experiment (separate slice).
+
+## GOOGLE MAPS NATIVE CONFIGURATION (configured & verified, 2026-09-30)
+
+### Verdict
+**GOOGLE MAPS CONFIG PASS** — smallest safe dynamic Expo config in place: `app.config.ts` re-emits `app.json` wholesale (spread) and adds the `react-native-maps` config plugin with both keys read **from environment variables only**. Resolved by `npx expo config --type public --json`: `android.package = com.yamak.assist`, `ios.bundleIdentifier = com.yamak.assist`, all existing app.json fields preserved, and the plugin carries **both** `androidGoogleMapsApiKey` and `iosGoogleMapsApiKey` options (values PRESENT at config time — verified masked, never printed). No key hardcoded anywhere; no build/prebuild; no commit; `react-native-maps` unchanged at 1.27.2.
+
+### Config strategy (decided — verified from installed `@expo/config`, no guessing)
+- **app.json REMAINS the static source of truth and is NOT deleted.** Fact from `@expo/config` source (`build/Config.js` `getConfig` + `build/getConfig.js`/`evalConfig.js`): when a dynamic config exists, the dynamic export **IS** the resolved config — app.json is only handed to it via the function's `config` argument; app.json is NOT auto-merged on top. That is exactly why `app.config.ts` spreads `config`: the spread is what preserves every app.json field.
+- `app.config.ts` = the smallest safe dynamic layer: `export default ({ config }: ConfigContext) => ({ ...config, plugins: [...(config.plugins ?? []), mapsPlugin] })`. Both flat and `{ expo: {...} }` returns are accepted by `reduceExpoObject`; fields omitted by the dynamic config are lost, so the full spread is load-bearing (kept).
+- No `newArchEnabled` key exists in `app.json` (SDK 57 new architecture default ON — unchanged and unimplemented by config).
+
+### Facts (verified only)
+- **Android key env var configured**: `androidGoogleMapsApiKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY`.
+- **iOS key env var configured**: `iosGoogleMapsApiKey = process.env.GOOGLE_MAPS_IOS_API_KEY`.
+- **Environment availability (names verified, values NEVER read or printed — masked PRESENT):** both `GOOGLE_MAPS_ANDROID_API_KEY` and `GOOGLE_MAPS_IOS_API_KEY` are PRESENT in the gitignored `.env` file (machine-local). They are NOT present in the shell/system environment; Expo CLI's env loader reads `.env` at config-evaluation time — proven by the resolved config showing both plugin options non-empty.
+- **No secrets committed**: keys live only in `.env` (`.gitignore` → `.env`, `.env*.local`); `.env.example` still holds only `EXPO_PUBLIC_API_URL`; no key characters appear in any tracked file, this report, or logs (masked-only policy).
+- **Identifiers (unchanged, re-verified)**: `android.package = com.yamak.assist`; `ios.bundleIdentifier = com.yamak.assist`.
+- **`react-native-maps` config plugin configured** as the 5th plugin (after expo-router, expo-splash-screen, expo-secure-store, expo-location).
+- **Plugin option → native mapping (keys verified from installed 1.27.2 source `plugin/build/{android,ios}.js`)**: `androidGoogleMapsApiKey` → `com.google.android.geo.API_KEY` meta-data on `<application>`; `iosGoogleMapsApiKey` → Info.plist `GMSApiKey` + Google pod + Swift AppDelegate init. Falsy/undefined options are guarded → safe no-op per platform (no key yet = no Maps SDK injection).
+- **Android application restriction temporarily not FINALIZED** — the API-key Android app restriction (package `com.yamak.assist` + SHA-1) cannot be completed yet because the **debug SHA-1 is unavailable until the first native build** (no `~/.android/debug.keystore` exists; auto-generated per machine on first Gradle debug build, alias `androiddebugkey`; prod = Google Play App Signing SHA-1, distinct from the upload key). Recorded from the credentials audit; keys in `.env` are currently unrestricted/unfinalized on the Android side.
+- **iOS key restriction**: per the credentials audit, the iOS key should be restricted to bundle ID `com.yamak.assist` (no SHA-1/Apple cert needed) — **if the user already configured that restriction in Google Cloud**; locally unverifiable → NEEDS EXTERNAL VERIFICATION in the Google Cloud console.
+- **Maps SDK for Android / Maps SDK for iOS enabled** — required per the credentials audit checklists; Google-Cloud-console state is NOT locally provable → NEEDS EXTERNAL VERIFICATION in the Google Cloud console (keys presumably created by the user already, hence present in `.env`).
+- `react-native-maps` **remains 1.27.2** (package.json untouched by that slice) — the 1.28.2 upgrade experiment has since been completed, see **REACT-NATIVE-MAPS 1.28.2 CONTROLLED OVERRIDE** below.
+- build / prebuild / `expo run:android` = **NOT RUN** (no `android/`/`ios/` folders generated).
+- `npx tsc --noEmit` = exactly the known baseline error (`src/components/app-tabs.web.tsx(27,38)` `/explore`); `app.config.ts` clean. `git diff --check` clean. commit = **NOT YET**.
+
+### Files touched by this slice
+- `app.config.ts` = **created** (only new file).
+- `app.json` = **untouched** this slice (still the identifiers-updated version).
+- `PROJECT_CONTEXT.md` = this section.
+- `package.json` = untouched (still carries the pre-existing uncommitted `name` edit, unrelated).
+
+## REACT-NATIVE-MAPS 1.28.2 CONTROLLED OVERRIDE (upgrade-only, 2026-09-30)
+
+### Verdict
+**REACT-NATIVE-MAPS 1.28.2 UPGRADE PASS** — `react-native-maps` upgraded **1.27.2 → 1.28.2 ONLY**, via npm directly (NOT `expo install`, which SDK 57 would pin back to 1.27.2). `package.json` + `package-lock.json` updated; `node_modules` installed 1.28.2; `npm ls` shows exactly one effective version; lock canonical (`npm ci --dry-run` exit 0). No other dependency changed. Intentional temporary override for the NEXT dev-build verification of the Fabric marker / MapView-children issue (upstream #5909 line). No prebuild/build/native folders; no commit.
+
+### Facts (verified only)
+- **Previous version = 1.27.2** — pre-flight confirmed declared/locked/installed all 1.27.2 (`package.json`, `package-lock.json`, `node_modules/react-native-maps/package.json`).
+- **New version = 1.28.2** — declared `"react-native-maps": "1.28.2"` (exact pin, project convention; npm's default caret `^1.28.2` was normalized to exact); locked (root range + `node_modules/react-native-maps` block: version, `resolved …react-native-maps-1.28.2.tgz`, new integrity hash); installed (`node_modules` `version` = 1.28.2).
+- **npm used intentionally instead of `expo install`**: command = `npm install react-native-maps@1.28.2`; `changed 1 package`; the install also sync'd the lock `name` metadata to the pre-existing "Yamak" package.json edit (cosmetic only). The 14 moderate `npm audit` advisories are the standard pre-existing SDK-toolchain set — NOT introduced by this upgrade, untouched.
+- **Expo SDK 57 recommended/pinned version REMAINS 1.27.2** — `node_modules/expo/bundledNativeModules.json` still maps `"react-native-maps": "1.27.2"` (confirmed post-upgrade).
+- **1.28.2 = INTENTIONAL TEMPORARY / NATIVE-VERIFICATION OVERRIDE** — recorded as `INTENTIONAL VERSION OVERRIDE FOR DEV-BUILD VERIFICATION`; scoped to the dev-build verification only; not part of the long-term Expo-managed version policy.
+- **`app.config.ts` unchanged and still resolves both Maps env vars** — plugin options `androidGoogleMapsApiKey` / `iosGoogleMapsApiKey` still read from `process.env.GOOGLE_MAPS_ANDROID_API_KEY` / `GOOGLE_MAPS_IOS_API_KEY`. Post-upgrade resolved config (`npx expo config --type public --json`): **Android package = com.yamak.assist**, **iOS bundleIdentifier = com.yamak.assist**, react-native-maps plugin resolved, **both key options PRESENT (masked — no key characters printed)**. 1.28.2 plugin source still uses exactly those two keys (`com.google.android.geo.API_KEY` meta-data; Info.plist `GMSApiKey` + `useGoogleMaps`), falsy-guarded same as 1.27.2.
+- **No API keys hardcoded** anywhere; `.env` remains the only key holder (gitignored).
+- **No prebuild, no build, no `expo run:android`, no `pod install`/`gradlew`, no `android/` or `ios/` folders generated** (git status shows none).
+- **TypeScript**: `npx tsc --noEmit` → only the known baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` TS2322 — **zero new errors from 1.28.2**.
+- **expo-doctor**: 20/21 checks passed; the single failing check = Expo-SDK package-version match where **react-native-maps expected 1.27.2 / found 1.28.2** — the known intentional override (recorded, NOT downgraded). The same check also lists 4 PRE-EXISTING Expo patch-drift rows (@expo/ui ~57.0.21 vs 57.0.20, expo ~57.0.26 vs 57.0.25, expo-constants ~57.0.20 vs 57.0.19, expo-router ~57.0.24 vs 57.0.23) — pre-existing, untouched per the no-SDK-change rule; no unrelated warnings fixed.
+- **package.json diff = only the maps line (+ the pre-existing `name` edit)**; **package-lock.json diff = only the maps root range + node block (+ the pre-existing `name` metadata insertions)** — dependency change limited to what npm legitimately changes for react-native-maps 1.28.2.
+- **Commit = NOT YET** (standing rule — working tree only). Everything else in the tree (6B map files, identifiers, app.config.ts, Maps keys) preserved untouched.
+- **Next approved step = Development Build verification ONLY** (this slice performs NO build): `expo run:android` (or EAS) with maps 1.28.2 to verify the Expo-Go-blocked marker / `mapType` / `showsTraffic` visuals per the 6B environment-blocker record (#5836/#5909); re-validate `tracksViewChanges` cost in the dev build. Rollback path if verification fails: `npm install react-native-maps@1.27.2`.
+
+## ANDROID DEVELOPMENT BUILD — MAP STEP 6B VERIFICATION (attempted 2026-09-30)
+
+### Verdict
+**ANDROID DEV BUILD + MAP STEP 6B = BLOCKED — EXACT REASON: the native Android debug build cannot be produced on this Windows host.** Two consecutive `npx expo run:android` runs (attempt 1: background, 18m04s; attempt 2: retry, cache-warm, 3m46s) both failed identically during the C++ (CMake/Ninja) build of the transitive native module `react-native-worklets`:
+`> Task :react-native-worklets:buildCMakeDebug[x86_64][worklets] FAILED` → `C/C++: CreateProcess failed. Command attempted:` → `C/C++: ninja: fatal: CreateProcess: Access is denied.`
+The failure is a **Windows process-spawn denial of the NDK toolchain** (`clang++.exe` from `ndk/27.1.12297006`, NDK stated by the build: `ndk 27.1.12297006`), NOT a code defect and NOT a maps/marker issue. Because the app was never built/installed/launched, NONE of the 6B map items could be verified in a dev build; every item below is **UNVERIFIED (app never launched)**. Per the standing rule, no alternative upgrade/downgrade or native-source patch was invented; the blocker is recorded for a human-environment decision (AV/EDR exclusion or build-host change — both outside this slice's mandate). **Commit = NOT YET.**
+
+### Facts (verified only)
+- **Prebuild PASSED**: `android/` native directory generated (`✔ Created native directory`, `✔ Finished prebuild`). Generated `android/` is **gitignored** (`git check-ignore android` → matched).
+- **Generated native identifiers**: `android/app/build.gradle` → `namespace 'com.yamak.assist'`, `applicationId 'com.yamak.assist'` (both confirmed from generated file).
+- **Maps key wired into native manifest**: generated `android/app/src/main/AndroidManifest.xml` contains `<meta-data android:name="com.google.android.geo.API_KEY" …/>` (value masked; sourced from the react-native-maps config plugin reading `.env` — PROVES the `.env` → plugin → manifest chain works in a real native build). `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION` also present in the generated manifest.
+- **Prebuild side-effect on package.json (documented, kept)**: prebuild rewrote scripts — `"android": "expo start --android"` → `"expo run:android"`, `"ios": "expo start --ios"` → `"expo run:ios"`. Recorded as expected prebuild behavior; not reverted (state now matches an android-native workflow).
+- **Blocker evidence (deterministic, 2/2 attempts)**: same task, same `ninja: fatal: CreateProcess: Access is denied` on both runs. The failing command spawns the NDK `clang++.exe` with the worklets PCH flags (`-Xclang -include-pch …`, `--target=x86_64-none-linux-android24`, long `-I`/`-isystem` set); command length measured = **3474 chars** (far below the 32,767 CreateProcess limit).
+- **Toolchain itself is healthy** (excludes toolchain corruption): `clang++.exe --version` runs (direct AND via ninja); a direct `clang++.exe --target=x86_64-none-linux-android24 -c` trivial compile succeeds; the long worklets-style command executed fine via `cmd.exe` (process spawned — only a missing `-isystem` include surfaced, expected).
+- **Spawn failure isolated to ninja→NDK-clang in the worklets `.cxx` dir**: plain `ninja -C …\react-native-worklets\android\.cxx\Debug\6a6a563a\x86_64 worklets` OUTSIDE Gradle reproduces `CreateProcess: Access is denied` on the same target; ninja can spawn clang with `--version` (short command) from an unrelated dir. Environment block ≈ 4664 chars, PATH = 2141 chars (no over-large-environment trigger).
+- **Host security software present (candidate root cause, unproven)**: **Reason Cybersecurity AV active** (SecurityCenter2 productState 266240) alongside **Windows Defender (real-time protection OFF, tamper-protected ON, DefenderSessionHelper running)**. Signature consistent with an AV/EDR policy denying NDK toolchain process spawn under Ninja within `node_modules\…\.cxx`. No attempt was made to disable/alter host security software (outside scope, requires user action).
+- **`signingReport` (user-requested, run)**: `cd android; .\gradlew.bat signingReport` → every module reports `Store: C:\Users\AAlYassin\.android\debug.keystore` → **`Error: Missing keystore`** → **debug SHA-1 NOT obtainable** (debug keystore is only auto-generated on first successful debug build's signing/packaging phase; the build dies in `react-native-worklets` CMake BEFORE reaching `:app:` packaging). The Android Maps key restriction (package `com.yamak.assist` + debug SHA-1) remains **PENDING / NEEDS EXTERNAL VERIFICATION** — will first need a working dev/CI build on some host.
+- **Emulator state**: emulator-5554 (Pixel_7) online throughout; GPS re-set to the documented wedged test position (29.238298, 48.0555) so the user-marker / `<0.1 km` distance checks were ready; app **never installed** (no `com.yamak.assist` package; foreground remained `host.exp.exponent` — Expo Go). Port 8081 stayed FREE (no Metro started; `expo run:android` exited before launch phase).
+- **Route hook NOT needed**: `src/app/index.tsx` is **untouched** (no `/map` redirect was made this slice — the app never launched, so no navigation was possible; verified `git diff --stat src/app/index.tsx` = empty).
+- **Integrity of the 6B slice preserved**: `react-native-maps` **still 1.28.2** (declared + locked + installed); `app.config.ts` + identifiers `com.yamak.assist` + all 6B map components/map.tsx/colors/distance untouched; no backend change; no iOS work; no API-key characters printed (masked-only policy — the key value appeared once in a raw manifest grep tool output and was NOT reproduced anywhere).
+- **Hygiene (re-run post-attempts)**: `npx tsc --noEmit` → exactly the one known baseline error (`src/components/app-tabs.web.tsx(27,38)`; forbidden to fix) — **zero new errors**. `git diff --check` → clean (CRLF warnings only; exit 0). `git status --short` → identical known dirty tree (PROJECT_CONTEXT.md, app.json, package-lock.json, package.json, map.tsx, MapMarkers.tsx, MapServiceChips.tsx, colors.ts, distance.ts modified; app.config.ts, MapControls.tsx, MicroBanner.tsx untracked) — `android/` absent because gitignored.
+- **Cleanup/state after this slice**: the two failed builds leave a warm Gradle daemon + `android/app/build` intermediates (all inside gitignored `android/`) — harmless; `react-native-worklets` `.cxx` PCH state is transient build output. **NO migrations, NO commits, NO native-source patches, NO dependency changes** were made this slice.
+- **What unblocks**: (a) user adds an AV/EDR exclusion (Reason Cybersecurity / Defender) for `%LOCALAPPDATA%\Android\Sdk\ndk\*` + the project `node_modules` path and re-runs `expo run:android`; or (b) run the same dev build on a host/CI without the blocking security policy; then re-run this full 6B verification checklist. No code change is implicated by the current evidence.
+
+## LOCATION REQUEST LOOP — ROOT CAUSE + FIX (diagnosed, fixed & runtime-verified 2026-09-30)
+
+### Verdict
+**LOCATION REQUEST LOOP FIX PASS.** A working Android Development Build (`com.yamak.assist`) is installed and running on emulator-5554 against Metro on port 8081 (`adb reverse` configured) with the live backend. **JS-only fix — no native rebuild, no dependency change, no backend change.** **Commit = NOT YET.**
+
+### Root cause (proven from runtime, not guessed)
+`requestLocation` had **no admission control**: `requestIdRef` decides only which result *wins*, so N overlapping calls still start N native `getCurrentPositionAsync` requests **and** N 10s grace timers. Any burst of invocations therefore produced a request storm whose superseded attempts all logged `stale` exits, while the surviving attempt could still lose the grace race and land on `timed-out`.
+
+`requestLocation` itself was **already** `useCallback(..., [])` (stable identity) and **both** callers already had one-shot refs (`requestedLocationRef` in `map.tsx`, `primedLocationRef` in `vehicle/[id].tsx`) — so the storm was **not** caused by unstable callback identity and **not** by an unguarded `useEffect([locationStatus, requestLocation])`. Verified by source inspection of `src/location/location-context.tsx`, `src/app/(app)/(tabs)/map.tsx`, `src/app/(app)/vehicle/[id].tsx`, `src/app/(app)/_layout.tsx` and `src/app/_layout.tsx`.
+
+The `id=1..12` burst reproduced in one earlier logcat was produced by **dev-time Fast Refresh remounts** while files were being edited under the running app (stack trace showed `reconnectPassiveEffects` → re-running passive mount effects), not by an application-code loop. Recorded so the same false signal is not re-diagnosed as a product loop.
+
+### Fix applied (smallest change)
+- **`src/location/location-context.tsx`** — split the pipeline out of `requestLocation` into `resolveLocation` (unchanged body) and made `requestLocation` a thin gate: `if (resolvingRef.current) return;` → `resolvingRef.current = true` → `try { await resolveLocation(); } finally { resolvingRef.current = false; }`. One resolution is admitted at a time **by construction**, regardless of trigger. `requestIdRef` is deliberately untouched on the early return, so the in-flight request keeps its id and can still apply its result. `requestIdRef` stale-result protection is **fully retained** (all four `requestId !== requestIdRef.current` guards untouched).
+- **`src/app/(app)/(tabs)/map.tsx`** — passes the already-declared-but-unused `busy={locationStatus === 'resolving'}` prop to `EnableLocationCard`, so a burst of presses cannot even reach the provider during a request.
+- No timers, no intervals, no `setTimeout` changes, no change to `LOCATION_GRACE_PERIOD_MS = 10_000`, no accuracy-policy change, no last-known-position policy change, no new `expo-location` calls outside `UserLocationProvider`.
+
+### Verified facts (runtime, Development Build + Metro)
+- **Initial auto-request count after fix = exactly 1.** `adb logcat` on a cold launch + `yamakexponew://map` deep link logged `request entry id=1` once, with **no `id=2…` while resolving**. Repeated across 3 clean runs.
+- **Manual retry still works, one press = one request.** With device location services off (`cmd location set-location-enabled false` → `unavailable`), one press on the card produced `request entry id=2` — exactly one.
+- **Spam burst = still one request.** 8 presses at ~220 ms intervals inside the resolving window produced exactly **one** new request (`id=3`), not 8.
+- **Stale-result guard preserved and still correct** — the early return never touches `requestIdRef`, so an in-flight request keeps its id and applies its own result.
+- **No duplicate permission prompt.** `getForegroundPermissionsAsync()` returns `{status:"granted", granted:true, canAskAgain:true, expires:"never", accuracy:"fine"}` (verified from both the pre-check and the request call); with permission already granted the OS prompt does not fire.
+- **Android permission state (dumpsys `com.yamak.assist`)**: `ACCESS_FINE_LOCATION: granted=true`, `ACCESS_COARSE_LOCATION: granted=true`, flags `USER_SET|SELECTED_LOCATION_ACCURACY`.
+- **Fresh GPS fix result**: `getCurrentPositionAsync({accuracy: Balanced})` resolved → `status = available`, coords `{"latitude":29.2382967,"longitude":48.0555}`. **Card disappeared.**
+- **User marker**: blue `#2563EB` dot + navy "You are here" tooltip rendered on-screen (verified by pixel scan of `screencap`; 1228 px of `#2563EB`).
+- **Recenter works**: panning moved the user marker fully off-screen; one press on `Recenter map` (`accessibilityState.disabled=false`, so it is enabled whenever coords exist) restored it to the exact map centre (identical 46×46 px bbox).
+- **Haversine — Car Wash**: vehicle `#3` (online) at `29.2383392,48.0555014` → `0.00 km` → renders **`<0.1 km`**. Matches the required value.
+- **Haversine — Wench**: vehicle `#6` (online) at `28.7932593,48.0327835` → `49.54 km` → renders **`49.5 km`**. Matches the required value. No backend `distance` field is read (`geoLocation.coordinates` + local `haversineDistanceKm` only).
+- **Card copy is now status-truthful** (fix carried from the previous slice): `unavailable` → "📍 Location services are off / Location access is on, but your device location services are off. Turn them on, then try again. / Try again"; `timed-out` → "📍 Location not found / … we could not get your position. Try again. / Try again".
+- **Debug logs removed.** All temporary `[LOCDBG]` / `[MAPDBG]` instrumentation was deleted; a repo-wide scan of `src/**/*.ts(x)` for `LOCDBG|MAPDBG|TEMP DIAGNOSTIC|console.log|console.warn|console.debug` returns **zero matches**. `npx tsc --noEmit` clean apart from baseline.
+
+### Emulator note (environment, NOT a code defect — recorded so it is not re-diagnosed)
+Early runs timed out because the emulator's **network provider has never produced a fix** (`dumpsys location` → `network provider: last location=null`) and `Accuracy.Balanced` maps to `PRIORITY_BALANCED_POWER_ACCURACY`, which does **not** engage the GPS provider. `adb emu geo fix` feeds the GPS provider, so it could not satisfy a Balanced request; `getLastKnownPositionAsync` did return a fix but with `age ≈ 982565 ms` (~16 min), far older than the `maxUpdateAgeMillis = 3000` Balanced imposes. Once the fused cache was warmed by repeated `adb emu geo fix` injection, **Balanced resolved normally** — confirming the `timed-out` outcome was an emulator state, not app logic. Device location services were restored afterwards (`location_mode = 3`, `Location Setting: true`).
+
+### Out-of-scope observation (pre-existing, NOT changed by this slice)
+The mount-time one-shot auto-recenter (`recenteredOnUserRef` + `animateToRegion` in `map.tsx`) did **not** move the map to the user on first load — `git show HEAD` confirms the effect is byte-identical to the committed STEP 6B code. Manual Recenter works. Left untouched deliberately; flagged for a separate decision.
+
+### Hygiene (re-run after the fix)
+- `npx tsc --noEmit` → exactly the one known baseline error `src/components/app-tabs.web.tsx(27,38)` (`"/explore"` TS2322) — **forbidden to fix, untouched**.
+- `git diff --check` → **clean, exit 0** (CRLF line-ending warnings only).
+- **NO migrations, NO commits, NO native rebuild, NO dependency change, NO backend change, NO iOS work.** `react-native-maps` stays 1.28.2; `app.config.ts` + Google Maps native config untouched.
+- **Next approved step**: user review of the 3-file diff, then commit.
