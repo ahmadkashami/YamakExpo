@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError, verifyEmailOtp } from '@/api';
-import { useAuth } from '@/auth';
+import { AUTHENTICATED_ENTRY_ROUTE, useAuth } from '@/auth';
 import {
   colors,
   fontWeight,
@@ -111,6 +111,19 @@ function getVerifyErrorMessage(error: unknown): string {
   return GENERIC_VERIFY_ERROR_MESSAGE;
 }
 
+/**
+ * Email OTP verification.
+ *
+ * Post-success behaviour is owned by Step A2: on a successful verification the
+ * screen persists the session through `authenticate()` (the single auth owner)
+ * and then `router.replace`s to `AUTHENTICATED_ENTRY_ROUTE`, the same
+ * destination A1's gate uses. The success card is kept as the transient
+ * confirmation — it is no longer a permanent dead end.
+ *
+ * Failure behaviour is unchanged: an invalid/expired code or a network error
+ * keeps the user on this screen with the existing safe error UI, and mutates no
+ * session state.
+ */
 export default function EmailOtpScreen() {
   const { email } = useLocalSearchParams<{ email?: string | string[] }>();
   const emailValue = Array.isArray(email) ? (email[0] ?? '') : (email ?? '');
@@ -125,8 +138,17 @@ export default function EmailOtpScreen() {
   const [isVerified, setIsVerified] = useState(false);
   const digitInputs = useRef<Array<TextInput | null>>([]);
   const isVerifyingRef = useRef(false);
+  /**
+   * A2 duplicate-submit guard. `isVerifyingRef` is already set synchronously on
+   * entry, so a double tap while the request is in flight is blocked; this
+   * second flag closes the only remaining window — after `finally` clears
+   * `isVerifyingRef` but before the success card has unmounted the Verify
+   * button. It makes "one submit → one authenticate → one replace" explicit.
+   */
+  const hasAuthenticatedRef = useRef(false);
   const successScale = useRef(new Animated.Value(SUCCESS_STARTED_SCALE)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
   const { authenticate } = useAuth();
 
   const code = digits.join('');
@@ -217,7 +239,7 @@ export default function EmailOtpScreen() {
   }
 
   async function handleVerifyPress() {
-    if (isVerifyingRef.current || !isCodeComplete) {
+    if (isVerifyingRef.current || hasAuthenticatedRef.current || !isCodeComplete) {
       return;
     }
 
@@ -233,12 +255,29 @@ export default function EmailOtpScreen() {
         response.data?.user !== undefined &&
         response.data.accessToken !== undefined
       ) {
+        // `authenticate()` is the ONLY writer: it persists to SecureStore and
+        // flips AuthProvider to `authenticated`. Nothing here touches storage.
         try {
           await authenticate(response.data.accessToken, response.data.user);
-          setIsVerified(true);
         } catch {
+          // Persistence failed — stay on this screen. `finally` still runs.
           setVerifyError(SESSION_SAVE_ERROR_MESSAGE);
+          return;
         }
+
+        hasAuthenticatedRef.current = true;
+
+        /**
+         * A2 — complete signup. The success card stays as the transient
+         * confirmation, but it is no longer a dead end: navigation happens only
+         * AFTER `authenticate()` has resolved, so the session is already
+         * persisted when `(app)` mounts. `replace` (not `push`) is what makes
+         * BACK skip this screen — a completed signup must not be re-enterable.
+         * A1's `(app)/_layout.tsx` gate then accepts the session; A2 does not
+         * duplicate or re-implement that gate.
+         */
+        setIsVerified(true);
+        router.replace(AUTHENTICATED_ENTRY_ROUTE);
       } else {
         setVerifyError(GENERIC_VERIFY_ERROR_MESSAGE);
       }

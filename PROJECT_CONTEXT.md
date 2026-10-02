@@ -71,9 +71,10 @@ An explicit user decision outranks any document, including this one.
 - `npx tsc --noEmit`: Run TypeScript validation.
 
 ## Current Implementation Position
-- Route tree: `src/app/_layout.tsx` (root Stack, `headerShown: false`, wraps `AuthProvider`), `index.tsx` (the startup gate), `register.tsx` (guarded), `email-otp.tsx` (unguarded — A2 owns it) + the Step-4B group `(app)/(tabs)/map.tsx` with a gated `(app)/_layout.tsx` (route `/map`). No tab bar, drawer, `+not-found`, onboarding, or authenticated Home shell yet.
+- Route tree: `src/app/_layout.tsx` (root Stack, `headerShown: false`, wraps `AuthProvider`), `index.tsx` (the startup gate), `register.tsx` (guarded), `email-otp.tsx` (ungated by design — it must be reachable while unauthenticated, and now completes signup itself) + the Step-4B group `(app)/(tabs)/map.tsx` with a gated `(app)/_layout.tsx` (route `/map`). No tab bar, drawer, `+not-found`, onboarding, or authenticated Home shell yet.
 - **Root startup gate (Step A1, done):** `src/app/index.tsx` reads `useAuth().status` and returns `<Redirect href="/map" />` when `authenticated`, `<Redirect href="/register" />` when `unauthenticated`, and the neutral `AuthGateLoading` surface while `loading`. It replaces the former unconditional `<Redirect href="/register" />`, which sent authenticated users to Register. The `/map` destination is only the entry route that already exists inside `(app)` — A1 does not decide the final post-OTP screen and does not create a Home route.
 - `(app)/_layout.tsx` is now protected: it renders `<Redirect href="/register" />` unless `status === 'authenticated'`, while still mounting the single shared `UserLocationProvider` around its `<Slot />` for authenticated users.
+- **Post-OTP completion (Step A2, done, NOT YET committed):** `src/app/email-otp.tsx` now, after `await authenticate(...)` succeeds, calls `router.replace(AUTHENTICATED_ENTRY_ROUTE)` — reusing A1's central constant rather than introducing a second destination or a second auth mechanism. The success card was kept as a transient confirmation instead of a permanent hold, and a duplicate `authenticate`/`replace` is blocked by `hasAuthenticatedRef`. It deliberately stays **ungated** so it remains reachable while unauthenticated.
 - `AuthProvider` (`src/auth/auth-context.tsx`) exposes `status: 'loading' | 'unauthenticated' | 'authenticated'`, `user`, `accessToken`, `authenticate`, `signOut`. Session is read from SecureStore keys `yamak_access_token` + `yamak_auth_user` (`src/auth/auth-storage.ts`). Restoration is fire-and-forget in a `useEffect`.
 - **Auth restore loading gate (Step A, done):** `src/app/_layout.tsx` holds the native splash with module-scope `void SplashScreen.preventAutoHideAsync()` and renders an internal `AuthReadyLayout` inside `AuthProvider`. `AuthReadyLayout` reads `useAuth().status`; while `loading` it returns `null` so no Stack renders, and a `useEffect` keyed on `status` calls `SplashScreen.hideAsync()` once status leaves `loading`, guarded by a `hasHiddenSplash` ref so later status flips cannot re-hide. `RootLayout`, `ThemeProvider`, `StatusBar` and the Stack options are otherwise unchanged.
 - `signOut()` is exported but still has no call site.
@@ -526,8 +527,9 @@ Method: TEMP `src/app/index.tsx` redirect hook (documented 4C technique — **RE
 route-param string→number coercion + NaN guard (parseVehicleId); external `Linking` safety (`tel:`/`whatsapp://`, intent failure, wa.me fallback); `encodeURIComponent` of the WhatsApp message; nullable contact handling (phoneNum/photo/name/currentDriver); image fallback strategy (iconMap → emoji placeholder, photo → initials, no hardcoded legacy URLs); API 500-vs-404 reality (frontend-only generic sanitized state); 5B element-level data-provenance (design numbers are never product data — enforced by removal); availability value mapping (`workStatus` → display); 4C demo-claims neutralization + approve-ui authority honored for the details screen; theme-token mapping decision applied (minimal justified additions on existing semantic tokens).
 
 ## Next Approved Step
-- **PHASE A / STEP A1 (session + auth gate) delivered and runtime-verified** — see the dedicated section above. The root startup gate, the `(app)` group gate and the `/register` gate are in place in both directions, `AuthProvider` is still the single session owner, and SecureStore is unchanged. `/email-otp` was deliberately left unguarded and unchanged.
-- **NEXT APPROVED STEP = A2 — Email OTP → Authenticated App.** A2 owns the missing transition: on `authenticate()` success, leave `/email-otp` for the authenticated `(app)` area. The destination it should navigate to is still undecided — `/map` is only the placeholder entry that A1 had to use because it was the one route already inside `(app)`. A3 (Home route) and A5 (tabs layout) are what will settle it; do not build Home, tabs, the Profile Hub, onboarding or the drawer inside A2.
+- **PHASE A / STEP A1 (session + auth gate) delivered, runtime-verified and committed** as `e5ec96b` — see the dedicated section above. The root startup gate, the `(app)` group gate and the `/register` gate are in place in both directions, `AuthProvider` is still the single session owner, and SecureStore is unchanged. `/email-otp` was deliberately left unguarded and unchanged by A1.
+- **PHASE A / STEP A2 (Email OTP → Authenticated App) delivered and runtime-verified, NOT YET committed** — see `PHASE A — STEP A2` at the end of this document. One file changed (`src/app/email-otp.tsx`): `authenticate()` is still the only session writer, then `router.replace(AUTHENTICATED_ENTRY_ROUTE)`. The old permanent success hold is now a transient confirmation; Back cannot re-enter Email OTP; invalid-OTP and network-failure behaviour is unchanged.
+- **NEXT APPROVED STEP = A3 — Home Route.** A3 owns the authenticated landing screen inside `(app)` and, with it, finally settles the destination question: create the Home route and repoint `AUTHENTICATED_ENTRY_ROUTE` at it (`/map` is still only the placeholder that A1/A2 had to use because it was the one entry route already inside `(app)`). Do not build tabs, the Profile Hub, onboarding or the drawer inside A3 — tabs are A5.
 - Slice 3B (location foundation + Vehicles) delivered and runtime-verified (see the architecture section above and the Verification entries). Nothing from 3B is mounted by any production screen yet (the Map consumes `useUserLocation()` via the shared provider).
 - **Step 4A (Map + ViewMap analysis) + Google Maps native config audit (both read-only) delivered** — verified facts and decisions recorded above. Step 4A's two original blockers were resolved for this slice: the `/map` route (deep-linkable, no Home shell) was explicitly approved, and `react-native-maps@1.27.2` was approved via `npx expo install` (bundled in Expo Go — no key needed there).
 - **Home slice 4B (Map tab) delivered and runtime-verified** — see the dedicated section and Verification entries above. `/map` now exists as a real screen; marker press remains local-selection-only by design (Vehicle Details still has no route). A real shared bug surfaced by live-verification (raw Laravel SQLSTATE leaked through `ApiError.message`) was fixed in `src/api/api-error.ts` (sanitizer) — see the section above.
@@ -828,8 +830,10 @@ The mount-time one-shot auto-recenter (`recenteredOnUserRef` + `animateToRegion`
 
 ## PHASE A — STEP A1: SESSION / AUTH GATE (implemented & runtime-verified, 2026-10-02)
 
-**Verdict: A1 SESSION/AUTH GATE PASS.** Routing only. Commit: **NOT YET**. Next approved step:
-**A2 — Email OTP → Authenticated App.**
+**Verdict: A1 SESSION/AUTH GATE PASS.** Routing only. Commit: `e5ec96b`
+`feat(auth): add authenticated session routing gate`. Next approved step was
+**A2 — Email OTP → Authenticated App**, which is now **DONE** — see
+`PHASE A — STEP A2` at the end of this document.
 
 ### Startup routing BEFORE this change (verified, read-only)
 1. `src/app/_layout.tsx` ran module-scope `void SplashScreen.preventAutoHideAsync()` and rendered
@@ -915,3 +919,102 @@ Screen identity was read from the on-device UI/accessibility hierarchy dump (tex
 - `src/app/email-otp.tsx` is **byte-identical** — A2's navigation was NOT added.
 - Metro (`npx expo start --dev-client --port 8081`) was left running against the emulator; it can
   be stopped at any time without a rebuild.
+
+## PHASE A — STEP A2: EMAIL OTP → AUTHENTICATED APP (implemented & runtime-verified, 2026-10-02)
+
+**Verdict: A2 EMAIL OTP → AUTHENTICATED APP PASS.** One file changed: `src/app/email-otp.tsx`
+(43 insertions, 4 deletions). Commit: **NOT YET**. Next approved step:
+**A3 — Home Route.**
+
+### Old Email OTP success behaviour (verified before changing anything)
+`src/app/email-otp.tsx` ended a successful verification **on the same screen, permanently**:
+1. `handleVerifyPress()` called `verifyEmailOtp({ email, code })`.
+2. On `success` + `data.user !== undefined` + `data.accessToken !== undefined` it did
+   `await authenticate(accessToken, user)`, then `setIsVerified(true)`.
+3. `isVerified` swapped the OTP form for a static success card (checkmark +
+   `SUCCESS_MESSAGE`) and ran a scale/opacity animation + accessibility announcement.
+4. **There was no navigation at all** — the file imported only `useLocalSearchParams`, had no
+   `useRouter`, no `Redirect`. Success was a dead end.
+Legacy Yamak differs: it set the auth-store token and the root navigator re-evaluated
+`token ? <AuthedReadyApp/> : <AuthStackNavigator/>`, so the whole tree swapped implicitly. In Expo
+Router there is no such implicit swap, so an explicit replace is required — A2 adds exactly that.
+
+### API success contract (verified live; **no backend change**)
+- TS type `VerifyEmailOtpResponse` (`src/api/auth.ts`): `data.user?`, `data.accessToken?` — unchanged.
+- Confirmed against the running backend source (read-only):
+  `AuthController::verifyEmail()` returns `response()->success(['user' => <resource>, 'accessToken' => <plainTextToken>])`.
+- Confirmed live on the LAN dev backend: `POST auth/signup` → `{ user, accessToken }`;
+  `POST auth/verify-email` with a valid code → HTTP 200,
+  `user.email = a2probe@yamak-mobile.test`, `isEmailVerified = true`, `accessToken` present;
+  a wrong code → HTTP 400 `{"success":false,"message":"invalid code","data":null,"errors":null}`.
+- Field names were **not** invented and the endpoint was **not** modified.
+
+### `authenticate()` integration (single session owner reused)
+- The screen still calls **only** `authenticate(accessToken, user)` from `useAuth()`. It does not
+  write SecureStore, does not duplicate persistence, and no new store was created.
+- Navigation happens **after** `await authenticate(...)` resolves, so `(app)` always mounts with the
+  session already persisted. Persisted state verified on-device: `key_v1-yamak_access_token` +
+  `key_v1-yamak_auth_user` (AES/keystore-encrypted values, as in A1).
+- The `authenticate` call was moved out of the shared `catch` so a navigation failure can never be
+  reported as `SESSION_SAVE_ERROR_MESSAGE`; a persistence failure still returns early and stays put.
+
+### Authenticated destination and replace-navigation
+- Reused the existing central constant, **no second destination**:
+  `import { AUTHENTICATED_ENTRY_ROUTE } from '@/auth'` → `router.replace(AUTHENTICATED_ENTRY_ROUTE)`
+  (`'/map'`, the same entry A1's gate uses). This is a **reuse of A1**, not a new mechanism.
+- `replace`, not `push` — `/email-otp` is removed from the stack, so a completed signup is not
+  re-enterable. Verified on-device: BACK after success does **not** return to Email OTP and does not
+  exit the app. The underlying `/register` entry is caught by A1's own register guard, so the
+  observable result is that Back leaves the user in the authenticated area. No loop back to Register.
+
+### Duplicate-submit / navigation safety
+- The existing guard (`isVerifyingRef` set **synchronously** on entry, plus
+  `disabled={!isCodeComplete || isVerifying}`) already blocks a double tap while in flight — verified
+  by inspection, no duplicate API call observed at runtime.
+- One added ref, `hasAuthenticatedRef`, closes the only remaining window (after `finally` clears
+  `isVerifyingRef` but before the success card has unmounted the Verify button), making
+  **one submit → one `authenticate` → one `replace`** explicit.
+- **No timeout, no delay, no navigation hack.** The screen simply leaves on its own.
+
+### Success-hold state
+- `isVerified` and the success card were **kept** — useful transient confirmation, not dead code.
+- Smallest clean change: the old permanent hold became a transient frame; no redesign, no removed UI.
+
+### Runtime verification (Android emulator-5554, `com.yamak.assist` Development Build + Metro + live dev backend)
+| Case | Result |
+|---|---|
+| 1 — valid OTP `5313` | Left `/email-otp` automatically; `/map` rendered; **no Register flash**; no duplicate navigation; session persisted |
+| 2 — Back after success | Did **not** return to Email OTP; app stayed in the authenticated area |
+| 3 — cold start after success | Neutral loading surface only, then `/map`; **Register never appeared** (sampled at +5/+7/+10/+13s) |
+| 4 — invalid OTP `0000` | Stayed on Email OTP; `That code is not correct. Please try again.`; **no session created**; no navigation |
+| 5 — network/API failure | Stayed on Email OTP; `Unable to connect to the server. Please try again.`; **no session created**; no navigation |
+
+- A1 still intact throughout: no session → Register; session → `/map`; `/email-otp` still reachable
+  while unauthenticated (its ungating was preserved).
+- `logcat` clean on the final cold start: only `Running "main"`, zero JS errors/warnings, zero Expo
+  Router navigation/mount warnings. (A "Cannot connect to Expo CLI" warning appears only while device
+  connectivity is deliberately cut for Case 5; it is dev-client noise, not app code.)
+- Method note for Case 5: `svc wifi disable` does **not** block this emulator (connectivity is `eth0`
+  `10.0.2.15`; only ICMP was blocked), and a global HTTP proxy blackhole also kills the dev-client
+  bundle load. The working method was to boot the app normally, then `cmd connectivity airplane-mode
+  enable` so the API became `Network is unreachable` while the already-loaded bundle kept working.
+  Connectivity was fully restored afterwards (`airplane_mode_on=0`, `http_proxy=:0`, API HTTP 200).
+- Emulator left as found: `SecureStore.xml` restored byte-for-byte (1355 bytes, `rw-rw----`).
+
+### Scope discipline
+- **No A3/Home work.** No `home.tsx`, no `(tabs)/_layout.tsx`, no `(app)/index.tsx`, no onboarding,
+  no drawer. Route tree is byte-identical to post-A1:
+  `_layout.tsx`, `index.tsx`, `register.tsx`, `email-otp.tsx`, `(app)/_layout.tsx`,
+  `(app)/(tabs)/map.tsx`, `(app)/vehicle/[id].tsx`.
+- **No backend change, no dependency change, no native build, no Expo prebuild, no migration, no iOS
+  work.** `react-native-maps` stays `1.28.2`; `app.config.ts` / `app.json` untouched.
+- Only `AUTHENTICATED_ENTRY_ROUTE` is used from `src/auth/app-routes.ts`; it was **not** repointed.
+
+### Hygiene for this slice
+- `npx tsc --noEmit` → **exactly the one known baseline error**,
+  `src/components/app-tabs.web.tsx(27,38)` `"/explore"` TS2322 — **forbidden to fix, untouched**.
+  No new type errors.
+- `git diff --check` → **clean, exit 0**.
+- `git diff --stat` → `src/app/email-otp.tsx | 47 ++++---`, 1 file changed, 43 insertions(+), 4 deletions(-).
+- `git status --short` → `M src/app/email-otp.tsx` (only).
+- Metro (`npx expo start --dev-client --port 8081`) left running against the emulator.
