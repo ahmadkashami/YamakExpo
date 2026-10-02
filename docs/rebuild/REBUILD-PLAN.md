@@ -240,8 +240,8 @@ Superseded decision**.
 
 | Order | Task | Note |
 |---|---|---|
-| 1 | **A1 — session gate for the `(app)` group** in `src/app/(app)/_layout.tsx` | ⬅️ **START HERE** |
-| 2 | A2 — Email OTP → authenticated shell transition | blocked on 1 |
+| 1 | **A1 — session gate for the `(app)` group** in `src/app/(app)/_layout.tsx` | ✅ **DONE** 2026-10-02 (also gated `index.tsx` + `register.tsx`) |
+| 2 | A2 — Email OTP → authenticated shell transition | ⬅️ **START HERE** — unblocked; A1 is done |
 | 3 | A3 — Home tab `(app)/(tabs)/index.tsx` (mount the four verified sections) | blocked on 1 |
 | 4 | **A4 — Profile Hub tab `(app)/(tabs)/profile.tsx` + logout** | blocked on 1; ⛔ gates D1/D2 |
 | 5 | A5 — bottom-tabs layout `(app)/(tabs)/_layout.tsx` | blocked on 3 + 4 |

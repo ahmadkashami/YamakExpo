@@ -45,11 +45,11 @@ Current tree:
 ```
 src/app/
 ├─ _layout.tsx                 ← ROOT NAVIGATOR (Stack) + AuthProvider + splash gate
-├─ index.tsx                   ← "/" — currently <Redirect href="/register" />
-├─ register.tsx                ← "/register"
-├─ email-otp.tsx               ← "/email-otp"
+├─ index.tsx                   ← "/" — A1 STARTUP GATE: loading → neutral surface; authenticated → /map; else → /register
+├─ register.tsx                ← "/register" (A1: redirects away when authenticated)
+├─ email-otp.tsx               ← "/email-otp" (unguarded on purpose — A2 owns its success transition)
 └─ (app)/                      ← route group: authenticated area (no "/(app)" in the URL)
-   ├─ _layout.tsx              ← authenticated layout; mounts UserLocationProvider + <Slot />
+   ├─ _layout.tsx              ← A1 GATE + UserLocationProvider + <Slot /> (non-authenticated → /register)
    ├─ (tabs)/map.tsx           ← "/map" — bottom-tab member (tabs group)
    └─ vehicle/[id].tsx         ← "/vehicle/:id" — dynamic segment, above the tabs
 ```

@@ -525,8 +525,11 @@ Do NOT bulk-copy the legacy project.
 > - A "screen" is a **file-based route** under `src/app/` — e.g. `src/app/login.tsx` → `/login`.
 >   There is **no** `AuthStackNavigator` and **no** screen-registry file.
 > - Navigation is `import { router } from 'expo-router'` → `router.push('/login')`,
->   `router.replace('/register')`, `router.back()`. The session gate lives in
->   `src/app/_layout.tsx` (Stack + `AuthProvider` + `AuthReadyLayout`).
+>   `router.replace('/register')`, `router.back()`. The session gate is delivered (A1):
+>   startup gate in `src/app/index.tsx`, protected group gate in
+>   `src/app/(app)/_layout.tsx`, unauthenticated-area guard in `src/app/register.tsx`;
+>   the auth loading/splash gate lives in `src/app/_layout.tsx` (Stack + `AuthProvider` +
+>   `AuthReadyLayout`).
 > - Auth state is **React Context**: `src/auth/auth-context.tsx` exposes
 >   `status`, `user`, `accessToken`, `authenticate`, `signOut`; tokens persist in
 >   **SecureStore** (`src/auth/auth-storage.ts`, keys `yamak_access_token` / `yamak_auth_user`).
@@ -547,9 +550,10 @@ Learning concepts: View/Text/TextInput, StyleSheet, keyboard handling, validatio
 SecureStore persistence, session gating.
 
 > ⏭ **NOT STARTED — deferred to Phase F (see `12-rebuild-order.md`).**
-> Reason: there is **no authenticated destination yet**. `src/app/index.tsx` redirects to
-> `/register`, and the app shell (tabs/drawer) is Phase A. Building Login before an
-> authenticated area exists would produce a screen that authenticates into nothing.
+> Reason: there is still **no real authenticated destination** — A1 sends an authenticated
+> session to `/map` only because it is the one route already inside `(app)`, and the app shell
+> (Home / Profile / tabs) is Phase A. Building Login before that exists would produce a screen
+> that authenticates into nothing.
 
 - Step 1 — Create `src/app/login.tsx` returning a basic centered `<View>` with an empty `<Text>`. Confirm it is reachable as `/login`. **RUN → VERIFY → STOP.**
 - Step 2 — Add the Yamak logo image at the top (from `assets/images/appLogo.png`). **RUN → VERIFY → STOP.**
@@ -559,7 +563,7 @@ SecureStore persistence, session gating.
 - Step 6 — Add local state (`useState`) holding email + password; wire console.log on submit. **RUN → VERIFY → STOP.**
 - Step 7 — Add validation: valid email, password min 8; show errors under inputs. **RUN → VERIFY → STOP.**
 - Step 8 — Add `login({ email, password })` to `src/api/auth.ts` → `httpClient` POST `auth/login`. **RUN → VERIFY → STOP.**
-- Step 9 — Call `authenticate(token, user)` from `useAuth()` on success; verify the session gate in `src/app/_layout.tsx` flips to the authenticated area and the token survives an app restart (SecureStore). **RUN → VERIFY → STOP.**
+- Step 9 — Call `authenticate(token, user)` from `useAuth()` on success; verify the gate flips to the authenticated area (`src/app/index.tsx` sends an authenticated session into `(app)`) and the token survives an app restart (SecureStore). **RUN → VERIFY → STOP.**
 - Step 10 — Add error UI: on failure show a safe message via `ApiError` (never a raw response body); special-case `"user not registered"`. **RUN → VERIFY → STOP.**
 - Step 11 — Add "Forgot password?" link → Forgot-Password form (SCREEN-008). **RUN → VERIFY → STOP.**
 - Step 12 — Add "Sign up" link → Register (`router.replace('/register')`); conditional social buttons (after the deferred Google Sign-In work). **RUN → VERIFY → STOP.**
@@ -653,9 +657,10 @@ Goal: complete signup. Legacy evidence: `otpEmailVerificationScreen.tsx`, `auth/
 
 ## 6. APP SHELL SCREENS
 
-> ⛔ **PHASE A — this section is the immediate next work.** The authenticated shell does not
-> exist yet: `src/app/(app)/_layout.tsx` is a bare `<UserLocationProvider><Slot /></UserLocationProvider>`
-> with no gate, no tabs and no drawer. Every "open the app after login" outcome depends on it.
+> ⛔ **PHASE A — this section is the immediate next work.** The authenticated shell still does not
+> exist: `src/app/(app)/_layout.tsx` is `<UserLocationProvider><Slot /></UserLocationProvider>`
+> with the A1 gate and **no tabs and no drawer**. Every "open the app after login" outcome depends
+> on it.
 >
 > **Naming rule:** the tab group already exists as the directory `src/app/(app)/(tabs)/`
 > (it currently holds only `map.tsx`). Home and Profile are added as sibling route files in
@@ -697,7 +702,7 @@ Concepts: fetch-on-mount, context refresh, grid of navigation buttons.
 - Step 3 — Fetch `app-users/profile` and refresh the auth context user. **RUN → VERIFY → STOP.**
 - Step 4 — Add heading row (icon + labels). **RUN → VERIFY → STOP.**
 - Step 5 — Add buttons grid: Edit Profile / My Cars / Favorites / Notifications / Contact Us / Privacy / Join Us / About / Settings / Messages / FreshChat. Each navigates to a real route or shows an explicit "not available yet" note — **never invent a route**. **RUN → VERIFY → STOP.**
-- Step 6 — Logout = `signOut()` from `useAuth()`; verify the session gate in `src/app/_layout.tsx` returns to `/register` and the `(app)` group is unreachable. **RUN → VERIFY → STOP.**
+- Step 6 — Logout = `signOut()` from `useAuth()`; verify the gate returns to `/register` (the `(app)/_layout.tsx` gate replaces into the unauthenticated area) and the `(app)` group is unreachable. **RUN → VERIFY → STOP.**
 - Step 7 — (Only if legacy parity requires it) add a drawer `<Drawer>` in `src/app/(app)/_layout.tsx` and point its `Profile` entry at this same route — resolving legacy's duplicate-entry inconsistency deliberately rather than copying it. **RUN → VERIFY → STOP.**
 
 ---
@@ -932,12 +937,13 @@ Goal: offline state + retry. Legacy evidence: `NoNetworkScreen.tsx`, NetInfo.
 
 | # | Task | Screen | Route | Depends on | Status |
 |---|---|---|---|---|---|
-| A1 | Session gate for the `(app)` group | — | `src/app/(app)/_layout.tsx` | AuthProvider exists | ⏭ NEXT |
-| A2 | Home tab (mount verified components) | SCREEN-010 | `(app)/(tabs)/index.tsx` | A1 | 🟡 components done |
-| A3 | Profile Hub tab + logout | SCREEN-016 | `(app)/(tabs)/profile.tsx` | A1 | ⏭ NEXT (after A2) |
-| A4 | Tab bar wiring (Home · Map · Profile) | — | `(app)/(tabs)/_layout.tsx` | A2, A3 | ⏭ |
-| A5 | Onboarding (post-auth, first launch) | SCREEN-009 | `(app)/onboarding.tsx` | A4 | ⏭ |
-| A6 | Drawer — **only if** legacy parity requires it | — | `(app)/_layout.tsx` | A4 | ⛔ optional, decide explicitly |
+| A1 | Session gate for the `(app)` group | — | `src/app/(app)/_layout.tsx` | AuthProvider exists | ✅ **DONE** 2026-10-02 — also gated `index.tsx` + `register.tsx` |
+| A2 | Email OTP → authenticated app transition | SCREEN-005 | `src/app/email-otp.tsx` | A1 | ⏭ **NEXT** (success still dead-ends) |
+| A3 | Home tab (mount verified components) | SCREEN-010 | `(app)/(tabs)/index.tsx` | A1 | 🟡 components done |
+| A4 | **Profile Hub tab + logout** | SCREEN-016 | `(app)/(tabs)/profile.tsx` | A1 | ⏭ ⛔ GATES `017` / `018` |
+| A5 | Tab bar wiring (Home · Map · Profile) | — | `(app)/(tabs)/_layout.tsx` | A3, A4 | ⏭ |
+| A6 | Onboarding (post-auth, first launch) | SCREEN-009 | `(app)/onboarding.tsx` | A5 | ⏭ |
+| A7 | Drawer — **only if** legacy parity requires it | — | `(app)/_layout.tsx` | A5 | ⛔ optional, decide explicitly |
 
 ### Phase B — Profile Hub Contents
 

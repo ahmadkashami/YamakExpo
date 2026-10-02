@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError, registerUser } from '@/api';
+import { AUTHENTICATED_ENTRY_ROUTE, useAuth } from '@/auth';
 import { AuthBrandHeader } from '@/components/auth/AuthBrandHeader';
 import { CountrySelectorModal } from '@/components/auth/CountrySelectorModal';
 import {
@@ -151,6 +152,7 @@ export default function RegisterScreen() {
   const [signupError, setSignupError] = useState<string | null>(null);
   const isSubmittingRef = useRef(false);
   const router = useRouter();
+  const { status } = useAuth();
   const callingCode = getCallingCode(selectedCountry.isoCode);
 
   const nameError = nameTouched ? getNameError(name) : null;
@@ -163,6 +165,19 @@ export default function RegisterScreen() {
     [phone, selectedCountry.isoCode],
   );
   const phoneError = phoneTouched ? phoneValidation.error : null;
+
+  /**
+   * Step A1 (Case 4): an authenticated session must never be left sitting on
+   * Register. Placed after every hook so hook order stays unconditional, and
+   * `<Redirect>` performs a `router.replace`, so `/register` is not left behind
+   * on the back stack.
+   *
+   * `/email-otp` is deliberately NOT guarded here: Step A2 owns its success
+   * transition, and guarding it would make this gate perform that navigation.
+   */
+  if (status === 'authenticated') {
+    return <Redirect href={AUTHENTICATED_ENTRY_ROUTE} />;
+  }
 
   function selectCountry(country: Country) {
     setSelectedCountry(country);

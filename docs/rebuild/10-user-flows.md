@@ -10,7 +10,9 @@
 >
 > **Do not copy the legacy navigation steps.** Flows below name `RootFun`, `AuthStack`,
 > `DrawerStack`, `TabNavigator` and `HomeStackNAvigator` because that is how legacy navigated. In
-> the rebuild, navigation is **Expo Router**: a session gate in `src/app/_layout.tsx`, route groups
+> the rebuild, navigation is **Expo Router**: the session gate (A1 — startup gate in
+> `src/app/index.tsx`, protected group gate in `src/app/(app)/_layout.tsx`, unauthenticated-area
+> guard in `src/app/register.tsx`), route groups
 > `(app)/(tabs)`, and `router.push/replace/back`. See `03-navigation-map.md` Part 2 for the
 > authoritative target behavior.
 >

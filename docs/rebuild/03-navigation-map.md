@@ -237,9 +237,11 @@ Drawer behavior may be layered on the authenticated shell **where legacy parity 
 - **Dynamic segments `[id].tsx`** are route parameters; read them with `useLocalSearchParams`.
 - **Navigation** uses `router.push/replace/back` and `<Redirect>` / `<Link>` from `expo-router`.
   There is **no** `navigation.navigate('ScreenName')` and **no** `ScreenNames.ts`.
-- **The session gate** belongs in the root layout (`src/app/_layout.tsx`) and in the authenticated
-  group layout (`src/app/(app)/_layout.tsx`) — currently the auth loading gate exists and the
-  authenticated redirect does not. Both are part of Phase A.
+- **The session gate** is **implemented (A1)** as three scoped guards, not one root-layout gate:
+  the startup gate in `src/app/index.tsx`, the protected group gate in
+  `src/app/(app)/_layout.tsx`, and an authenticated guard in `src/app/register.tsx`. The
+  `src/app/_layout.tsx` auth **loading** gate (splash hold) is unchanged. `/email-otp` is
+  deliberately **ungated** so that A1 does not perform A2's success navigation.
 - **Deep links** must keep working; `/map` and `/vehicle/{id}` are deep-linkable today.
 
 ## 9. Current-vs-target navigation status

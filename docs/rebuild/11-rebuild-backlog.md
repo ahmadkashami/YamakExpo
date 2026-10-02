@@ -66,9 +66,9 @@
 
 | ID | Phase | Task | Priority | Depends | Status |
 |---|---|---|---|---|---|
-| SHELL-001 | A1 | **Session gate for the `(app)` group** (`src/app/(app)/_layout.tsx`) | P0 | FOUND-007 | ⏳ **TODO — ⬅️ NEXT TASK** |
-| SHELL-002 | A2 | Natural **Email OTP → authenticated shell** transition | P0 | SHELL-001 | ⏳ **TODO** (UI exists; success is currently a dead end) |
-| SHELL-003 | — | Authenticated Expo Router layout (hosts shared providers) | P0 | SHELL-001 | 🟡 **PARTIAL** — a `(app)` group layout exists as a placeholder host (`UserLocationProvider` + `Slot`); no gate yet |
+| SHELL-001 | A1 | **Session gate for the `(app)` group** (`src/app/(app)/_layout.tsx`) | P0 | FOUND-007 | ✅ **DONE** — delivered & runtime-verified 2026-10-02 (also gated `index.tsx` + `register.tsx`) |
+| SHELL-002 | A2 | Natural **Email OTP → authenticated shell** transition | P0 | SHELL-001 | ⏳ **TODO — ⬅️ NEXT TASK** (UI exists; success is currently a dead end) |
+| SHELL-003 | — | Authenticated Expo Router layout (hosts shared providers) | P0 | SHELL-001 | 🟡 **PARTIAL** — `(app)/_layout.tsx` hosts `UserLocationProvider` + `Slot` and now carries the A1 gate; no tabs/drawer navigator yet |
 | SHELL-005 | A3 | **Home tab route** `(app)/(tabs)/index.tsx` — mount the four verified sections | P0 | SHELL-001 | ⏳ **TODO** (sections built; nothing mounts them) |
 | SHELL-007 | A4 | **Profile Hub tab** `(app)/(tabs)/profile.tsx` + **logout** | P0 | SHELL-001 | ⏳ **TODO — ⛔ GATES `017` / `018`** |
 | SHELL-009 | A5 | Bottom-tabs layout `(app)/(tabs)/_layout.tsx` | P0 | SHELL-005, SHELL-007 | ⏳ **TODO** |

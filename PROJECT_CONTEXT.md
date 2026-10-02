@@ -71,8 +71,9 @@ An explicit user decision outranks any document, including this one.
 - `npx tsc --noEmit`: Run TypeScript validation.
 
 ## Current Implementation Position
-- Route tree: `src/app/_layout.tsx` (root Stack, `headerShown: false`, wraps `AuthProvider`), `index.tsx`, `register.tsx`, `email-otp.tsx` + the Step-4B group `(app)/(tabs)/map.tsx` with a bare `(app)/_layout.tsx` (route `/map`). No tab bar, drawer, `+not-found`, onboarding, or authenticated Home shell yet.
-- `src/app/index.tsx` unconditionally renders `<Redirect href="/register" />` — no auth check, no loading check. This is still true for authenticated users and is intentional until an approved authenticated destination exists.
+- Route tree: `src/app/_layout.tsx` (root Stack, `headerShown: false`, wraps `AuthProvider`), `index.tsx` (the startup gate), `register.tsx` (guarded), `email-otp.tsx` (unguarded — A2 owns it) + the Step-4B group `(app)/(tabs)/map.tsx` with a gated `(app)/_layout.tsx` (route `/map`). No tab bar, drawer, `+not-found`, onboarding, or authenticated Home shell yet.
+- **Root startup gate (Step A1, done):** `src/app/index.tsx` reads `useAuth().status` and returns `<Redirect href="/map" />` when `authenticated`, `<Redirect href="/register" />` when `unauthenticated`, and the neutral `AuthGateLoading` surface while `loading`. It replaces the former unconditional `<Redirect href="/register" />`, which sent authenticated users to Register. The `/map` destination is only the entry route that already exists inside `(app)` — A1 does not decide the final post-OTP screen and does not create a Home route.
+- `(app)/_layout.tsx` is now protected: it renders `<Redirect href="/register" />` unless `status === 'authenticated'`, while still mounting the single shared `UserLocationProvider` around its `<Slot />` for authenticated users.
 - `AuthProvider` (`src/auth/auth-context.tsx`) exposes `status: 'loading' | 'unauthenticated' | 'authenticated'`, `user`, `accessToken`, `authenticate`, `signOut`. Session is read from SecureStore keys `yamak_access_token` + `yamak_auth_user` (`src/auth/auth-storage.ts`). Restoration is fire-and-forget in a `useEffect`.
 - **Auth restore loading gate (Step A, done):** `src/app/_layout.tsx` holds the native splash with module-scope `void SplashScreen.preventAutoHideAsync()` and renders an internal `AuthReadyLayout` inside `AuthProvider`. `AuthReadyLayout` reads `useAuth().status`; while `loading` it returns `null` so no Stack renders, and a `useEffect` keyed on `status` calls `SplashScreen.hideAsync()` once status leaves `loading`, guarded by a `hasHiddenSplash` ref so later status flips cannot re-hide. `RootLayout`, `ThemeProvider`, `StatusBar` and the Stack options are otherwise unchanged.
 - `signOut()` is exported but still has no call site.
@@ -82,7 +83,7 @@ An explicit user decision outranks any document, including this one.
 - **Home slice 4B (done): the Map tab (`/map`).** `src/app/(app)/_layout.tsx` mounts the SINGLE shared `UserLocationProvider` around a `<Slot />`; `src/app/(app)/(tabs)/map.tsx` is the Map screen (route param `serviceId` canonical → local state; no global selected-service store). New files: `src/components/map/{MapServiceChips,EnableLocationCard,MapMarkers}.tsx`, `src/hooks/use-map-vehicles.ts`, `src/utils/vehicle-marker.ts`; `src/api/vehicles.ts` gained `getVehiclesByService` + `VehiclesByServiceResponse` (bare-array `data`); `src/theme/colors.ts` gained `primary`/`goldTint`/`goldTintBorder`; `react-native-maps@1.27.2` installed via `npx expo install` (Expo Go SDK 57 bundles it). See the dedicated section below.
 - **Home slice 4C (done): the ViewMap CTA.** `src/components/home/ViewMap.tsx` — the approved "Live Radar Map Preview" card from `docs/rebuild/approve-ui/home/code.html` (the approved-UI reference the user dropped mid-slice; governs over `new-ui`), static promotional copy with the prototype's demo statistics neutralized (decorative examples, not product data), whose navy "Explore Map" button is the ONLY interactive element and navigates to `/map` with NO serviceId. No API, location, global state, MapView, skeleton, or fake loading; no new dependency (`Animated` + `react-native-svg` already present); gradient approximated flat `#EFF6FF`. Not mounted by any production screen (belongs to the future authenticated Home shell). See the dedicated section below.
 - `http-client.ts` attaches the Bearer token by reading SecureStore directly via `getAccessToken()` (not from context).
-- `email-otp.tsx` calls `authenticate(...)` on success and renders a success state but never navigates — currently a dead end.
+- `email-otp.tsx` calls `authenticate(...)` on success and renders a success state but never navigates — still a dead end. **Step A2 owns that transition**; A1 deliberately did not guard `/email-otp`, because an authenticated guard there would have made the gate perform A2's navigation as soon as `authenticate()` resolved.
 - Unused `create-expo-app` template leftovers remain (`components/app-tabs.tsx`, `animated-icon.tsx`, `web-badge.tsx`, `external-link.tsx`, `hint-row.tsx`, `ui/collapsible.tsx`, `themed-text.tsx`, `themed-view.tsx`, `hooks/use-color-scheme*.ts`, `constants/theme.ts`).
 
 ## Verified Legacy Startup Facts (reference: yamak-mobile)
@@ -525,7 +526,9 @@ Method: TEMP `src/app/index.tsx` redirect hook (documented 4C technique — **RE
 route-param string→number coercion + NaN guard (parseVehicleId); external `Linking` safety (`tel:`/`whatsapp://`, intent failure, wa.me fallback); `encodeURIComponent` of the WhatsApp message; nullable contact handling (phoneNum/photo/name/currentDriver); image fallback strategy (iconMap → emoji placeholder, photo → initials, no hardcoded legacy URLs); API 500-vs-404 reality (frontend-only generic sanitized state); 5B element-level data-provenance (design numbers are never product data — enforced by removal); availability value mapping (`workStatus` → display); 4C demo-claims neutralization + approve-ui authority honored for the details screen; theme-token mapping decision applied (minimal justified additions on existing semantic tokens).
 
 ## Next Approved Step
-- **Slice 3B (location foundation + Vehicles) delivered and runtime-verified** (see the architecture section above and the Verification entries). Nothing from 3B is mounted by any production screen yet (the Map consumes `useUserLocation()` via the shared provider).
+- **PHASE A / STEP A1 (session + auth gate) delivered and runtime-verified** — see the dedicated section above. The root startup gate, the `(app)` group gate and the `/register` gate are in place in both directions, `AuthProvider` is still the single session owner, and SecureStore is unchanged. `/email-otp` was deliberately left unguarded and unchanged.
+- **NEXT APPROVED STEP = A2 — Email OTP → Authenticated App.** A2 owns the missing transition: on `authenticate()` success, leave `/email-otp` for the authenticated `(app)` area. The destination it should navigate to is still undecided — `/map` is only the placeholder entry that A1 had to use because it was the one route already inside `(app)`. A3 (Home route) and A5 (tabs layout) are what will settle it; do not build Home, tabs, the Profile Hub, onboarding or the drawer inside A2.
+- Slice 3B (location foundation + Vehicles) delivered and runtime-verified (see the architecture section above and the Verification entries). Nothing from 3B is mounted by any production screen yet (the Map consumes `useUserLocation()` via the shared provider).
 - **Step 4A (Map + ViewMap analysis) + Google Maps native config audit (both read-only) delivered** — verified facts and decisions recorded above. Step 4A's two original blockers were resolved for this slice: the `/map` route (deep-linkable, no Home shell) was explicitly approved, and `react-native-maps@1.27.2` was approved via `npx expo install` (bundled in Expo Go — no key needed there).
 - **Home slice 4B (Map tab) delivered and runtime-verified** — see the dedicated section and Verification entries above. `/map` now exists as a real screen; marker press remains local-selection-only by design (Vehicle Details still has no route). A real shared bug surfaced by live-verification (raw Laravel SQLSTATE leaked through `ApiError.message`) was fixed in `src/api/api-error.ts` (sanitizer) — see the section above.
 - **Home slice 4C (ViewMap CTA) reconciled to the latest approved rules and delivered** — the radar card per the user-dropped `approve-ui/home` reference; prototype demo statistics neutralized (decorative examples, not product data); `approve-ui/map` recorded as the Map visual authority + consistency reference; final-Home business-information requirements recorded (NOT implemented). `ViewMap.tsx` is the only product file; its navy "Explore Map" button targets the real `/map` route with no serviceId, verified live before and after neutralization.
@@ -822,3 +825,93 @@ The mount-time one-shot auto-recenter (`recenteredOnUserRef` + `animateToRegion`
 - `git diff --check` → **clean, exit 0** (CRLF line-ending warnings only).
 - **NO migrations, NO commits, NO native rebuild, NO dependency change, NO backend change, NO iOS work.** `react-native-maps` stays 1.28.2; `app.config.ts` + Google Maps native config untouched.
 - **Next approved step**: user review of the 3-file diff, then commit.
+
+## PHASE A — STEP A1: SESSION / AUTH GATE (implemented & runtime-verified, 2026-10-02)
+
+**Verdict: A1 SESSION/AUTH GATE PASS.** Routing only. Commit: **NOT YET**. Next approved step:
+**A2 — Email OTP → Authenticated App.**
+
+### Startup routing BEFORE this change (verified, read-only)
+1. `src/app/_layout.tsx` ran module-scope `void SplashScreen.preventAutoHideAsync()` and rendered
+   `AuthProvider` → `AuthReadyLayout`, which returned `null` while `loading` and called
+   `SplashScreen.hideAsync()` once status left `loading`.
+2. Route `/` resolved to `src/app/index.tsx`, which **unconditionally** rendered
+   `<Redirect href="/register" />` — it never read `useAuth()`.
+3. Consequence (both verified against the pre-change code): a user with a **valid persisted
+   session** cold-launched and was sent to **Register**, not into `(app)`; and `(app)/_layout.tsx`
+   had **no gate**, so an **unauthenticated** user could open `/map` or `/vehicle/[id]` directly.
+
+### Where the gate now lives (three scoped guards — no route was moved or created)
+- **Startup gate** — `src/app/index.tsx`. `loading` → neutral surface; `authenticated` →
+  `AUTHENTICATED_ENTRY_ROUTE` (`/map`); else → `UNAUTHENTICATED_ENTRY_ROUTE` (`/register`).
+- **Protected group** — `src/app/(app)/_layout.tsx`. `loading` → neutral surface;
+  not `authenticated` → `<Redirect href="/register" />`; `authenticated` → the **unchanged**
+  `<UserLocationProvider><Slot /></UserLocationProvider>`.
+- **Unauthenticated area** — `src/app/register.tsx`. `authenticated` →
+  `<Redirect href="/map" />`, placed after every hook so hook order stays unconditional.
+
+### Auth ownership (unchanged by A1)
+- `AuthProvider` (`src/auth/auth-context.tsx`) remains the **single auth/session owner**. No second
+  auth store, **no Zustand**, and no duplicate SecureStore read inside any route — the gate only
+  consumes `useAuth()`.
+- SecureStore keys, token format and `auth-storage.ts` were **not touched**. Confirmed on-device:
+  the emulator's `SecureStore.xml` still holds exactly `key_v1-yamak_access_token` and
+  `key_v1-yamak_auth_user`.
+- **No API call was added to validate a restored token.** A1 routes on the existing persisted
+  session only; there is still no boot-time token validation (same as legacy).
+
+### Destination tables
+- New `src/auth/app-routes.ts` — `UNAUTHENTICATED_ENTRY_ROUTE = '/register'` (unchanged default)
+  and `AUTHENTICATED_ENTRY_ROUTE = '/map'`. Kept **outside `src/app/`** on purpose, because Expo
+  Router treats every file in the app directory as a potential route.
+- `/map` is chosen **only** because it is the one entry route that already exists inside `(app)`.
+  When A3 adds Home and A5 adds the tab layout, this constant is repointed; no other A1 file
+  changes. A1 added **no Home route, no tabs, no onboarding, no drawer**.
+
+### Redirect-loop control (why these three placements and not one root-level gate)
+A single root-layout gate using `useSegments()` was **rejected on purpose**: it would have had to
+treat every non-`(app)` route as blocked once authenticated, which would have made `/email-otp`
+navigate away the instant `authenticate()` resolved — i.e. it would have silently implemented A2.
+The three guards above are scoped so that `/email-otp` is untouched. `<Redirect>` performs a
+`router.replace`, so a blocked protected route is never left on the back stack for a back gesture
+to re-enter; verified on-device (BACK after the `/map` block did not return to `/map`).
+
+### Runtime verification (Android emulator-5554, `com.yamak.assist` Development Build + Metro, live backend)
+Screen identity was read from the on-device UI/accessibility hierarchy dump (text nodes), not guessed.
+
+| Case | Action | Observed | Result |
+|---|---|---|---|
+| 1 | No stored session, cold launch | blank splash → **Register** | PASS |
+| 2 | Valid stored session, cold launch (force-stop + relaunch) | **Map** inside `(app)`; Register never mounted | PASS |
+| 3 | Unauthenticated deep link `/map` | redirected to **Register** | PASS |
+| 3 | Unauthenticated deep link `/vehicle/1` | redirected to **Register** | PASS |
+| 4 | Authenticated deep link `/register` | redirected to **Map**; Register never shown | PASS |
+| 5 | Rapid UI sampling across a cold launch | blank(splash) → Register only; no wrong-screen flash | PASS |
+| I | BACK after the `/map` block | never returned to `/map` (no loop) | PASS |
+
+- The emulator held a valid session, so Cases 2, 4 and I ran against it directly. To exercise
+  Cases 1, 3 and 5 the emulator's `shared_prefs/SecureStore.xml` was **backed up and removed**, the
+  dev-client server URL in `settings_preference.xml` was left intact, and the file was then
+  **restored byte-for-byte** (1355 bytes, `rw-rw----`) and re-verified: the app again cold-launched
+  straight into `(app)`. The emulator is back in its original authenticated state.
+- `logcat` across the whole session: the **only** `ReactNativeJS` line was the normal
+  `Running "main" with {...}` startup line — **zero JS errors, zero JS warnings**, and zero
+  `Attempted to navigate before mounting the Root Layout` / unmatched-route warnings.
+- No destination UI beyond what already existed in `(app)` was implemented. The Map's
+  "Enable location" permission card appearing after a fresh cold start is pre-existing Map
+  behaviour (fresh process ⇒ no granted permission yet), not gate behaviour.
+
+### Hygiene for this slice
+- `npx tsc --noEmit` → **exactly the one known baseline error**,
+  `src/components/app-tabs.web.tsx(27,38)` `"/explore"` TS2322 — **forbidden to fix, untouched**.
+  No new type errors were introduced.
+- `git diff --check` → **clean, exit 0** (CRLF line-ending warnings only, pre-existing repo mix).
+- `git status --short` at delivery → `M src/app/(app)/_layout.tsx`, `M src/app/index.tsx`,
+  `M src/app/register.tsx`, `M src/auth/index.ts`, `?? src/auth/app-routes.ts`,
+  `?? src/components/auth/AuthGateLoading.tsx`.
+- **NO migrations, NO commits, NO native rebuild, NO Expo prebuild, NO dependency change, NO
+  backend change, NO iOS work.** `react-native-maps` stays `1.28.2`; `app.config.ts`, `app.json`
+  and the Google Maps native config are untouched.
+- `src/app/email-otp.tsx` is **byte-identical** — A2's navigation was NOT added.
+- Metro (`npx expo start --dev-client --port 8081`) was left running against the emulator; it can
+  be stopped at any time without a rebuild.

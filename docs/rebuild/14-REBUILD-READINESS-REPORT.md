@@ -59,8 +59,8 @@ in a normal authenticated session. Everything else can proceed **after** Phase A
 Dependency chain:
 
 ```
-A1  session gate for the (app) group          ← NEXT TASK
-   → A2  Email OTP → authenticated shell
+A1  session gate for the (app) group          ✅ DONE 2026-10-02
+   → A2  Email OTP → authenticated shell       ← NEXT TASK
    → A3  Home tab          (sections exist; no route mounts them)
    → A4  Profile Hub tab + logout             ← ⛔ GATES A-below
        → A5  bottom-tabs layout
@@ -112,7 +112,7 @@ A1  session gate for the (app) group          ← NEXT TASK
 **Documentation: READY.**
 **Implementation: NOT ready to continue past the authenticated app shell.**
 
-- Startable NOW: **Phase A** — task A1, the session gate for the `(app)` group.
+- Startable NOW: **Phase A / A2** — the Email OTP → authenticated shell transition (A1 is done).
 - Then: the rest of Phase A (Home tab → **Profile Hub + logout** → tabs layout → onboarding) →
   B (Profile Hub contents) → C (All Vehicles; `POST /requests` blocked) → D (Edit Profile, My Cars)
   → E (secondary) → F (deferred auth/integrations) → G (legacy parity audit).
@@ -127,7 +127,12 @@ A1  session gate for the (app) group          ← NEXT TASK
 > unauthenticated area or the authenticated shell based on `useAuth().status`, keeping the existing
 > splash gate intact and leaving `UserLocationProvider` mounted exactly once.
 >
-> Then **A2** (Email OTP → authenticated shell transition), **A3** (Home tab route) and **A4**
-> (Profile Hub tab + logout).
+> **✅ COMPLETE — delivered and runtime-verified 2026-10-02.** A1 also gated the startup route
+> (`src/app/index.tsx`) and the unauthenticated Register screen; `/email-otp` was deliberately left
+> ungated. See the `PHASE A — STEP A1` section in `PROJECT_CONTEXT.md`.
+>
+> **NEXT = A2** (Email OTP → authenticated shell transition). A2 owns the destination: A1 sent
+> authenticated sessions to `/map` only because it was the one entry route already inside `(app)`.
+> Then **A3** (Home tab route) and **A4** (Profile Hub tab + logout).
 >
 > Per the STANDING rules: one small change → RUN → VERIFY → STOP → wait for explicit confirmation.
