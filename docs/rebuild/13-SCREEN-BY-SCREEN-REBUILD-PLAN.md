@@ -1,6 +1,29 @@
 # YAMAK MOBILE — 13. SCREEN-BY-SCREEN REBUILD PLAN
 
-> **Current platform context:** `YamakExpoNew` is the active rebuild target, using Expo + React Native + Expo Router. The React Native CLI sections below are historical context and are superseded by this note. `YamakMobileNew` is superseded and is not the active target.
+> # ⚠️ READ THIS FIRST — CURRENT ARCHITECTURE
+>
+> **ACTIVE PROJECT:** `YamakExpoNew` — **Expo + React Native + TypeScript + Expo Router**.
+>
+> **SUPERSEDED PROJECT:** `YamakMobileNew` (React Native CLI). Retained for rollback/migration
+> review only. **Not** the active target.
+>
+> **LEGACY REFERENCE:** `yamak-mobile` — functional/business reference **only**. It is the source of
+> truth for functionality, screens, flows, API contracts, validation, assets/content, and required
+> native capabilities. It is **NOT** the source of truth for package versions, navigation
+> implementation, state-management library, old RN architecture, deprecated native configuration, or
+> obsolete workarounds.
+>
+> **TECHNICAL AUTHORITY:** current Expo / React Native official documentation.
+>
+> **Any statement in this document that contradicts the architecture above is HISTORICAL /
+> SUPERSEDED and must not be implemented.** Those statements are confined to the sections explicitly
+> labelled `HISTORICAL CLI PLAN` / `Legacy implementation` / `Superseded decision`.
+>
+> **Source-of-truth hierarchy:** see `REBUILD-PLAN.md` §0. **Current execution order:**
+> `REBUILD-PLAN.md` §5 (phases A–G). **Verified current state:** `PROJECT_CONTEXT.md`.
+>
+> **Master rule for this plan: the goal is FUNCTIONAL PARITY with legacy Yamak — not identical
+> architecture.**
 >
 > THE MASTER REBUILD DOCUMENT.
 > Strategy: **ONE SCREEN AT A TIME** and **ONE SMALL STEP AT A TIME**.
@@ -8,8 +31,9 @@
 > At every STOP: save, run the app, confirm the step works, then optionally `git commit`.
 > NEVER auto-continue beyond a STOP. Wait for explicit confirmation.
 >
-> The existing backend (base `https://yamak-kw.com/api/mobile/v1/`) is READY. Do NOT redesign it.
-> We build OUR OWN app front-end against those contracts, learning while we build.
+> The existing Yamak backend is READY. Do NOT redesign it. Its base URL is supplied at runtime
+> via the `EXPO_PUBLIC_API_URL` env var (`src/api/config.ts`) — e.g. a LAN dev host during
+> development. We build OUR OWN app front-end against those contracts, learning while we build.
 >
 > JUST-IN-TIME ARCHITECTURE: folders, navigation, services, stores, and storage are created
 > ONLY when the screen you are working on needs them. No upfront architecture dump.
@@ -141,9 +165,9 @@ LEGACY YAMAK
     ↓
 Understand existing requirement
     ↓
-Check current React Native approach
+Check current Expo / React Native approach
     ↓
-Implement cleanly in NEW YamakMobile
+Implement cleanly in NEW YamakExpoNew (Expo Router route file)
     ↓
 Run
     ↓
@@ -154,17 +178,19 @@ Verify
 STOP
 ```
 
-### 📖 OFFICIAL REACT NATIVE DOCUMENTATION RULE
+### 📖 OFFICIAL EXPO / REACT NATIVE DOCUMENTATION RULE
 
-For the NEW project's technical foundation, React Native's CURRENT official documentation is the
-primary authority — especially for: creating the project, environment setup, Android requirements,
-React Native CLI, project structure, native configuration, and current supported practices.
-Use `https://reactnative.dev/docs/environment-setup` and the relevant current official docs.
+For the NEW project's technical foundation, the **current official Expo documentation** is the
+primary authority — especially for: Expo SDK configuration, Expo Router (layouts, route groups,
+dynamic segments, typed routes), config plugins, `app.json` / `app.config.ts`, `.env` handling,
+Continuous Native Generation, and current supported practices.
+Use `https://docs.expo.dev/` (version-matched to the installed SDK) plus the React Native docs where
+relevant.
 
 Therefore:
 - **LEGACY PROJECT** = source of truth for Yamak **functionality and requirements**.
-- **CURRENT OFFICIAL REACT NATIVE DOCUMENTATION** = source of truth for how the new React Native
-  application is **technically created and configured**.
+- **CURRENT OFFICIAL EXPO DOCUMENTATION** = source of truth for how the new application is
+  **technically created and configured**.
 
 ### 🔬 NO LARGE CHANGES
 
@@ -177,7 +203,7 @@ Keep every implementation step intentionally small.
 
 ### ✅ PROJECT MUST ALWAYS REMAIN RUNNABLE
 
-After every completed step, the new YamakMobile project should be in a runnable state. Avoid
+After every completed step, the new `YamakExpoNew` project should be in a runnable state. Avoid
 leaving half-completed architecture or broken imports meant to be fixed in a later step.
 
 A step is NOT COMPLETE until:
@@ -224,64 +250,85 @@ NEXT STEP
 
 ## 1. How to use this plan
 
-1. Start with **PHASE 0** (see below) — the clean React Native application MUST exist and run
-   BEFORE any Yamak screen work (`YAMAK-SCREEN-001`, `YAMAK-SCREEN-002`, or any other).
-2. Read each task's "Goal + evidence". The legacy Yamak project is ONLY a functional/design/API
+1. **The Expo foundation already exists.** `YamakExpoNew` (Expo + Expo Router) is running with
+   Register, Email OTP, SecureStore session persistence, Home data sections, Map, and Vehicle Details
+   implemented. The historical CLI bootstrap steps (PHASE 0 / `YAMAK-SETUP-001…005`) are **done or
+   superseded** — see `REBUILD-PLAN.md` §8.
+2. **Start from the CURRENT execution order:** `REBUILD-PLAN.md` §5 (phases A–G) /
+   `12-rebuild-order.md` §2. The next task is the **authenticated app shell**, not a CLI setup task.
+3. Read each task's "Goal + evidence". The legacy Yamak project is ONLY a functional/design/API
    reference — never a template for the new project structure.
-3. Follow the **GLOBAL MANDATORY RULES** (Section 0) for every step:
+4. Follow the **GLOBAL MANDATORY RULES** (Section 0) for every step:
    **REFERENCE LEGACY → UNDERSTAND → EXPLAIN → IMPLEMENT ONE SMALL CHANGE → RUN → VERIFY → STOP**
    → wait for my explicit confirmation → then the next step.
-4. Never auto-continue past a STOP. One small step per execution unless I ask for more.
+5. Never auto-continue past a STOP. One small step per execution unless I ask for more.
 
-## 2. First task directive (user rule)
+## 2. First task directive (user rule) — CURRENT
 
-- The rebuild starts with **YAMAK-SETUP-001 → 005 (PHASE 0)**. NO screen (Login, Register,
-  Forgot Password, Onboarding, or any other) is started before Phase 0 is complete and understood.
-- Login and About Yamak App are **documented in this plan but NOT to be implemented in this pass**.
-- We are rebuilding Yamak with **React Native WITHOUT a framework**, using the CURRENT official
-  React Native documentation (`https://reactnative.dev/docs/environment-setup`) as the authority.
+- ⛔ **SUPERSEDED:** "the rebuild starts with YAMAK-SETUP-001 → 005 (PHASE 0)". The Expo foundation
+  is complete; Phase 0 is history.
+- ✅ **CURRENT:** the rebuild continues with **Phase A — Authenticated App Shell Completion**,
+  then Phase B (Profile Hub), C, D, E, F, G. See `REBUILD-PLAN.md` §5 and §6 (next 10 tasks).
+- Login and About Yamak App remain **documented but NOT to be implemented in this pass**
+  (Login is also formally deferred to Phase F).
+- ✅ **The rebuild runs on Expo**, using the CURRENT official Expo documentation
+  (`https://docs.expo.dev/`) as the technical authority.
 
-## 3. Global conventions (applied to every screen)
+## 3. Global conventions (applied to every screen) — CURRENT
 
-- Colors: ONLY the **approved Yamak New design tokens** (Section 4 — PHASE 1). Legacy `AppColorsTheme2`
-  (`primary #002F6C`, `secondary #F7B123`, `offWhite #f4f1f6`, `gray #ABB0B8`) is a REFERENCE ONLY and was
-  rejected as the authority (gold-on-white ≈1.9:1 contrast fails AA). Nothing is used until **approval gate
-  YAMAK-DESIGN-001** is passed and the approved token file is put in the new `src/theme/`.
-- Fonts: only the approved Yamak New type scale. Legacy `Roboto-Medium`/`Roboto-MedItalic` + `AppSizes`
-  (12/14/16/18/20/24/32) are reference only.
-- Text: i18n-wrapper of the approved Typography components (Arabic-aware, proper RTL layout — legacy `AppText`
-  mis-set `textAlign:"left"` for Arabic); never hardcode strings — always i18n keys.
-- Icons: `AppIcon` wrapper (Ionicons/AntDesign/Material/MaterialCommunityIcons/Entypo/FontAwesome/Fontisto/FontAwesome5).
-- API: central `makeApiCall({method,url,data,params})`; Bearer token auto-attached; NetInfo offline guard built-in.
-- Errors: global `AppFlashMessage` via `useErrorStore`.
-- Routes: constants in `ScreenNames.ts`; register each new screen in the relevant navigator file.
+- Colors: ONLY the **approved Yamak tokens** already implemented in `src/theme/` (`colors.ts`,
+  `spacing.ts`, `radius.ts`, `typography.ts`, `interaction.ts`). Legacy `AppColorsTheme2`
+  (`primary #002F6C`, `secondary #F7B123`, …) is a REFERENCE ONLY (gold-on-white ≈1.9:1 fails AA).
+  There is exactly **one** palette — never a second design system.
+- Fonts: only the approved type scale in `src/theme/typography.ts`. Legacy `Roboto-Medium` +
+  `AppSizes` are reference only.
+- Text: i18n wrapper (Arabic-aware, proper RTL layout — legacy `AppText` mis-set
+  `textAlign:"left"` for Arabic); never hardcode strings — always i18n keys. **i18n is not built
+  yet**; until then a `language` prop (`'en' | 'ar'`) is the agreed interim shape.
+- Icons: `@expo/vector-icons` and/or `react-native-svg` icon components.
+- API: the shared `fetch` client in `src/api/http-client.ts` + typed `ApiError`
+  (`src/api/api-error.ts`). Screens call feature functions in `src/api/`, never `fetch` directly.
+  Bearer token is attached by reading SecureStore directly.
+- Errors: typed `ApiError` with the sanitizing message extractor; a global toast
+  (`useErrorStore` equivalent) is still TODO.
+- **Routes: Expo Router file-based routes.** A screen is a file in `src/app/`; a navigator is a
+  `_layout.tsx`; navigation uses `router.push/replace/back`, `<Redirect>` and `<Link>`.
+  ⛔ **There is no `ScreenNames.ts` and no navigator registration file.**
 
 ## 4. Just-in-time rules
 
-- Create `src/apis/<feature>.api.ts` only when the first screen needs that endpoint.
-- Create a Zustand store only when the first screen needs shared state.
-- Create a navigator only when the first screen that lives in it is built.
+- Create `src/api/<feature>.ts` only when the first screen needs that endpoint.
+- Create a shared state owner (React Context) only when the first screen needs shared state. Hook-local
+  state is the default. ⛔ Do not introduce Zustand.
+- Create a route / `_layout.tsx` only when the first screen that lives in it is built.
 - Create UI components only when a screen reuses them twice or more.
-- Never port dead code (Form/FormAuth, custom-IP modal, duplicate favorites store, Themes 1&3).
+- Never port dead code (Form/FormAuth, custom-IP modal, duplicate favorites store, Themes 1&3, and the
+  unused `create-expo-app` template leftovers).
 
 ---
 
-# PHASE 0 — CREATE AND UNDERSTAND THE CLEAN REACT NATIVE APPLICATION
+# PHASE 0 — HISTORICAL CLI PLAN — NON-CURRENT (SUPERSEDED)
 
-> This phase MUST happen before `YAMAK-SCREEN-001`, `YAMAK-SCREEN-002`, or any other Yamak screen.
-> Authority = the CURRENT official React Native documentation (`https://reactnative.dev/docs/environment-setup`),
-> NOT versions copied from the legacy Yamak project.
+> # ⛔ SUPERSEDED — DO NOT EXECUTE
 >
-> We rebuild Yamak with React Native WITHOUT a framework. The legacy project is ONLY a
-> functional/design/API reference. Do NOT use its old project structure (or its `package.json`,
-> `android/`, Gradle, RN configs, `node_modules`) as the template for the new application.
+> This entire PHASE 0 describes creating a **React Native CLI** project **without a framework** using
+> `npx react-native init`, `react-native-config`, and Gradle flavors. That architecture is **NOT** the
+> current one. `YamakExpoNew` already exists on **Expo + Expo Router**.
+>
+> **Superseded by:** `REBUILD-PLAN.md` §8 (historical milestones) and
+> `EXPO-MIGRATION.md` (the CLI→Expo migration record).
+>
+> Retained below only so the original CLI rationale is not lost. **Every task in this phase is
+> either DONE (in its Expo equivalent) or SUPERSEDED.**
 
----
+## YAMAK-SETUP-001 — Verify Development Environment — ✅ COMPLETED HISTORICALLY
 
-## YAMAK-SETUP-001 — Verify Development Environment
+**Purpose:** verify that the development machine satisfies the platform requirements.
+Consultation only — nothing is installed or modified here.
 
-**Purpose:** Before creating Yamak, verify that this Windows machine satisfies the CURRENT
-official React Native requirements. Consultation only — nothing is installed or modified here.
+> **Current note:** for `YamakExpoNew` the equivalent checks are `npx expo-doctor`,
+> `npx expo config --type public`, `npx tsc --noEmit`, and `npx expo install` for dependency
+> management. `npx expo install` is **always** preferred over `npm install` for Expo packages.
 
 Verify each item below; for each, record the installed version and whether it meets the official
 requirement. Commands to run (verify each, do NOT alter anything during the documentation phase):
@@ -302,156 +349,123 @@ Do NOT install or modify anything during the documentation phase.
 
 ---
 
-## YAMAK-SETUP-002 — Create Clean React Native Project
+## YAMAK-SETUP-002 — Create Clean React Native Project — ⏭ SUPERSEDED
 
-**This will be the FIRST actual implementation task later** (per user directive, implementation
-does not start in the documentation phase).
+> ⛔ **SUPERSEDED — do not execute.** This task described creating a React Native CLI project named
+> `Yamak` **WITHOUT a framework**. It was performed historically in the superseded project
+> `YamakMobileNew` (commit `8f24f51`) and then **migrated to Expo**.
+>
+> **Current equivalent:** `YamakExpoNew` created with `create-expo-app`, Expo Router file-based
+> routes, `app.json` + `app.config.ts`. See `EXPO-MIGRATION.md` and
+> `PROJECT-STRUCTURE-LEARNING.md`.
 
-- Use the CURRENT official React Native CLI command for creating a React Native project
-  WITHOUT a framework. Determine the exact command from the official documentation
-  at implementation time.
-- Project name: **`YamakMobile`** (use exactly this).
-- Do NOT copy `package.json` from the legacy project.
-- Do NOT copy `node_modules`.
-- Do NOT copy `android/`.
-- Do NOT copy old Gradle configuration.
-- Do NOT copy old React Native configuration.
-- The new application MUST start from the clean official React Native template.
+Historical instructions (kept for the record only):
 
-When the project is generated, learn what each top-level item is:
+- Use the official React Native CLI command for creating a project WITHOUT a framework.
+- Project name: **`YamakMobile`** (this is what was actually used, in `YamakMobileNew`).
+- Do NOT copy `package.json`, `node_modules`, `android/`, Gradle configuration, or old React Native
+  configuration from the legacy project.
 
-| Path | What it is |
-|---|---|
-| `android/` | Native Android project (Gradle + Kotlin/Java). |
-| `ios/` | Native iOS project (Xcode + Swift/Obj-C). |
-| `src/` | DOES NOT EXIST in the clean template — we create it later, only when Yamak screens need it. |
-| `App.tsx` | Root React component — first thing rendered (this IS the app's UI entry). |
-| `index.js` | JS entry point that registers `App` with React Native. |
-| `package.json` | Manifest of JS dependencies + scripts. |
-| `metro.config.js` | Metro (JS bundler) configuration. |
-| `babel.config.js` | Babel (JS transpiler) configuration. |
-| `tsconfig.json` | TypeScript compiler configuration. |
-| `.gitignore` · `.prettierrc` · `eslint` config | Generated tooling defaults. |
+### Historical generated structure (NOT current)
 
-Clearly distinguish:
-
-- **FILES GENERATED BY REACT NATIVE** → `package.json`, `App.tsx`, `index.js`, `metro.config.js`,
-  `babel.config.js`, `tsconfig.json`, `android/`, `ios/` etc. — come from the official template.
-- **FILES WE WILL CREATE FOR YAMAK** → `src/`, plus Yamak-specific config, services, stores,
-  screens, and assets — added ONLY when the current screen needs them (JUST-IN-TIME).
+| Path | What it is | Current equivalent in `YamakExpoNew` |
+|---|---|---|
+| `android/` | Native Android project (Gradle + Kotlin/Java). | **Generated** by prebuild/`run:android` — gitignored, never hand-edited |
+| `ios/` | Native iOS project (Xcode + Swift/Obj-C). | **Generated** — gitignored, never hand-edited |
+| `src/` | Did not exist in the clean template. | ✅ exists — `src/app`, `src/api`, `src/auth`, `src/components`, `src/hooks`, `src/location`, `src/theme`, `src/utils` |
+| `App.tsx` | Root React component — the app's UI entry. | ❌ replaced by Expo Router: `src/app/_layout.tsx` is the root navigator |
+| `index.js` | JS entry that registers `App`. | ❌ replaced by `expo-router/entry` (`package.json` `main`) |
+| `package.json` | JS dependency manifest + scripts. | ✅ exists |
+| `metro.config.js` | Metro (JS bundler) configuration. | ❌ Expo manages Metro defaults |
+| `babel.config.js` | Babel configuration. | ❌ Expo manages Babel defaults |
+| `tsconfig.json` | TypeScript compiler configuration. | ✅ exists |
+| `.gitignore` · eslint config | Generated tooling defaults. | ✅ exists |
 
 **RUN → VERIFY → STOP after project creation.**
 
 ---
 
-## YAMAK-SETUP-003 — Run Clean Android Application
+## YAMAK-SETUP-003 / 004 / 005 — RUN, UNDERSTAND, AND SEED THE PROJECT — ✅ COMPLETED HISTORICALLY
 
-Before adding ANY Yamak code:
+> ⛔ **SUPERSEDED CLI STEPS — do not execute `npx react-native start` / `npx react-native run-android`.**
+> `YamakExpoNew` runs with `npx expo start` and `npx expo run:android`.
+>
+> These tasks were completed historically in `YamakMobileNew` and their outcomes are realized in
+> `YamakExpoNew`. The **current** structure to learn is `PROJECT-STRUCTURE-LEARNING.md`.
 
-1. **Start Metro** — the JavaScript bundler/dev server (typically `npx react-native start`).
-2. **Start the Android emulator/device** — from Android Studio or `emulator -list-avds`/`adb devices`.
-3. **Run the clean React Native Android application** — typically `npx react-native run-android`.
-4. **Confirm the default React Native screen launches successfully.**
+The concepts below remain valid background knowledge and are **not** architecture instructions:
 
-Concepts to understand at this stage:
+- **Metro** = the bundler that serves the JS bundle; it watches files and rebuilds on change
+  (fast refresh / live reload). Expo starts it via `npx expo start`.
+- **Gradle** = the Android build system; it resolves dependencies, compiles Java/Kotlin, packages the
+  APK, and wires React Native native libraries. In Expo it runs inside the **generated** `android/`.
+- **adb** = the Android Debug Bridge; it installs/launches the APK and streams logs (`adb logcat`).
+- **How JavaScript reaches the Android app:** Metro builds the bundle → the installed APK loads it
+  from the dev server (debug) or the packaged bundle (release) → Hermes executes it → it renders the
+  root component. **In Expo the root component is the Expo Router root layout `src/app/_layout.tsx`**,
+  not `App.tsx`.
+- **Native project files** (`AndroidManifest.xml`, `build.gradle`, `MainActivity`,
+  `MainApplication`, `Info.plist`) are **generated** in Expo and must never be hand-edited. Native
+  behavior is declared in `app.json` / `app.config.ts` and config plugins.
 
-- **Metro** = the bundler that serves the JS bundle to the app; it watches your files and
-  rebuilds the bundle on change (fast reload / live reload).
-- **Gradle** = the Android build system; it resolves dependencies, compiles Java/Kotlin, packages
-  the APK, and wires the React Native native libraries for your emulator/device.
-- **adb** = the Android Debug Bridge; it connects the build to a running emulator/device so the
-  APK installs and starts, and streams logs (searchable via `adb logcat`).
-- **How JavaScript reaches the Android application:** Metro builds the JS bundle → the installed
-  APK (native part) loads it either from the Metro dev server (debug) or from the packaged bundle
-  (release) → React Native engine (Hermes) executes it → it renders `App.tsx` on the native screen.
+**Current equivalents (already done):**
 
-> ### ⛔ HARD GATE
-> If the clean React Native application does NOT build and launch:
-> **STOP.** Do NOT install Yamak dependencies. Do NOT create screens. Do NOT copy assets.
-> Do NOT configure Firebase. Do NOT configure Maps. Do NOT continue.
+| Historical task | Current equivalent | Status |
+|---|---|---|
+| SETUP-003 — run the clean app | `npx expo start` + a verified Android **Development Build** | ✅ DONE |
+| SETUP-004 — understand the project | `PROJECT-STRUCTURE-LEARNING.md` (Expo edition) | ✅ DONE |
+| SETUP-005 — minimum `src` structure | `src/app`, `src/api`, `src/auth`, `src/components`, `src/hooks`, `src/location`, `src/theme`, `src/utils` | ✅ DONE |
+
+> ### ⛔ HARD GATE (historical)
+> If the app does NOT build and launch, **STOP.** Do NOT install Yamak dependencies. Do NOT create
+> screens. Do NOT copy assets. Do NOT configure Firebase. Do NOT configure Maps. Do NOT continue.
 > The clean application must work FIRST.
 
-**RUN → VERIFY → STOP.**
-
 ---
 
-## YAMAK-SETUP-004 — Understand the Clean Project
+## IMPORTANT ORDER CHANGE — ⏭ SUPERSEDED (Historical CLI plan)
 
-Before changing anything, study the generated project (no Yamak architecture yet):
+> ⛔ **SUPERSEDED.** The CLI bootstrap order below has been **executed and superseded**. Do not follow
+> it as the current order.
 
-Explain at a beginner level:
-
-- `App.tsx`, `index.js`, `package.json`, `android/`, `ios/`, `metro.config.js`,
-  `babel.config.js`, `tsconfig.json`.
-- Android specifics:
-  - `android/app/` — the app module: it holds your application's Android source and resources.
-  - `AndroidManifest.xml` — the Android manifest: declares the app, its main activity, and
-    permissions (e.g. INTERNET, location).
-  - `build.gradle` — Gradle build scripts: project-level (`android/build.gradle`) and app-level
-    (`android/app/build.gradle`) — versions, dependencies, signing, etc.
-  - `settings.gradle` — declares which modules the build includes.
-  - `MainActivity` — the Android Activity that hosts the React Native experience.
-  - `MainApplication` — the Application class: initializes React Native and native modules.
-
-The relationship:
+<details>
+<summary>Historical CLI bootstrap order (already completed)</summary>
 
 ```
-index.js              ← native entry calls into React Native to start the JS app
-   ↓                  (registers the root component)
-App.tsx               ← React component tree the user sees
-   ↓
-React Native (JS)     ← executed by the JS/Hermes engine, drives UI natively
-   ↓
-Android native app    ← Activity/Application host that renders that UI on screen
-```
-
-**Do NOT introduce Yamak architecture yet.**
-
-**RUN → VERIFY → STOP.**
-
----
-
-## YAMAK-SETUP-005 — Create the First Yamak `src` Structure
-
-ONLY after the clean project works and its structure is understood:
-
-- Create ONLY the minimum structure needed for the first Yamak screen.
-- Do NOT create the entire future architecture.
-- Follow the JUST-IN-TIME ARCHITECTURE rule: do NOT automatically create `api/`, `store/`,
-  `services/`, `navigation/`, `hooks/`, `utils/` — unless the current implementation step
-  actually needs them.
-- The first Yamak screen comes AFTER this task (per the IMPORTANT ORDER CHANGE below).
-
-**RUN → VERIFY → STOP.**
-
----
-
-## IMPORTANT ORDER CHANGE
-
-The beginning of the rebuild order is now FIXED:
-
-```
-YAMAK-SETUP-001 — Verify environment
+YAMAK-SETUP-001 — Verify environment                    ✅ done historically
         ↓
-YAMAK-SETUP-002 — Create clean React Native application
+YAMAK-SETUP-002 — Create clean React Native application ⏭ superseded by Expo (YamakMobileNew 8f24f51)
         ↓
-YAMAK-SETUP-003 — Run clean Android application
+YAMAK-SETUP-003 — Run clean Android application        ✅ done historically
         ↓
         ⛔ HARD GATE
         ↓
-YAMAK-SETUP-004 — Understand generated project structure
+YAMAK-SETUP-004 — Understand generated project structure✅ done historically
         ↓
-YAMAK-SETUP-005 — Add minimum Yamak structure
+YAMAK-SETUP-005 — Add minimum Yamak structure           ✅ done (YamakMobileNew c2d5252)
         ↓
-First Yamak screen
+MIGRATION to YamakExpoNew (Expo)                        ✅ done
         ↓
-Next screen
+Register → Email OTP → Home slices → Map → Vehicle Details  ✅ done
         ↓
-...
+**Phase A — Authenticated App Shell**                   ⬅️ CURRENT
 ```
 
-Do NOT start with Forgot Password, Register, Login, Onboarding, or any other screen before this
-setup phase is complete.
+</details>
+
+### ✅ CURRENT ORDER (authoritative)
+
+```
+Phase A — Authenticated App Shell Completion   ← CURRENT NEXT PHASE
+Phase B — Profile Hub (SCREEN-016)
+Phase C — All Vehicles + Vehicle Details request flow
+Phase D — Profile Features (Edit Profile, My Cars, Favorites, Notifications)
+Phase E — Secondary screens
+Phase F — Deferred auth / integrations
+Phase G — Final legacy parity audit
+```
+
+See `REBUILD-PLAN.md` §5 and §6 for the full detail and the next 10 tasks.
 
 ---
 
@@ -474,6 +488,12 @@ Do NOT bulk-copy the legacy project.
 - After updating this document, STOP.
 
 # PHASE 1 — DESIGN (approved before any screen work)
+
+> ✅ **GATE STATUS:** passed for the screens already built. Register, the Home data sections, the
+> Map, and Vehicle Details each shipped against a user-approved reference under
+> `docs/rebuild/approve-ui/` (which supersedes the provisional `new-ui` prototypes where both exist).
+> The gate still applies to **every unbuilt screen**: no screen may take legacy colors/fonts.
+> Any new screen must present its reference for approval the same way those four did.
 
 > **YAMAK-DESIGN-001 — UI/UX design approval gate.**
 > Legacy Yamak UI is NOT the visual authority (contrast failures, RTL bug, unused stub components).
@@ -501,146 +521,273 @@ Do NOT bulk-copy the legacy project.
 
 ## 5. AUTHENTICATION SCREENS
 
+> **Current terminology for every step in this section (Expo Router):**
+> - A "screen" is a **file-based route** under `src/app/` — e.g. `src/app/login.tsx` → `/login`.
+>   There is **no** `AuthStackNavigator` and **no** screen-registry file.
+> - Navigation is `import { router } from 'expo-router'` → `router.push('/login')`,
+>   `router.replace('/register')`, `router.back()`. The session gate lives in
+>   `src/app/_layout.tsx` (Stack + `AuthProvider` + `AuthReadyLayout`).
+> - Auth state is **React Context**: `src/auth/auth-context.tsx` exposes
+>   `status`, `user`, `accessToken`, `authenticate`, `signOut`; tokens persist in
+>   **SecureStore** (`src/auth/auth-storage.ts`, keys `yamak_access_token` / `yamak_auth_user`).
+>   There is **no** Zustand store and **no** AsyncStorage auth persistence.
+> - API calls go through `src/api/*` built on the **fetch**-based `src/api/http-client.ts`
+>   (`ApiError` from `src/api/api-error.ts`). There is **no** `makeApiCall` helper and
+>   **no** axios.
+>
+> **Status legend:** ✅ DONE · 🟡 PARTIAL · ⏭ NOT STARTED (deferred to Phase F) · ⛔ BLOCKED.
+
 ### YAMAK-SCREEN-001 — LOGIN (exemplar; documented fully)
 
-Goal: email+password screen that authenticates against `auth/login` and unlocks the app.
-Evidence: `src/screens/authScreens/loginScreen.tsx`, `loginSchema.ts`, `Auth.api.ts`, `auth.store.ts`.
-Learning concepts: View/Text/TextInput, StyleSheet, keyboard handling, Formik+Yup, axios, Zustand persist, navigation gates.
+Goal: email+password route that authenticates against `auth/login` and unlocks the app.
+Legacy evidence (functional reference only): `src/screens/authScreens/loginScreen.tsx`,
+`loginSchema.ts`, `Auth.api.ts`, `auth.store.ts`.
+Current evidence: `src/api/auth.ts`, `src/auth/auth-context.tsx`, `src/api/http-client.ts`.
+Learning concepts: View/Text/TextInput, StyleSheet, keyboard handling, validation, fetch,
+SecureStore persistence, session gating.
 
-- Step 1 — Create `src/screens/LoginScreen.tsx` returning a basic centered `<View>` with an empty `<Text>`. Register it in a new `AuthStackNavigator` (`Login`). **RUN → VERIFY → STOP.**
+> ⏭ **NOT STARTED — deferred to Phase F (see `12-rebuild-order.md`).**
+> Reason: there is **no authenticated destination yet**. `src/app/index.tsx` redirects to
+> `/register`, and the app shell (tabs/drawer) is Phase A. Building Login before an
+> authenticated area exists would produce a screen that authenticates into nothing.
+
+- Step 1 — Create `src/app/login.tsx` returning a basic centered `<View>` with an empty `<Text>`. Confirm it is reachable as `/login`. **RUN → VERIFY → STOP.**
 - Step 2 — Add the Yamak logo image at the top (from `assets/images/appLogo.png`). **RUN → VERIFY → STOP.**
 - Step 3 — Add the first `TextInput` (email) with label "Email". **RUN → VERIFY → STOP.**
-- Step 4 — Add the password `TextInput` (secureTextEntry) with label "Password". **RUN → VERIFY → STOP.**
+- Step 4 — Add the password `TextInput` (`secureTextEntry`) with label "Password". **RUN → VERIFY → STOP.**
 - Step 5 — Add the "Login" button (`FilledButton`, primary background, secondary text). **RUN → VERIFY → STOP.**
-- Step 6 — Add local state (`useState`/Formik) holding email + password; wire console.log on submit. **RUN → VERIFY → STOP.**
-- Step 7 — Add Yup validation (`loginValidationSchema`): valid email, password min 8; show errors under inputs. **RUN → VERIFY → STOP.**
-- Step 8 — Add `src/apis/auth.api.ts` with `login({email,password})` → `makeApiCall("post","auth/login")`. **RUN → VERIFY → STOP.**
-- Step 9 — Add `src/store/auth.store.ts` (Zustand persist `auth`, AsyncStorage) with `authenticate(token,user)`; call on success; verify the token gate flips to the main area and persists after restart. **RUN → VERIFY → STOP.**
-- Step 10 — Add error UI: on failure show flash message; special-case `"user not registered"`. **RUN → VERIFY → STOP.**
+- Step 6 — Add local state (`useState`) holding email + password; wire console.log on submit. **RUN → VERIFY → STOP.**
+- Step 7 — Add validation: valid email, password min 8; show errors under inputs. **RUN → VERIFY → STOP.**
+- Step 8 — Add `login({ email, password })` to `src/api/auth.ts` → `httpClient` POST `auth/login`. **RUN → VERIFY → STOP.**
+- Step 9 — Call `authenticate(token, user)` from `useAuth()` on success; verify the session gate in `src/app/_layout.tsx` flips to the authenticated area and the token survives an app restart (SecureStore). **RUN → VERIFY → STOP.**
+- Step 10 — Add error UI: on failure show a safe message via `ApiError` (never a raw response body); special-case `"user not registered"`. **RUN → VERIFY → STOP.**
 - Step 11 — Add "Forgot password?" link → Forgot-Password form (SCREEN-008). **RUN → VERIFY → STOP.**
-- Step 12 — Add "Sign up" link → Register (SCREEN-002); conditional social buttons (after NATIVE-001/002). **RUN → VERIFY → STOP.**
-- DONE when: valid login works end-to-end; invalid shows errors; token survives restart; logout returns here.
+- Step 12 — Add "Sign up" link → Register (`router.replace('/register')`); conditional social buttons (after the deferred Google Sign-In work). **RUN → VERIFY → STOP.**
+- DONE when: valid login works end-to-end; invalid shows errors; token survives restart; `signOut()` returns here.
 
 ### YAMAK-SCREEN-002 — REGISTER
-Goal: create account via `auth/signup`. Evidence: `registerScreen.tsx`, `registerValidationSchema`.
+
+> ✅ **DONE (shipped + runtime-verified).** Route `src/app/register.tsx` → `/register`.
+> Components `src/components/auth/AuthBrandHeader.tsx` + `CountrySelectorModal.tsx`.
+> Learn from this screen — do **not** rebuild it.
+
+Goal: create account via `auth/signup`. Legacy evidence: `registerScreen.tsx`, `registerValidationSchema`.
 Concepts: multi-field forms, terms checkbox, country code.
-- Step 1 — Basic screen + registration in AuthStack. **RUN → VERIFY → STOP.**
-- Step 2 — ⛔ **Apply the approved Yamak New branding foundation** (design tokens + theme components + Yamak logo) per `YAMAK-DESIGN-001`. **BLOCKED until the design approval gate passes** — do not apply legacy colors/fonts. **RUN → VERIFY → STOP.**
-- Step 3 — Add Name input. **RUN → VERIFY → STOP.**
-- Step 4 — Add Email input. **RUN → VERIFY → STOP.**
-- Step 5 — Add Phone input + country code picker (`CountryPicker` style). **RUN → VERIFY → STOP.**
-- Step 6 — Add Password input + Terms checkbox (`isAgreed`). **RUN → VERIFY → STOP.**
-- Step 7 — Yup validation (name min 3, email, phone regex, password min 8, isAgreed true). **RUN → VERIFY → STOP.**
-- Step 8 — `signup` API wrapper (`register` body `{name,email,phone}`). **RUN → VERIFY → STOP.**
-- Step 9 — On success navigate to Email OTP (SCREEN-005) and pass email. **RUN → VERIFY → STOP.**
-- Step 10 — Add "Already have account?" link → Login. **RUN → VERIFY → STOP.**
+- Step 1 — Basic route `src/app/register.tsx`. **RUN → VERIFY → STOP.** ✅
+- Step 2 — ⛔ **Apply the approved Yamak New branding foundation** (design tokens + theme components + Yamak logo) per `YAMAK-DESIGN-001`. **BLOCKED until the design approval gate passes** — do not apply legacy colors/fonts. **RUN → VERIFY → STOP.** ✅
+- Step 3 — Add Name input. **RUN → VERIFY → STOP.** ✅
+- Step 4 — Add Email input. **RUN → VERIFY → STOP.** ✅
+- Step 5 — Add Phone input + country code picker (`CountrySelectorModal`). **RUN → VERIFY → STOP.** ✅
+- Step 6 — Add Password input + Terms checkbox (`isAgreed`). **RUN → VERIFY → STOP.** ✅
+- Step 7 — Validation (name min 3, email, phone regex, password min 8, `isAgreed` true). **RUN → VERIFY → STOP.** ✅
+- Step 8 — `signup` API wrapper in `src/api/auth.ts` (`register` body `{name,email,phone}`). **RUN → VERIFY → STOP.** ✅
+- Step 9 — On success `router.push({ pathname: '/email-otp', params: { email } })`. **RUN → VERIFY → STOP.** ✅
+- Step 10 — Add "Already have account?" link → Login (once SCREEN-001 exists). **RUN → VERIFY → STOP.** ⏭ Phase F
 
 ### YAMAK-SCREEN-008 — FORGOT PASSWORD (email form)
-Goal: request reset code. Evidence: `components/auth/EmailForgotPassword.tsx`, `auth/send-reset-password`.
-- Step 1 — Basic screen + route. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase F (paired with SCREEN-001).
+
+Goal: request reset code. Legacy evidence: `components/auth/EmailForgotPassword.tsx`, `auth/send-reset-password`.
+- Step 1 — Basic route `src/app/forgot-password.tsx`. **RUN → VERIFY → STOP.**
 - Step 2 — Email field + validation. **RUN → VERIFY → STOP.**
-- Step 3 — API wrapper `sendResetPassword(email)`. **RUN → VERIFY → STOP.**
-- Step 4 — On success → Reset OTP (SCREEN-006). **RUN → VERIFY → STOP.**
+- Step 3 — API wrapper `sendResetPassword(email)` in `src/api/auth.ts`. **RUN → VERIFY → STOP.**
+- Step 4 — On success → Reset OTP (SCREEN-006), passing `email`. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-006 — RESET OTP
-Goal: validate reset code. Evidence: `otpResetPasswordScreen.tsx`, `auth/check-reset-password`.
-- Step 1 — Basic screen + route. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase F.
+
+Goal: validate reset code. Legacy evidence: `otpResetPasswordScreen.tsx`, `auth/check-reset-password`.
+- Step 1 — Basic route `src/app/reset-otp.tsx`. **RUN → VERIFY → STOP.**
 - Step 2 — Code input (6-digit style, `CodeAuthModel`). **RUN → VERIFY → STOP.**
 - Step 3 — Resend handler (calls SCREEN-008's API again) + countdown. **RUN → VERIFY → STOP.**
 - Step 4 — `checkResetPassword(email, code)`. **RUN → VERIFY → STOP.**
 - Step 5 — Success → New Password screen (SCREEN-007). **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-007 — NEW PASSWORD
-Goal: set new password. Evidence: `NewPasswordScreen.tsx`, `resetPasswordValidationSchema`, `auth/reset-password`.
-- Step 1 — Basic screen + route + two password fields. **RUN → VERIFY → STOP.**
-- Step 2 — Yup: min 8 + confirm match. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase F.
+
+Goal: set new password. Legacy evidence: `NewPasswordScreen.tsx`, `resetPasswordValidationSchema`, `auth/reset-password`.
+- Step 1 — Basic route `src/app/new-password.tsx` + two password fields. **RUN → VERIFY → STOP.**
+- Step 2 — Validation: min 8 + confirm match. **RUN → VERIFY → STOP.**
 - Step 3 — `resetPassword(email, password)`. **RUN → VERIFY → STOP.**
 - Step 4 — Success → back to Login with success message. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-003 — PHONE LOGIN (auth)
-Goal: request SMS code. Evidence: `authScreen.tsx`, `auth/sendCode`.
-- Step 1 — Basic screen + route. **RUN → VERIFY → STOP.**
-- Step 2 — Phone input + country code picker. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase F.
+
+Goal: request SMS code. Legacy evidence: `authScreen.tsx`, `auth/sendCode`.
+- Step 1 — Basic route `src/app/phone-login.tsx`. **RUN → VERIFY → STOP.**
+- Step 2 — Phone input + country code picker (reuse `CountrySelectorModal`). **RUN → VERIFY → STOP.**
 - Step 3 — `sendCode(phone)`. **RUN → VERIFY → STOP.**
 - Step 4 — Success → OTP (SCREEN-004), pass phone. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-004 — PHONE OTP VERIFICATION
-Goal: verify SMS code and authenticate. Evidence: `otpVerificationScreen.tsx`, `auth/checkCode`.
-- Step 1 — Basic screen + route (no animation). **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase F.
+
+Goal: verify SMS code and authenticate. Legacy evidence: `otpVerificationScreen.tsx`, `auth/checkCode`.
+- Step 1 — Basic route `src/app/phone-otp.tsx` (no animation). **RUN → VERIFY → STOP.**
 - Step 2 — Code input + resend + countdown. **RUN → VERIFY → STOP.**
 - Step 3 — `checkCode(phone, code)`. **RUN → VERIFY → STOP.**
-- Step 4 — On success load `app-users/profile` then `authenticate`. **RUN → VERIFY → STOP.**
+- Step 4 — On success load `app-users/profile` then call `authenticate(token, user)`. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-005 — EMAIL OTP VERIFICATION
-Goal: complete signup. Evidence: `otpEmailVerificationScreen.tsx`, `auth/verify-email`.
-- Step 1 — Basic screen + route. **RUN → VERIFY → STOP.**
-- Step 2 — Code input + resend. **RUN → VERIFY → STOP.**
-- Step 3 — `emailVerify(email, code)`. **RUN → VERIFY → STOP.**
-- Step 4 — Success → proceed into app (or back to Login). **RUN → VERIFY → STOP.**
+
+> 🟡 **PARTIAL.** Route `src/app/email-otp.tsx` → `/email-otp` exists and is reachable from
+> Register. Remaining before DONE: resend + countdown parity with legacy, and the
+> post-verification transition (success must enter the authenticated shell, which does not
+> exist yet — so success currently has nowhere correct to go).
+
+Goal: complete signup. Legacy evidence: `otpEmailVerificationScreen.tsx`, `auth/verify-email`.
+- Step 1 — Basic route `src/app/email-otp.tsx`. **RUN → VERIFY → STOP.** ✅
+- Step 2 — Code input. **RUN → VERIFY → STOP.** ✅
+- Step 3 — Resend + countdown. **RUN → VERIFY → STOP.** ⏭
+- Step 4 — `emailVerify(email, code)`. **RUN → VERIFY → STOP.** 🟡
+- Step 5 — On success enter the authenticated shell (blocked on Phase A) instead of returning to Register. **RUN → VERIFY → STOP.** ⛔ blocked on Phase A
 
 ---
 
 ## 6. APP SHELL SCREENS
 
+> ⛔ **PHASE A — this section is the immediate next work.** The authenticated shell does not
+> exist yet: `src/app/(app)/_layout.tsx` is a bare `<UserLocationProvider><Slot /></UserLocationProvider>`
+> with no gate, no tabs and no drawer. Every "open the app after login" outcome depends on it.
+>
+> **Naming rule:** the tab group already exists as the directory `src/app/(app)/(tabs)/`
+> (it currently holds only `map.tsx`). Home and Profile are added as sibling route files in
+> that same group — **do not** create `src/app/(tabs)/` at the root. The drawer (if legacy
+> parity requires it) is a `<Drawer>` from `expo-router/drawer` declared **inside the `(app)`
+> group**, above the tabs.
+
 ### YAMAK-SCREEN-009 — ONBOARDING
-Goal: first-launch intro. Evidence: `OnBoardingScreen.tsx`, `CarouselCards`, `appReady.store` (`isFirstLunch`).
-Concepts: FlatList/carousel, Lottie, first-launch flag.
-- Step 1 — Basic screen + route inside `DrawerStackNavigator` guarded by `isFirstLunch`. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase A.
+> ⚠️ Placement verified from legacy: onboarding is **inside** the authenticated area, not before
+> auth. Legacy's `DrawerStackNavigator` conditionally registers `"onboarding"` above an
+> always-present `"drawer"` screen, and onboarding exits via `replace` in the same session.
+> A first-launch *unauthenticated* user must therefore NOT see onboarding.
+
+Goal: first-launch intro shown after authentication.
+Legacy evidence: `OnBoardingScreen.tsx`, `CarouselCards`, `appReady.store` (`isFirstLunch`).
+Concepts: FlatList carousel, Lottie, first-launch flag.
+- Step 1 — Basic route `src/app/(app)/onboarding.tsx`, gated by a persisted first-launch flag (SecureStore or AsyncStorage — decide and record). **RUN → VERIFY → STOP.**
 - Step 2 — Add carousel of 3 intro slides (images + titles). **RUN → VERIFY → STOP.**
-- Step 3 — Add "Get started" button → clears flag, navigates to drawer. **RUN → VERIFY → STOP.**
+- Step 3 — Add "Get started" / "Skip" → clears the flag, `router.replace('/(app)/(tabs)')`. **RUN → VERIFY → STOP.**
 - Step 4 — Add language picker (EN/AR) persisting to `lang`. **RUN → VERIFY → STOP.**
 
-### YAMAK-SCREEN-016 — PROFILE HUB
-Goal: display user + menu. Evidence: `ProfileScreen.tsx`, `Profile*` components, `app-users/profile`.
-Concepts: fetch-on-mount, store refresh, grid of navigation buttons.
-- Step 1 — Basic screen + registration in `ProfileStack` (tab 3). **RUN → VERIFY → STOP.**
-- Step 2 — Show user name/email from `auth` store. **RUN → VERIFY → STOP.**
-- Step 3 — Fetch `app-users/profile` and refresh store (`updateUserInfo`). **RUN → VERIFY → STOP.**
+### YAMAK-SCREEN-016 — PROFILE HUB — ⛔ MUST PRECEDE SCREEN-017 / SCREEN-018
+
+> ⏭ NOT STARTED — Phase A (second half).
+> ⛔ **HARD DEPENDENCY RULE:** SCREEN-017 (Edit Profile) and SCREEN-018 (My Cars) are reached
+> **through** this hub, and legacy routes the drawer's `Profile` entry and the `Profile` tab to
+> the **same** screen. Rebuilding Edit Profile or My Cars before the hub exists would require
+> inventing a navigation parent that does not exist yet. **Do not start SCREEN-017/018 until
+> SCREEN-016 is DONE.**
+> Also: this hub is where **logout** lives. Until it exists there is no way out of an
+> authenticated session — that is the concrete reason it is Phase A and not Phase D.
+
+Goal: display user + menu. Legacy evidence: `ProfileScreen.tsx`, `Profile*` components, `app-users/profile`.
+Concepts: fetch-on-mount, context refresh, grid of navigation buttons.
+- Step 1 — Basic route `src/app/(app)/(tabs)/profile.tsx` (the Profile tab). **RUN → VERIFY → STOP.**
+- Step 2 — Show user name/email from `useAuth()`. **RUN → VERIFY → STOP.**
+- Step 3 — Fetch `app-users/profile` and refresh the auth context user. **RUN → VERIFY → STOP.**
 - Step 4 — Add heading row (icon + labels). **RUN → VERIFY → STOP.**
-- Step 5 — Add buttons grid: Edit Profile / My Cars / Favorites / Notifications / Contact Us / Privacy / Join Us / About / Settings / Messages / FreshChat / Logout. Each navigates (or shows stub note). **RUN → VERIFY → STOP.**
-- Step 6 — Logout = `removeAuthentication()`. **RUN → VERIFY → STOP.**
+- Step 5 — Add buttons grid: Edit Profile / My Cars / Favorites / Notifications / Contact Us / Privacy / Join Us / About / Settings / Messages / FreshChat. Each navigates to a real route or shows an explicit "not available yet" note — **never invent a route**. **RUN → VERIFY → STOP.**
+- Step 6 — Logout = `signOut()` from `useAuth()`; verify the session gate in `src/app/_layout.tsx` returns to `/register` and the `(app)` group is unreachable. **RUN → VERIFY → STOP.**
+- Step 7 — (Only if legacy parity requires it) add a drawer `<Drawer>` in `src/app/(app)/_layout.tsx` and point its `Profile` entry at this same route — resolving legacy's duplicate-entry inconsistency deliberately rather than copying it. **RUN → VERIFY → STOP.**
 
 ---
 
 ## 7. HOME & DATA SCREENS
 
+> **Data-slicing is the current pattern, not one-screen-at-a-time.** Home is being built as
+> independent, runtime-verified slices (services → adds → location+vehicles → map → vehicle
+> details), each with its own `src/api/*` + `src/hooks/use-*.ts` + `src/components/<area>/*`.
+> **No `services`/`adds`/`vehicles` Zustand stores** — each hook owns local state, exactly as
+> decided for slices 1–3B. Sections that need to share a selection pass it upward as a prop/callback.
+>
+> 🔴 **Blocking gap: there is no Home ROUTE.** The components
+> `ServicesList`, `AddsCarousel`, `VehiclesList`, `ViewMap` all exist and are verified, but
+> **nothing mounts them** — `src/app/(app)/(tabs)/` contains only `map.tsx`. Home is Phase A.
+
 ### YAMAK-SCREEN-010 — HOME
-Goal: services + adds + vehicles dashboard. Evidence: `HomeScreen.tsx`, `components/home/*`, `services`, `adds`, `vehicles`.
+
+> 🟡 **PARTIAL — data slices done, composition + route NOT done.**
+> ✅ `src/api/services.ts` + `src/hooks/use-services.ts` + `components/home/{ServicesList,ServiceItem}.tsx`
+> ✅ `src/api/adds.ts` + `src/hooks/use-adds.ts` + `components/home/{AddsList,AddsCarousel,AddCard}.tsx`
+> ✅ `src/api/vehicles.ts` + `src/location/*` + `src/hooks/use-vehicles.ts` + `components/home/{VehiclesList,VehicleItem,ApiErrorRow}.tsx`
+> ✅ `src/components/home/ViewMap.tsx` (approved "Nearby on radar" CTA → `router.push('/map')`)
+> ⛔ Missing: `src/app/(app)/(tabs)/index.tsx`, the custom header, and section tap wiring.
+
+Goal: services + adds + vehicles dashboard, faithful port of legacy `HomeScreen`.
+Legacy evidence: `HomeScreen.tsx`, `components/home/*`, `services`, `adds`, `vehicles`.
 Concepts: parallel fetching, loading placeholders, horizontal lists, localized names.
-- Step 1 — Basic screen + custom header (logo right, map button left) in `HomeStackNavigator`. **RUN → VERIFY → STOP.**
-- Step 2 — Add `services` store + fetch `GET services`; render services grid (localized names). **RUN → VERIFY → STOP.**
-- Step 3 — Add `adds` store + `GET adds`; render ads carousel. **RUN → VERIFY → STOP.**
-- Step 4 — Add vehicles store + `GET vehicles` (page 1, limit 10, userLocation params); render vehicles strip. **RUN → VERIFY → STOP.**
-- Step 5 — Add loading placeholders for all three sections. **RUN → VERIFY → STOP.**
-- Step 6 — Wire taps: service→filter, vehicle→Vehicle Details, "see more"→All Vehicles, search→Search modal. **RUN → VERIFY → STOP.**
+- Step 1 — Create `src/app/(app)/(tabs)/index.tsx` and mount the already-built sections in legacy order (ViewMap → services → vehicles → ads). **RUN → VERIFY → STOP.**
+- Step 2 — Add the custom header (logo right, map button left → `router.push('/map')`). **RUN → VERIFY → STOP.**
+- Step 3 — Mount `ViewMap` (`useServices`-independent, purely navigational). **RUN → VERIFY → STOP.** ✅ component exists
+- Step 4 — Mount `ServicesList`; wire `onServicePress(service)` → `router.push({ pathname: '/map', params: { serviceId: service._id } })`. **RUN → VERIFY → STOP.** ✅ component exists
+- Step 5 — Mount `VehiclesList`; wire a vehicle press → `router.push({ pathname: '/vehicle/[id]', params: { id } })`. **RUN → VERIFY → STOP.** ✅ component exists
+- Step 6 — Mount `AddsCarousel`; wire the card press to open `add.link` via `Linking`. **RUN → VERIFY → STOP.** ✅ component exists
+- Step 7 — Add loading placeholders for all sections (legacy `*ListPH` parity). **RUN → VERIFY → STOP.**
+- Step 8 — Add pull-to-refresh that re-runs all section fetches (legacy `callHomeScreenApi`). **RUN → VERIFY → STOP.**
+- Step 9 — Add "View All" on the vehicles section **only when a real `/vehicles` route exists** (SCREEN-011) — otherwise the affordance is omitted, never a dead route. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-011 — ALL VEHICLES
-Goal: full list w/ pagination + filters. Evidence: `AllVicelessScreen.tsx`, `AllVehiclesList`.
-- Step 1 — Basic screen + route. **RUN → VERIFY → STOP.**
-- Step 2 — List from `GET vehicles` with page/limit + infinite scroll. **RUN → VERIFY → STOP.**
-- Step 3 — Service filter (uses `selectedServiceId`). **RUN → VERIFY → STOP.**
-- Step 4 — Tap → Vehicle Details. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase C.
+
+Goal: full list w/ pagination + filters. Legacy evidence: `AllVicelessScreen.tsx`, `AllVehiclesList`.
+- Step 1 — Basic route `src/app/(app)/(tabs)/vehicles.tsx` (or a pushed route — decide and record; legacy reached it from a "see more" affordance). **RUN → VERIFY → STOP.**
+- Step 2 — List from `getVehicles` with page/limit + infinite scroll (`limit` default 10 server-side). **RUN → VERIFY → STOP.**
+- Step 3 — Service filter (local selected-service state, mirroring the Map's decision — **no** global store). **RUN → VERIFY → STOP.**
+- Step 4 — Tap → `router.push('/vehicle/[id]')`. **RUN → VERIFY → STOP.**
+- Step 5 — Empty / error / pull-to-refresh states. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-012 — VEHICLE / PROVIDER DETAILS
-Goal: detail + available services + request. Evidence: `VehiclesDetailsScreen.tsx`, `components/vehicleDetails/*`.
-APIs: `vehicles/:id`, `services/:id/vehicles`, `requests`.
-- Step 1 — Basic screen + route + `vehicles/:id` fetch. **RUN → VERIFY → STOP.**
-- Step 2 — Render info + phone/address (open maps/phone). **RUN → VERIFY → STOP.**
-- Step 3 — Render available services list (`services/:id/vehicles`). **RUN → VERIFY → STOP.**
-- Step 4 — Add request CTA → `POST requests`. **RUN → VERIFY → STOP.**
-- Step 5 — Add WhatsApp share (`getWhatsAppMessage`) + `YourSaftyMatter`/`ShareWithus` blocks. **RUN → VERIFY → STOP.**
-- Step 6 — Add placeholder loading state. **RUN → VERIFY → STOP.**
+
+> ✅ **DONE (shipped + runtime-verified, commit `f87aa1a`).** Route
+> `src/app/(app)/vehicle/[id].tsx`, hook `src/hooks/use-vehicle-details.ts`,
+> components `src/components/vehicle-details/{ContactBar,DriverAvatar,SafetyCard,VehicleStatusPill,icons}.tsx`.
+> Map marker press now pushes this route, and `VehiclesList` excludes the current vehicle.
+> Learn from this screen — do **not** rebuild it.
+>
+> ⚠️ **Deliberately NOT implemented: `POST /requests`.** The endpoint is public/unauthenticated
+> and silently drops `payload` — a backend-owner decision that is still open. The screen is
+> contact-only (`tel:` / `wa.me` / share sheet) so the first build creates **no** order rows and
+> sends **no** driver emails. TODO markers record the deferred request call.
+
+Goal: detail + available services + contact. Legacy evidence: `VehiclesDetailsScreen.tsx`, `components/vehicleDetails/*`.
+APIs: `vehicles/:id` (public), `services/:id/vehicles`.
+- Step 1 — Route + `vehicles/:id` fetch. **RUN → VERIFY → STOP.** ✅
+- Step 2 — Render info + phone/address (`Linking.openURL`). **RUN → VERIFY → STOP.** ✅
+- Step 3 — Render available services list (`services/:id/vehicles`). **RUN → VERIFY → STOP.** ✅
+- Step 4 — Add request CTA → `POST requests`. **RUN → VERIFY → STOP.** ⛔ DEFERRED — backend decision pending
+- Step 5 — Add WhatsApp share + `YourSaftyMatter`/`ShareWithus` blocks. **RUN → VERIFY → STOP.** ✅ (share sheet; WhatsApp via `wa.me` fallback)
+- Step 6 — Loading / error (sanitized `ApiError`) / missing-vehicle states. **RUN → VERIFY → STOP.** ✅
 
 ### YAMAK-SCREEN-014 — FAVORITES
-Goal: locally-persisted favorites. Evidence: `FavotiesScreen.tsx`, `Favorites.store`, `components/favorites/*`.
-- Step 1 — Basic screen + route. **RUN → VERIFY → STOP.**
-- Step 2 — `favorites` store (persist `favorites` key) + heart toggle on cards. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase B.
+> ⚠️ Verified gap: the backend has **no favorites routes at all** (grep of `routes/`) and legacy
+> Vehicle Details has no favorites. Favorites is therefore **local-only persistence** — do not
+> invent a favorites endpoint.
+
+Goal: locally-persisted favorites. Legacy evidence: `FavotiesScreen.tsx`, `Favorites.store`, `components/favorites/*`.
+- Step 1 — Basic route `src/app/(app)/(tabs)/favorites.tsx`. **RUN → VERIFY → STOP.**
+- Step 2 — Persisted favorites list (SecureStore or AsyncStorage — decide and record) + heart toggle on vehicle cards. **RUN → VERIFY → STOP.**
 - Step 3 — List ids → load/cards; fix duplicate bug (BR-023). **RUN → VERIFY → STOP.**
 - Step 4 — Empty state (`NoFavorites`) + filter chips. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-015 — NOTIFICATIONS
-Goal: paginated notification list. Evidence: `NotificationsScreen.tsx`, `user-notifications/mine?page=`.
-- Step 1 — Basic screen + route. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase B. Deps on nothing remote beyond the endpoint itself.
+
+Goal: paginated notification list. Legacy evidence: `NotificationsScreen.tsx`, `user-notifications/mine?page=`.
+- Step 1 — Basic route `src/app/(app)/(tabs)/notifications.tsx`. **RUN → VERIFY → STOP.**
 - Step 2 — Fetch page 1, render list. **RUN → VERIFY → STOP.**
 - Step 3 — Infinite scroll with `page` increment. **RUN → VERIFY → STOP.**
 - Step 4 — Empty + pull-to-refresh states. **RUN → VERIFY → STOP.**
@@ -650,28 +797,54 @@ Goal: paginated notification list. Evidence: `NotificationsScreen.tsx`, `user-no
 ## 8. MAP & LOCATION SCREENS
 
 ### YAMAK-SCREEN-013 — MAP
-Goal: nearby providers on map. Evidence: `MapScreen.tsx`, `components/map/*`, `userLocation.store`.
-- Step 1 — Register `Map` tab (requires NATIVE-005 Maps SDK). **RUN → VERIFY → STOP.**
-- Step 2 — Render `<MapView>` with initial region. **RUN → VERIFY → STOP.**
-- Step 3 — Get device location → `userLocation` store + AsyncStorage. **RUN → VERIFY → STOP.**
-- Step 4 — Fetch `GET vehicles` with lat/lng; draw markers. **RUN → VERIFY → STOP.**
-- Step 5 — Service filter chips update markers. **RUN → VERIFY → STOP.**
-- Step 6 — Card detail on marker tap + request CTA. **RUN → VERIFY → STOP.**
+
+> ✅ **DONE (shipped + runtime-verified, commits `66d933d` and `143bc8d`).**
+> Route `src/app/(app)/(tabs)/map.tsx` → `/map`; hook `src/hooks/use-map-vehicles.ts`;
+> components `src/components/map/{MapServiceChips,EnableLocationCard,MapMarkers,MapControls,MicroBanner}.tsx`;
+> util `src/utils/vehicle-marker.ts`. `react-native-maps@1.28.2` installed.
+> Learn from this screen — do **not** rebuild it.
+>
+> ⚠️ **Known baseline deviation — do NOT "fix" as part of unrelated work:**
+> the dependency is pinned to `1.28.2` (an intentional override of the SDK-57 `1.27.2` pin)
+> because the approved visual needs it. Recorded in `PROJECT_CONTEXT.md`.
+>
+> ⚠️ The map's app-bar buttons (☰ Menu · 🔔 Notifications) are still inert, because the drawer
+> and Notifications do not exist. Wiring them belongs to Phase A.
+
+Goal: nearby providers on map. Legacy evidence: `MapScreen.tsx`, `components/map/*`, `userLocation.store`.
+- Step 1 — Map route registered inside the `(app)/(tabs)` group. **RUN → VERIFY → STOP.** ✅
+- Step 2 — Render `<MapView>` (`provider={PROVIDER_GOOGLE}`, uncontrolled, Kuwait `initialRegion`). **RUN → VERIFY → STOP.** ✅
+- Step 3 — Consume `useUserLocation()` — **never** request location on the Map itself; the single owner is `UserLocationProvider` in `src/app/(app)/_layout.tsx`. **RUN → VERIFY → STOP.** ✅
+- Step 4 — Fetch `GET /services/{serviceId}/vehicles`; draw markers from `geoLocation.coordinates`. **RUN → VERIFY → STOP.** ✅
+- Step 5 — Service filter chips (`MapServiceChips`, self-fetching via the shared `useServices()`) update markers. **RUN → VERIFY → STOP.** ✅
+- Step 6 — Marker press → `router.push('/vehicle/[id]')` (Vehicle Details now exists). **RUN → VERIFY → STOP.** ✅
+- Step 7 — Wire the app-bar ☰ Menu and 🔔 Notifications buttons once the drawer / Notifications route exist. **RUN → VERIFY → STOP.** ⏭ Phase A / B
 
 ---
 
 ## 9. PROFILE EXTENSIONS
 
+> ⛔ **Both screens below are blocked behind YAMAK-SCREEN-016 (Profile Hub).**
+> See the hard dependency rule in §6. Neither Edit Profile nor My Cars may be started first.
+
 ### YAMAK-SCREEN-017 — EDIT PROFILE
-Goal: update profile. Evidence: `EditProfileScreen.tsx`, `ProfileMapView`, `PATCH app-users/profile`.
-- Step 1 — Basic screen + route, prefill from store. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase D. ⛔ Blocked on SCREEN-016.
+> **Do not treat this as "the next screen".** The App Shell (Phase A) and Profile Hub
+> (SCREEN-016) both come first.
+
+Goal: update profile. Legacy evidence: `EditProfileScreen.tsx`, `ProfileMapView`, `PATCH app-users/profile`.
+- Step 1 — Basic route `src/app/(app)/profile/edit.tsx`, prefilled from `useAuth()` + `app-users/profile`. **RUN → VERIFY → STOP.**
 - Step 2 — Name/phone/email fields. **RUN → VERIFY → STOP.**
-- Step 3 — Optional map location picker. **RUN → VERIFY → STOP.**
-- Step 4 — Save → PATCH + refresh store. **RUN → VERIFY → STOP.**
+- Step 3 — Optional map location picker (`ProfileMapView` equivalent — a second `MapView`, not a second location *flow*). **RUN → VERIFY → STOP.**
+- Step 4 — Save → `PATCH app-users/profile` + refresh the auth context user. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-018 — MY CARS
-Goal: CRUD cars. Evidence: `MyCarScreen.tsx`, `components/Profile/myCarList/*`, `user-cars`.
-- Step 1 — Basic screen + route. **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase D. ⛔ Blocked on SCREEN-016.
+
+Goal: CRUD cars. Legacy evidence: `MyCarScreen.tsx`, `components/Profile/myCarList/*`, `user-cars`.
+- Step 1 — Basic route `src/app/(app)/profile/cars.tsx`. **RUN → VERIFY → STOP.**
 - Step 2 — `GET user-cars` list + car card. **RUN → VERIFY → STOP.**
 - Step 3 — Add-car modal → `POST user-cars`. **RUN → VERIFY → STOP.**
 - Step 4 — Delete → confirm → `DELETE user-cars/:id`. **RUN → VERIFY → STOP.**
@@ -681,35 +854,56 @@ Goal: CRUD cars. Evidence: `MyCarScreen.tsx`, `components/Profile/myCarList/*`, 
 ## 10. SECONDARY SCREENS
 
 ### YAMAK-SCREEN-019 — CONTACT US
-Goal: contact options. Evidence: `ContactUsScreen.tsx`, `messages.ts`.
-- Step 1 — Static screen with phone/mail/WhatsApp buttons (Linking.openURL). **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase E.
+
+Goal: contact options. Legacy evidence: `ContactUsScreen.tsx`, `messages.ts`.
+- Step 1 — Static route `src/app/(app)/profile/contact.tsx` with phone/mail/WhatsApp buttons (`Linking.openURL`). **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-020 — PRIVACY & POLICY
-Goal: legal modal. Evidence: `PrivacyAndPolicyScreen.tsx`.
-- Step 1 — Modal screen (`presentation:"modal"`) with text (from `app-setting` or static). **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase E.
+
+Goal: legal content. Legacy evidence: `PrivacyAndPolicyScreen.tsx`.
+- Step 1 — Modal route (`src/app/(app)/profile/privacy.tsx` + `<Stack.Screen options={{ presentation: 'modal' }} />`) with text (from `app-setting` or static). **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-021 — JOIN US
-Goal: static join-us content. Evidence: `JoinUsScreen.tsx`.
+
+> ⏭ NOT STARTED — Phase E.
+
+Goal: static join-us content. Legacy evidence: `JoinUsScreen.tsx`.
 - Step 1 — Static content + contact CTA. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-022 — ABOUT YAMAK APP (PLANNED ONLY)
-Goal: about/branding page. Evidence: `AboutYamakAppScreen.tsx`.
-- Step 1..N — Static content, app version (`device-info`), follow-us. 
-- ⚠️ NOT TO BE IMPLEMENTED in this pass (user directive) — documented for completeness. **RUN → VERIFY → STOP.**
+
+> ⛔ NOT TO BE IMPLEMENTED in this pass (user directive) — documented for completeness.
+
+Goal: about/branding page. Legacy evidence: `AboutYamakAppScreen.tsx`.
+- Step 1..N — Static content, app version (from `app.json`, not a `device-info` dependency), follow-us links.
 
 ### YAMAK-SCREEN-023 — FRESHCHAT
-Goal: support chat. Evidence: `FreshCharScreen.tsx`, `freshchat.config.ts` (requires NATIVE-006).
-- Step 1 — SDK init at app start. **RUN → VERIFY → STOP.**
+
+> ⛔ **PLANNED — NOT YET MIGRATED.** No Freshchat SDK is installed in YamakExpoNew. Requires the
+> Freshchat Expo plugin and its API credentials, which are not present. Do not scaffold it now.
+
+Goal: support chat. Legacy evidence: `FreshCharScreen.tsx`, `freshchat.config.ts`.
+- Step 1 — SDK init at app start (add `expo-freshchat` plugin + config, once approved). **RUN → VERIFY → STOP.**
 - Step 2 — Screen embedding chat widget + route. **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-024 — NO NETWORK
-Goal: offline state + retry. Evidence: `NoNetworkScreen.tsx`, NetInfo.
-- Step 1 — Screen + route; show when offline (or on error). **RUN → VERIFY → STOP.**
+
+> ⏭ NOT STARTED — Phase E.
+
+Goal: offline state + retry. Legacy evidence: `NoNetworkScreen.tsx`, NetInfo.
+- Step 1 — Route `src/app/(app)/no-network.tsx`; show when offline (or on error). **RUN → VERIFY → STOP.**
 - Step 2 — Retry button re-fetches. **RUN → VERIFY → STOP.**
 
 ---
 
 ## 11. STUB / OPTIONAL SCREENS (user decision ahead)
+
+> All four are **legacy stubs**. Rebuild only on an explicit user decision — never build them
+> speculatively, and never count them toward parity.
 
 ### YAMAK-SCREEN-027 — SEARCH (optional)
 - Legacy stub `SearchScreen.tsx`; plan: step 1 route, step 2 input, step 3 filter `GET vehicles` by query, step 4 results list. **RUN → VERIFY → STOP after each.**
@@ -728,47 +922,98 @@ Goal: offline state + retry. Evidence: `NoNetworkScreen.tsx`, NetInfo.
 
 ---
 
-## 12. FINAL ORDER TABLE (build sequence)
+## 12. FINAL ORDER TABLE (current build sequence — A–G)
 
-> The sequence now starts with **PHASE 0** (see the PHASE 0 section above). No Yamak
-> screen may begin before Phase 0 is complete.
+> The authoritative sequence is `12-rebuild-order.md`. This table is the screen-level index of
+> that plan. **The historical CLI sequence (Phase 0 SETUP-001…005 + the old 1–32 table) is
+> SUPERSEDED** — the project already exists as an Expo app, so there is nothing to scaffold.
 
-| # | Task | Screen | Depends on |
+### Phase A — Authenticated App Shell Completion 🔴 CURRENT PHASE
+
+| # | Task | Screen | Route | Depends on | Status |
+|---|---|---|---|---|---|
+| A1 | Session gate for the `(app)` group | — | `src/app/(app)/_layout.tsx` | AuthProvider exists | ⏭ NEXT |
+| A2 | Home tab (mount verified components) | SCREEN-010 | `(app)/(tabs)/index.tsx` | A1 | 🟡 components done |
+| A3 | Profile Hub tab + logout | SCREEN-016 | `(app)/(tabs)/profile.tsx` | A1 | ⏭ NEXT (after A2) |
+| A4 | Tab bar wiring (Home · Map · Profile) | — | `(app)/(tabs)/_layout.tsx` | A2, A3 | ⏭ |
+| A5 | Onboarding (post-auth, first launch) | SCREEN-009 | `(app)/onboarding.tsx` | A4 | ⏭ |
+| A6 | Drawer — **only if** legacy parity requires it | — | `(app)/_layout.tsx` | A4 | ⛔ optional, decide explicitly |
+
+### Phase B — Profile Hub Contents
+
+| # | Task | Screen | Depends on | Status |
+|---|---|---|---|---|
+| B1 | Favorites (local-only persistence) | SCREEN-014 | A3 | ⏭ |
+| B2 | Notifications | SCREEN-015 | A3 | ⏭ |
+| B3 | Profile sub-routes reachable from the hub | — | A3 | ⏭ |
+
+### Phase C — All Vehicles + Request
+
+| # | Task | Screen | Depends on | Status |
+|---|---|---|---|---|
+| C1 | All Vehicles list + filters | SCREEN-011 | A2 | ⏭ |
+| C2 | Vehicle Details ↔ list/marker cross-push polish | SCREEN-012 | C1 | ✅ route exists |
+| C3 | `POST /requests` | SCREEN-012 | ⛔ backend decision | ⛔ BLOCKED |
+
+### Phase D — Profile Features
+
+| # | Task | Screen | Depends on | Status |
+|---|---|---|---|---|
+| D1 | Edit Profile | SCREEN-017 | **A3 (Profile Hub) — mandatory** | ⏭ |
+| D2 | My Cars CRUD | SCREEN-018 | **A3 (Profile Hub) — mandatory** | ⏭ |
+
+### Phase E — Secondary Screens
+
+| # | Task | Screen | Depends on | Status |
+|---|---|---|---|---|
+| E1 | Contact Us | SCREEN-019 | A3 | ⏭ |
+| E2 | Privacy & Policy | SCREEN-020 | A3 | ⏭ |
+| E3 | Join Us | SCREEN-021 | A3 | ⏭ |
+| E4 | No Network | SCREEN-024 | — | ⏭ |
+| E5 | About Yamak | SCREEN-022 | — | ⛔ PLANNED ONLY |
+| E6 | Freshchat | SCREEN-023 | ⛔ SDK not installed | ⛔ NOT YET MIGRATED |
+
+### Phase F — Deferred Auth & Integrations
+
+| # | Task | Screen | Depends on | Status |
+|---|---|---|---|---|
+| F1 | Login | SCREEN-001 | A1 | ⏭ |
+| F2 | Forgot Password | SCREEN-008 | F1 | ⏭ |
+| F3 | Reset OTP | SCREEN-006 | F2 | ⏭ |
+| F4 | New Password | SCREEN-007 | F3 | ⏭ |
+| F5 | Phone Login | SCREEN-003 | A1 | ⏭ |
+| F6 | Phone OTP | SCREEN-004 | F5 | ⏭ |
+| F7 | Email OTP — resend + success transition | SCREEN-005 | A1 | 🟡 PARTIAL |
+| F8 | Google Sign-In / Firebase / Sentry | — | ⛔ not installed | ⛔ PLANNED |
+
+### Phase G — Legacy Parity Audit
+
+| # | Task | Depends on | Status |
 |---|---|---|---|
-| 1 | **YAMAK-SETUP-001** | Verify dev environment | — |
-| 2 | **YAMAK-SETUP-002** | Create clean React Native application (`YamakMobile`) | SETUP-001 |
-| 3 | **YAMAK-SETUP-003** | Run clean Android application | SETUP-002 |
-| 4 | **⛔ HARD GATE** | Clean app builds & launches — otherwise STOP | — |
-| 5 | **YAMAK-SETUP-004** | Understand generated project structure | SETUP-003 |
-| 6 | **YAMAK-SETUP-005** | Add minimum Yamak `src` structure | SETUP-004 |
-| 7 | First Yamak screen | First screen chosen by user (NOT Login/About this pass) | PHASE 0 complete |
-| 7a | **YAMAK-DESIGN-001** | ⛔ Review & approve Yamak New UI/UX (see `docs/rebuild/new-ui/index.html`) | 7 |
-| 7b | **⛔ DESIGN APPROVAL GATE** | Approved tokens become the sole style authority — otherwise STOP | 7a |
-| 8 | YAMAK-SCREEN-008 | Forgot password | SETUP-007 |
-| 9 | YAMAK-SCREEN-006 | Reset OTP | 008 |
-| 10 | YAMAK-SCREEN-007 | New password | 006 |
-| 11 | YAMAK-SCREEN-002 | Register | SETUP-008, DESIGN APPROVAL (7b) |
-| 12 | YAMAK-SCREEN-005 | Email OTP | 002 |
-| 13 | YAMAK-SCREEN-003 | Phone login | SETUP-008 |
-| 14 | YAMAK-SCREEN-004 | Phone OTP | 003 |
-| 15 | YAMAK-SCREEN-001 | Login | SETUP-007/008 (documented, planned) |
-| 16 | YAMAK-SCREEN-009 | Onboarding | SETUP-010 |
-| 17 | YAMAK-SCREEN-016 | Profile hub | SETUP-011 |
-| 18 | YAMAK-SCREEN-010 | Home | SETUP-011, UI kit |
-| 19 | YAMAK-SCREEN-011 | All vehicles | 010 |
-| 20 | YAMAK-SCREEN-012 | Vehicle details | 010 |
-| 21 | YAMAK-SCREEN-013 | Map | NATIVE-005, 010 |
-| 22 | YAMAK-SCREEN-017 | Edit profile | 016 |
-| 23 | YAMAK-SCREEN-018 | My cars | 016 |
-| 24 | YAMAK-SCREEN-015 | Notifications | NATIVE-004 |
-| 25 | YAMAK-SCREEN-020 | Privacy & policy | 016 |
-| 26 | YAMAK-SCREEN-014 | Favorites | 010 |
-| 27 | YAMAK-SCREEN-019 | Contact us | 016 |
-| 28 | YAMAK-SCREEN-021 | Join us | 016 |
-| 29 | YAMAK-SCREEN-024 | No network | — |
-| 30 | YAMAK-SCREEN-023 | Freshchat | NATIVE-006 |
-| 31 | YAMAK-SCREEN-022 | About Yamak | 016 (PLANNED ONLY) |
-| 32 | Optional stubs | 025–028 | user decision |
+| G1 | Screen-by-screen functional diff vs legacy | Phases A–E | ⏭ |
+| G2 | API contract diff vs `04-api-catalog.md` | A–E | ⏭ |
+| G3 | i18n / RTL audit (`ar`/`en`) | A–E | ⏭ |
+| G4 | Confirm no legacy defect was ported | A–E | ⏭ |
+
+### Optional / user decision (never planned speculatively)
+
+| Task | Screen | Status |
+|---|---|---|
+| Search | SCREEN-027 | ⏭ user decision |
+| Settings | SCREEN-025 | ⏭ user decision |
+| Messages | SCREEN-026 | ⏭ user decision |
+| Email validations | SCREEN-028 | ⏭ user decision |
+| Form / FormAuth | SCREEN-029 | ⛔ SKIP (legacy duplicate) |
+
+### ⛔ Ordering rules that must not be violated
+
+1. **A3 (Profile Hub) precedes D1 (Edit Profile) and D2 (My Cars).** Those screens are reached
+   through the hub; the hub is also the only logout path.
+2. **A1 precedes every route under `(app)`.** No authenticated screen may exist outside a gate.
+3. **A2/A3 precede A4**, and A4 precedes A5/A6.
+4. **C3 (`POST /requests`) stays blocked** until the backend owner decides auth + `payload`
+   handling. The contact-only Vehicle Details design is the approved interim state.
+5. **No screen may be started before its phase's dependencies above are ✅.**
 
 ## 13. Completion checklist per step, then per screen
 

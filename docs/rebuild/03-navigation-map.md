@@ -1,10 +1,20 @@
 # YAMAK MOBILE — 03. NAVIGATION MAP
 
-> Reverse-engineered from `src/navigations/`, `App.tsx`, `RootFun.tsx`, `src/helpers/AuthedReadyApp.tsx`.
-> Evidence: `CONFIRMED` (code seen) | `INFERRED` | `UNKNOWN`.
-> Library: React Navigation v7 — stack + drawer + bottom-tabs.
+> **This file has TWO clearly separated halves.**
+>
+> - **§1–§5 — LEGACY NAVIGATION (reference only, NON-CURRENT ARCHITECTURE).** Reverse-engineered
+>   from the legacy `yamak-mobile` project (`src/navigations/`, `App.tsx`, `RootFun.tsx`,
+>   `src/helpers/AuthedReadyApp.tsx`). Evidence: `CONFIRMED` (code seen) | `INFERRED` | `UNKNOWN`.
+>   Legacy library: **React Navigation v7** — stack + drawer + bottom-tabs.
+> - **§6 — NEW YAMAK EXPO TARGET BEHAVIOR (AUTHORITATIVE).** What `YamakExpoNew` must do, expressed
+>   as **behavior**, not as a forced library structure.
+>
+> ⛔ **Never copy the legacy navigator graph into the Expo app.** Legacy is the reference for
+> *behavior only*. See `REBUILD-PLAN.md` §2.1 and §3.
 
 ---
+
+# PART 1 — LEGACY NAVIGATION (reference only, NON-CURRENT)
 
 ## 1. Root routing (authentication gate)
 
@@ -23,10 +33,9 @@ App.tsx
 
 - `RootFun.tsx`: decides which root navigator to render based on whether a valid
   session exists (see `06-authentication.md`). CONFIRMED
-- `AuthedReadyApp.tsx`: authenticated shell — it initializes Firestore? **No** —
-  it: registers FCM notifications, subscribes topic, pushes `fcmToken` to profile,
-  initializes Freshchat + Sentry, and captures device location into
-  `userLocation` store + AsyncStorage key `userLocation`. CONFIRMED
+- `AuthedReadyApp.tsx`: authenticated shell — it registers FCM notifications, subscribes topic,
+  pushes `fcmToken` to profile, initializes Freshchat + Sentry, and captures device location into
+  the `userLocation` store + AsyncStorage key `userLocation`. CONFIRMED
 
 ## 2. Auth stack (`AuthStackNavigator`) — unauthenticated area
 
@@ -124,8 +133,18 @@ MainNavigaator (createStackNavigator, headers hidden)
   └─ PrivacyAndPolicy → PrivacyAndPolicyScreen (presentation: modal)
 ```
 
-> Rebuild decision: the rebuild should keep a single clear root stack and NOT
-> reproduce this overlapping drawer/profile duplication unless needed. See `12-rebuild-order.md`.
+> Rebuild decision: keep a single clear authenticated tree and do **not** reproduce the legacy
+> drawer/profile duplication (the legacy drawer "Profile" entry and the Profile tab render the
+> same screen with different navigation stacks — an inconsistency to resolve deliberately).
+
+### 3.7 Verified legacy authenticated landing
+
+- Final visible screen after auth is **`HomeScreen`**, not a generic shell:
+  valid token → authenticated shell → drawer `Home` → tab `Home_Stack` → stack `Home` → `HomeScreen`.
+- First launch (new install, authenticated): onboarding shows first, then the shell lands on
+  `HomeScreen`. Returning user: `HomeScreen` directly.
+- **Onboarding lives inside the authenticated area** — a first-launch *unauthenticated* user does
+  NOT see onboarding; they see it once they become authenticated.
 
 ## 4. Route-name constants (`src/constants/ScreenNames.ts`)
 
@@ -138,8 +157,12 @@ Canonical names used across screens (CONFIRMED): `Home_Screen`, `Map_Screen`,
 `NewPassword_Screen`, `No_Network_Screen`, plus `StackNames.Home_Stack`,
 `StackNames.Profile_Stack`.
 
-> IMPORTANT: The rebuild should name navigators/keys consistently. Legacy uses a
-> mix of `ScreenNames` and hard-coded strings (`"drawerNav"`, `"drawer"`, `"Home"`, `"messages"`).
+> ⛔ **NON-CURRENT for the rebuild.** `ScreenNames.ts` is a React Navigation artifact.
+> **Expo Router derives routes from file paths** — do not reintroduce a route-name constant file.
+> See `REBUILD-PLAN.md` §2.1.
+
+> Legacy also mixes `ScreenNames` with hard-coded strings (`"drawerNav"`, `"drawer"`, `"Home"`,
+> `"messages"`).
 
 ## 5. Drawer icons (reused assets)
 
@@ -151,16 +174,98 @@ Canonical names used across screens (CONFIRMED): `Home_Screen`, `Map_Screen`,
 | messages (notifications) | Ionicons | chatbox-ellipses-outline |
 | Map header button | MaterialCommunityIcons | map-marker-radius-outline |
 
-## 6. Rebuild design (JUST-IN-TIME)
+---
 
-Do NOT create navigation infrastructure upfront. Order of introduction (matches
-`13-SCREEN-BY-SCREEN-REBUILD-PLAN.md`):
-1. AuthStack (Login → Register → OTP flows) — first
-2. Root token gate + AuthedReadyApp shell
-3. DrawerStackNavigator + onboarding flag
-4. DrawerNavigator
-5. TabNavigator (Home/Map/Profile)
-6. HomeStack + ProfileStack (added only when their screens are built)
-7. Modal screens (Search, PrivacyAndPolicy, JoinUs) as needed
+# PART 2 — NEW YAMAK EXPO TARGET BEHAVIOR (AUTHORITATIVE)
 
-Each navigator is added ONLY when the first screen that needs it is implemented.
+## 6. Target functional tree
+
+Navigation is implemented with **Expo Router** (file-based routing under `src/app/`, typed routes
+enabled). What follows describes **behavior and reachability**, not a mandated library graph. The
+tree below is a functional model — map it onto Expo Router layouts and route groups.
+
+```
+Session gate
+├── unauthenticated routes
+│   ├── Register                     (built)
+│   └── Email OTP                    (built — success currently does NOT enter the shell)
+└── authenticated routes
+    ├── onboarding  (when required — first launch, inside the authenticated area)
+    └── app shell
+        ├── Home
+        ├── Map
+        └── Profile
+```
+
+Additional routes (all inside the authenticated area unless noted):
+
+- `vehicle/[id]` — Vehicle Details (already exists; reachable from Home cards and Map markers)
+- all vehicles
+- profile extensions (Edit Profile, My Cars, Favorites, Notifications)
+- notifications
+- favorites
+- secondary screens (Privacy, Contact Us, Join Us, No Network, Freshchat)
+- deferred auth routes (Login, phone auth, password reset, social auth)
+
+Drawer behavior may be layered on the authenticated shell **where legacy parity requires it**.
+
+## 7. Required BEHAVIOR (from legacy — this is the contract)
+
+| # | Behavior | Source |
+|---|---|---|
+| B1 | A single session gate decides unauthenticated vs authenticated at app start | legacy `RootFun` token gate |
+| B2 | Session is restored before any screen renders (splash held while loading) | verified Expo equivalent |
+| B3 | Unauthenticated area contains the auth flows | legacy `AuthStackNavigator` |
+| B4 | **Onboarding is inside the authenticated area** and shows exactly once per install | legacy `DrawerStackNavigator` + `isLunched` |
+| B5 | After authentication the app lands on **Home** (not a generic shell) | legacy verified landing |
+| B6 | Bottom tabs expose **Home / Map / Profile** | legacy `TabNavigator` |
+| B7 | Vehicle Details is reachable from **Home cards** and **Map markers** (one route, above the tabs) | legacy defect #3 fixed |
+| B8 | The Map opens with **no service selected** as a valid state | verified Expo behavior |
+| B9 | A selected service filters the map's vehicles | verified Expo behavior |
+| B10 | Logout clears the persisted session and returns to the unauthenticated area | legacy `removeAuthentication()` |
+| B11 | Drawer entries (Profile / Favorites / Notifications) are reachable | legacy `DrawerNavigator` |
+
+## 8. Expo Router implementation guidance (current)
+
+- **Routes are files.** `src/app/index.tsx`, `src/app/register.tsx`, `src/app/email-otp.tsx`,
+  `src/app/(app)/_layout.tsx`, `src/app/(app)/(tabs)/map.tsx`,
+  `src/app/(app)/vehicle/[id].tsx` — this is the current tree.
+- **`_layout.tsx` files are navigators.** A layout wraps its children in a Stack or Tabs and is
+  where shared providers belong (e.g. `UserLocationProvider` is mounted in `src/app/(app)/_layout.tsx`).
+- **Route groups `(group)`** group routes without affecting the URL. `(tabs)` gives the bottom tab
+  bar; `(app)` marks the authenticated area.
+- **Dynamic segments `[id].tsx`** are route parameters; read them with `useLocalSearchParams`.
+- **Navigation** uses `router.push/replace/back` and `<Redirect>` / `<Link>` from `expo-router`.
+  There is **no** `navigation.navigate('ScreenName')` and **no** `ScreenNames.ts`.
+- **The session gate** belongs in the root layout (`src/app/_layout.tsx`) and in the authenticated
+  group layout (`src/app/(app)/_layout.tsx`) — currently the auth loading gate exists and the
+  authenticated redirect does not. Both are part of Phase A.
+- **Deep links** must keep working; `/map` and `/vehicle/{id}` are deep-linkable today.
+
+## 9. Current-vs-target navigation status
+
+| Area | Status |
+|---|---|
+| Root layout + `AuthProvider` + splash-held auth restore gate | ✅ DONE |
+| Unauthenticated routes (`/`, `/register`, `/email-otp`) | ✅ DONE |
+| `/` → redirect to `/register` | ✅ DONE (placeholder until the authenticated landing is approved/built) |
+| `/map` route + screen | ✅ DONE (root stack; not yet inside the tabs group) |
+| `/vehicle/[id]` route + screen | ✅ DONE (above the tabs) |
+| Auth/session **routing** gate (redirect unauthenticated → auth, authenticated → shell) | ⏳ **TODO — Phase A1** |
+| Email OTP → authenticated shell transition | ⏳ **TODO — Phase A2** |
+| Onboarding gate | ⏳ **TODO — Phase A3** |
+| Authenticated layout | ⏳ **TODO — Phase A4** |
+| Bottom tabs (Home / Map / Profile) | ⏳ **TODO — Phase A5** |
+| Drawer / side menu (only if parity requires) | ⏳ **TODO — Phase A6** |
+| All vehicles route | ⏳ **TODO — Phase C1** |
+| Profile extensions routes | ⏳ **TODO — Phase D** |
+
+## 10. Do NOT reintroduce
+
+- `NavigationContainer`, `createStackNavigator`, `createDrawerNavigator`,
+  `createBottomTabNavigator` as the app's navigation architecture
+- `DrawerNavigator` package architecture
+- `ScreenNames.ts` / hard-coded route-name registration
+- A second navigation tree alongside Expo Router
+- Navigation targets that do not exist (a target must never be invented — if a route does not
+  exist yet, report upward through a callback instead of navigating)

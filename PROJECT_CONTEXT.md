@@ -3,11 +3,62 @@
 ## Project Name
 YamakExpoNew
 
+## DOCUMENTATION EXPO ALIGNMENT (recorded decisions — this section is authoritative)
+
+Recorded as DOCS-EXPO-001. Ten decisions, in the user's own terms:
+
+1. **Project history was corrected.** The earlier rebuild documentation described a bare React
+   Native CLI project (`YamakMobileNew`) as the active target. That was wrong and is now
+   superseded throughout the documentation.
+2. **`YamakExpoNew` (Expo + Expo Router) is the single ACTIVE implementation.**
+3. **`YamakMobileNew` (React Native CLI) is SUPERSEDED** — retained for migration/rollback review
+   only. It is not the build target and must not be referenced as current.
+4. **`yamak-mobile` (legacy) is a LEGACY FUNCTIONAL REFERENCE only.** It remains the source of
+   truth for functionality, business behaviour, screens, flows, API contracts, validation rules,
+   assets/content, and required native capabilities. It is **NOT** the source of truth for package
+   versions, navigation implementation, state-management library, old RN architecture, deprecated
+   native configuration, or obsolete workarounds.
+5. **The authoritative stack is:** Expo · React Native · TypeScript · Expo Router · React Context
+   (only where chosen deliberately) · SecureStore · a fetch-based HTTP client · `react-native-maps`
+   · `app.config.ts` · `.env` / `EXPO_PUBLIC_*`. RN CLI, `NavigationContainer`,
+   `createStackNavigator` as required architecture, the DrawerNavigator package, Zustand, Axios,
+   `react-native-config` and bare-RN are **NOT** to be forced.
+6. **The next phase is the Authenticated App Shell (Phase A).** The app shell must be completed
+   before Edit Profile — "Edit Profile is next" is no longer a valid statement.
+7. **The Profile Hub (SCREEN-016) must precede Edit Profile (SCREEN-017) and My Cars (SCREEN-018)**
+   and any profile-side navigation, because those screens are reached through the hub and the hub
+   holds the only logout path.
+8. **The final objective is functional parity with legacy Yamak**, not architectural identity.
+   Where legacy and current best practice disagree, current best practice wins — but only after
+   explicitly recording that legacy behaviour is intentionally not being copied.
+9. **This work was documentation-only.** No product code, no backend, no package installs, no
+   builds, no Expo prebuild, and no commits were performed or changed. Git HEAD remains `143bc8d`
+   with the documentation edits uncommitted.
+10. **Commit status for this documentation pass: NOT YET.**
+
+### Source-of-truth hierarchy (highest wins)
+
+1. `PROJECT_CONTEXT.md` — verified implementation facts, recorded decisions, this section.
+2. `docs/rebuild/REBUILD-PLAN.md` — phases A–G, next tasks, architecture authority.
+3. Legacy `yamak-mobile` — functional/business truth only (see item 4 above).
+4. `docs/rebuild/01–11` legacy-analysis documents — historical legacy evidence, NON-CURRENT for
+   architecture.
+5. Current Expo / React Native official documentation — technical authority for how to build it
+   (`https://docs.expo.dev/`, version-matched to the installed SDK).
+
+An explicit user decision outranks any document, including this one.
+
 ## Tech Stack
 - Expo
 - React Native
 - TypeScript
 - Expo Router
+- SecureStore (session persistence)
+- React Context (`src/auth`, `src/location`) — no Zustand
+- `fetch`-based HTTP client (`src/api/http-client.ts`) — no Axios
+- `react-native-maps`
+- Configuration via `app.json` + `app.config.ts`, secrets via `.env` / `EXPO_PUBLIC_*`
+  — no `react-native-config`, no Gradle flavors
 
 ## Project Structure
 - `src/app`: Expo Router screens and layouts.

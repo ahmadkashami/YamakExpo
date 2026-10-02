@@ -1,6 +1,27 @@
-# YAMAK MOBILE — 07. ASSETS & BRANDING
+# YAMAK MOBILE - 07. ASSETS & BRANDING
 
-> Reverse-engineered from `src/constants/`, `app.json`, `src/assets/`, `ios/Yamak/Info.plist`,
+> # ⚠️ LEGACY REFERENCE FOR CONTENT — NON-CURRENT FOR DESIGN AUTHORITY
+>
+> This document catalogs the legacy **`yamak-mobile`** project's brand assets and tokens, which is
+> **SUPERSEDED**. It is retained ONLY as the source of truth for **which assets, icons, fonts,
+> copy, logo files and app identity values exist and must be reproduced**.
+>
+> The active project is **`YamakExpoNew` (Expo + Expo Router)** — see `REBUILD-PLAN.md` §0–§2.
+>
+> **Design authority is NOT legacy.** Legacy's own palette is known to fail WCAG AA
+> (gold `#EEB247`/`#F7B123` on white ≈1.9:1). The rebuild's single palette is the **approved**
+> token set in `src/theme/` (`colors.ts`, `spacing.ts`, `radius.ts`, `typography.ts`,
+> `interaction.ts`), as approved through the `YAMAK-DESIGN-001` gate in
+> `13-SCREEN-BY-SCREEN-REBUILD-PLAN.md`. Legacy colors/fonts below are **content inventory only**.
+>
+> Also note: legacy `android/`, `ios/`, and hardcoded build config (application IDs, flavors,
+> Gradle) are historical. The rebuild configures through **`app.json` / `app.config.ts`** with
+> `android.package` / `ios.bundleIdentifier` = `com.yamak.assist` and the scheme `yamakexponew`.
+>
+> **Never reuse a legacy secret.** The Google Maps keys committed in legacy manifests must never
+> be copied into the rebuild — see `SECRETS-MIGRATION-CHECKLIST.md`.
+
+> Reverse-engineered from `src/constants/`, legacy `app.json`, `src/assets/`, `ios/Yamak/Info.plist`,
 > `android/app/src/main/res/`. Evidence: `CONFIRMED` | `INFERRED` | `UNKNOWN`.
 > IMPORTANT: This doc preserves brand tokens so the rebuild looks identical. Asset binary files
 > (images/lottie/fonts) must be re-delivered by the user or extracted from the legacy repo.

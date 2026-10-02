@@ -1,4 +1,25 @@
-# YAMAK MOBILE — 10. USER FLOWS
+# YAMAK MOBILE - 10. USER FLOWS
+
+> # ⚠️ LEGACY FUNCTIONAL REFERENCE — NON-CURRENT FOR ARCHITECTURE
+>
+> These flows were synthesized from the legacy **`yamak-mobile`** project, which is **SUPERSEDED**.
+> They are retained ONLY as the source of truth for **what the user can do, in what order, with
+> what outcome, and which validation or business rules apply at each step**.
+>
+> The active project is **`YamakExpoNew` (Expo + Expo Router)** — see `REBUILD-PLAN.md` §0–§2.
+>
+> **Do not copy the legacy navigation steps.** Flows below name `RootFun`, `AuthStack`,
+> `DrawerStack`, `TabNavigator` and `HomeStackNAvigator` because that is how legacy navigated. In
+> the rebuild, navigation is **Expo Router**: a session gate in `src/app/_layout.tsx`, route groups
+> `(app)/(tabs)`, and `router.push/replace/back`. See `03-navigation-map.md` Part 2 for the
+> authoritative target behavior.
+>
+> Also note: flows naming `navigation.navigate("X")`, Zustand stores, or AsyncStorage keys are
+> describing **behaviour**, not implementation. Preserve the behaviour; implement it with the
+> current architecture.
+>
+> Reading rule: every *step and outcome* entry is authoritative; every *navigation/state
+> mechanism* note is historical.
 
 > Flows synthesized from screens + navigation + APIs. Evidence: `CONFIRMED` | `INFERRED` | `UNKNOWN`.
 > Numbered `UF-###`. Each flow maps to screens in `02-screen-inventory.md` and tasks in `13-SCREEN-BY-SCREEN-REBUILD-PLAN.md`.

@@ -1,71 +1,147 @@
 # YAMAK MOBILE — SECRETS MIGRATION CHECKLIST
 
-> SECURITY RULE: This file lists WHERE secrets/keys live and their VARIABLE NAMES.
-> **No values are copied here.** When the rebuild configures these, the user must copy
-> values from the legacy files (or from the owning consoles) directly into the NEW project —
-> never into documentation.
-> NEVER commit real values to the repo.
+> # 🔒 SECURITY RULES (UNCHANGED — STILL FULLY BINDING)
+>
+> 1. This file lists **WHERE** secrets/keys live and their **VARIABLE NAMES** only.
+> 2. **NO VALUES ARE EVER WRITTEN IN THIS DOCUMENT.** If any value appears anywhere in `docs/`,
+>    treat it as an error and redact it.
+> 3. Values are copied by the **user** directly from the owning console / password manager into the
+>    NEW project's local `.env` — never into documentation, never into source, never into an issue.
+> 4. **NEVER commit real values to the repo.** `.env` is gitignored.
+> 5. **Never reuse the legacy committed Google Maps keys.** Rotate / restrict instead
+>    (see §4).
+>
+> ⛔ **Legacy leak recorded (do not replicate):** the legacy `yamak-mobile` repository has a Google
+> Maps Android key hardcoded in tracked `AndroidManifest.xml` files and a separate iOS key in a
+> tracked `AppDelegate.mm`. Firebase keys are also committed in tracked files and even in tracked log
+> files. **The Expo rebuild must not repeat this.** Rotate those keys in Google Cloud.
 
 ---
 
-## 1. Environment secrets (`.env*` files in repo)
+## 1. Environment configuration in Expo
 
-| Variable | Used by | Where value originates |
+`YamakExpoNew` uses Expo configuration, not `react-native-config`:
+
+| Mechanism | Purpose |
+|---|---|
+| `.env` | Local, **gitignored** environment values. Loaded by the Expo CLI at config-evaluation time. |
+| `.env.example` | Tracked template showing **variable NAMES only**. Never values. |
+| `EXPO_PUBLIC_*` | Variables inlined into the JS bundle and readable at runtime via `process.env`. Only put **public** values here (a base URL is public; a secret is not). |
+| Non-`EXPO_PUBLIC_` variables | Read **at build/config time only** (e.g. inside `app.config.ts`). Never shipped in the bundle. |
+
+> ⛔ **`react-native-config` is NOT used by `YamakExpoNew`.** It was a legacy CLI choice and is
+> superseded by `app.config.ts` + `.env`. Do not reintroduce it.
+
+### 1.1 Current variable names
+
+| Variable | Used by | Where the value originates | Current status |
+|---|---|---|---|
+| `EXPO_PUBLIC_API_URL` | Shared fetch client (`src/api/config.ts`) — API base URL | team backend (production `https://yamak-kw.com/api/mobile/v1/`) | ✅ **IN USE.** Present in `.env.example`; a public value, not a secret. |
+| `GOOGLE_MAPS_ANDROID_API_KEY` | `app.config.ts` → `react-native-maps` plugin → Android `com.google.android.geo.API_KEY` meta-data | Google Cloud Console → Maps SDK for Android | ✅ **IN USE.** Configured (build-time only). Restriction status in §4. |
+| `GOOGLE_MAPS_IOS_API_KEY` | `app.config.ts` → `react-native-maps` plugin → iOS `GMSApiKey` + Google pod + AppDelegate init | Google Cloud Console → Maps SDK for iOS | ✅ **IN USE.** Configured (build-time only). Restriction status in §4. |
+
+### 1.2 `app.config.ts` handling (current)
+
+- `app.json` is the **static source of truth** for every other value.
+- `app.config.ts` re-emits `app.json` wholesale via a spread and appends the `react-native-maps`
+  plugin entry. **The spread is load-bearing** — the dynamic config *is* the resolved config.
+- Both Maps keys are read from `process.env` **only**. No key is hardcoded anywhere in the project.
+- A falsy/undefined key is a safe no-op for that platform (no Maps SDK injection for the platform
+  without a key).
+
+```ts
+// shape only — NO VALUES
+const mapsPlugin = [
+  'react-native-maps',
+  {
+    androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY,
+    iosGoogleMapsApiKey: process.env.GOOGLE_MAPS_IOS_API_KEY,
+  },
+];
+```
+
+---
+
+## 2. Google Maps keys — current handling
+
+| Platform | Injection | Value location |
 |---|---|---|
-| `IOS_CLIENT_ID` | Google Sign-In iOS | Google Cloud Console (iOS client) |
-| `ANDROID_CLIENT_ID` | Google Sign-In Android | Google Cloud Console (Android client) |
-| `WEB_CLIENT_ID` | Google Sign-In server/web | Google Cloud Console (Web client) |
-| `API_URL` | axios base URL | team backend (production `https://yamak-kw.com/api/mobile/v1/`) |
-| `SENTRY_DSN` | Sentry init (`src/services/sentry/sentry.config.ts`) | Sentry project settings |
-| `FRESHCHAT_APPI_ID` | Freshchat init (`src/services/freshchat/freshchat.config.ts`) | Freshchat dashboard |
-| `FRESHCHAT_APP_KEY` | Freshchat init (same) | Freshchat dashboard |
+| Android | `react-native-maps` config plugin writes `com.google.android.geo.API_KEY` meta-data into the **generated** manifest | `.env` → `app.config.ts` |
+| iOS | `react-native-maps` config plugin writes `GMSApiKey` into the generated `Info.plist` + Google pod + Swift AppDelegate init | `.env` → `app.config.ts` |
 
-> Values exist in: `.env`, `.env.development`, `.env.staging`, `.env.production`
-> (Google ids + API URL are stored there). `SENTRY_DSN` / `FRESHCHAT_*` are consumed
-> via `react-native-config` `Config.*` (exact env var names should be re-verified at rebuild time).
+**Generated native files are never edited by hand.** The `android/` / `ios/` directories are produced
+by prebuild/EAS and are gitignored; the key reaches them only through the config plugin.
 
-## 2. Firebase configuration (source of truth: Firebase console)
+Prerequisites for the keys to work in a standalone build (all user/console actions, never in this repo):
 
-| File | Platform | Purpose |
+- Maps SDK for Android **enabled** in Google Cloud — *needs external verification*.
+- Maps SDK for iOS **enabled** in Google Cloud — *needs external verification*.
+- Android key restricted to package `com.yamak.assist` **+ the signing SHA-1** (debug SHA-1 for dev,
+  Play App Signing SHA-1 for production — the debug SHA-1 becomes available only after the first
+  successful debug build). *Pending.*
+- iOS key restricted to bundle id `com.yamak.assist`. *Needs external verification.*
+
+---
+
+## 3. PLANNED / NOT YET MIGRATED
+
+These legacy requirements still exist as **capabilities** and must be preserved as requirements —
+but nothing is configured in `YamakExpoNew` yet. Do **not** delete them; do **not** assume they are
+done. Marked **PLANNED / NOT YET MIGRATED**.
+
+| Item | Variable / file names (no values) | Status | Notes |
+|---|---|---|---|
+| **Firebase** — Android config | `google-services.json` | **PLANNED / NOT YET MIGRATED** | Regenerate for the NEW applicationId `com.yamak.assist` (never the legacy flavors). |
+| **Firebase** — iOS config | `GoogleService-Info.plist` | **PLANNED / NOT YET MIGRATED** | Regenerate for bundle id `com.yamak.assist`. |
+| **FCM push** | push-token field name `fcmToken` vs `notificationToken` (unconfirmed) | **PLANNED / NOT YET MIGRATED** | Topic `yamak-all` in legacy. Field name must be confirmed against the backend. |
+| **Google Sign-In** | `GOOGLE_EXPO_CLIENT_ID` (Android) / `IOS_CLIENT_ID` (iOS) / `WEB_CLIENT_ID` (server) — legacy names `ANDROID_CLIENT_ID`, `IOS_CLIENT_ID`, `WEB_CLIENT_ID` | **PLANNED / NOT YET MIGRATED** | In Expo the client ids are Expo config (`app.json` `ios.config.googleServicesFile`, Android `android.googleServicesFile`, plus `expo-auth-session` / config plugin). Names must be re-confirmed at implementation time. |
+| **Apple Sign-In** | iOS entitlement + Apple team credentials | **PLANNED / NOT YET MIGRATED** | iOS only. |
+| **Sentry** | `SENTRY_DSN` | **PLANNED / NOT YET MIGRATED** | Legacy read it via `react-native-config`; Expo equivalent is build-time config (config plugin or `app.config.ts`). DSN from Sentry project settings. |
+| **Freshchat** | `FRESHCHAT_APPI_ID`, `FRESHCHAT_APP_KEY` | **PLANNED / NOT YET MIGRATED** | Freshchat dashboard. Note the legacy variable name typo (`APPI`). |
+| **Alternate app icons** | legacy `Ramadan_AppIcon`, `defualt_AppIcon` (typo) | **PLANNED / NOT YET MIGRATED** | Expo equivalent decided at implementation time. |
+| **Deep links** | legacy `yamak://`, `https://yamak-kw.com`, `https://yamak.page.link.com` | **PLANNED / NOT YET MIGRATED** | Current scheme is `yamakexponew`; the share link `yamak.page.link/app` is used by Vehicle Details share. |
+| **Custom dev API-IP override** | legacy AsyncStorage key `environment` | ⛔ NOT TO REBUILD | Legacy dev-only workaround (BR-060). Do not port. |
+
+### 3.1 Legacy client-ID behaviour notes (historical, still applicable)
+
+- Google client IDs are semi-public (embedded in builds) but should still be managed via env/config,
+  **not** hardcoded in source. Never paste them into issues/PRs/docs.
+- The web/server client ID is used by the backend for token verification — keep mobile and backend
+  in sync.
+
+---
+
+## 4. App signing (current position)
+
+| Item | Legacy position | Action for the Expo rebuild |
 |---|---|---|
-| `google-services.json` | Android | FCM + Google Sign-In app config; **per flavor/package** (mobapp/mobstaging/mobdev) |
-| `GoogleService-Info.plist` | iOS | Firebase iOS config |
-| `firbease.json` (legacy file name typo at repo root) | repo | confirm/remove; NOT a config to copy |
+| Android debug keystore | `android/app/debug.keystore` (password `android`) | Expo/Gradle auto-generates `~/.android/debug.keystore`; fine for dev. Debug SHA-1 needed to restrict the Maps key. |
+| Android RELEASE keystore | **none — legacy ships release with the debug keystore** | ⚠️ **MUST create a real release keystore** and store alias/passwords in a secret manager. Never in the repo. Never sign release with the debug keystore. |
+| iOS signing identity | Xcode account | Own Apple Developer team credentials. |
+| Apple Sign-In entitlement | `ios/Yamak/*.entitlements` | Re-enable when social auth is migrated. |
 
-Migration: regenerate for each Android applicationId + iOS bundle in the Firebase console.
+---
 
-## 3. Native API keys (values live in native files)
+## 5. Migration procedure (at rebuild time)
 
-- Google Maps Android key → `<meta-data android:name="com.google.android.geo.API_KEY" android:value="AIza..."/>` in `android/app/src/main/AndroidManifest.xml`.
-- Google Maps iOS key → `ios/Yamak/Info.plist` `GMSApiKey` (verify key name at rebuild).
-- Google Sign-In iOS reverses-client URL scheme → `ios/Yamak/Info.plist` `URLSchemes`.
+1. Copy variable **NAMES** into a new local `.env` in `YamakExpoNew`; paste **values** locally from
+   the owning consoles / password manager (never into git, never into docs).
+2. Confirm `.env` is gitignored and `.env.example` contains **names only**.
+3. Maps keys flow through `.env` → `app.config.ts` → `react-native-maps` plugin → generated native
+   project. Never edit the generated `android/` / `ios/` files.
+4. For Firebase / FCM / social / Sentry / Freshchat: regenerate or create each artifact for
+   `com.yamak.assist` / `com.yamak.assist` in the owning console **before** wiring it, then wire it
+   through the documented Expo config mechanism and mark the item migrated here.
+5. Create the release keystore; store it securely; configure release signing (EAS credentials or a
+   managed keystore) — never commit it.
+6. Verify no key value is referenced anywhere in `docs/`.
 
-## 4. App signing
+---
 
-| Item | Location (legacy) | Action for rebuild |
-|---|---|---|
-| Android debug keystore | `android/app/debug.keystore` (password `android`) | regenerate per project; fine for dev |
-| Android RELEASE keystore | **none — legacy ships release with debug keystore** | ⚠️ MUST create a real release keystore + store in secret manager; record alias/passwords there, not in repo |
-| iOS signing identity | Xcode account | own team credentials |
-| Apple Sign-In entitlement | `ios/Yamak/*.entitlements` | re-enable in new project |
+## 6. Guardrail for this documentation set
 
-## 5. Client IDs behaviour notes
-
-- Google client IDs are semi-public (embedded in builds) but should still be managed via env vars,
-  NOT hard-coded in source. Never paste them into issues/PRs/docs.
-- `WEB_CLIENT_ID` is used by the backend for token verification — keep in sync between mobile and backend.
-
-## 6. Migration procedure (for rebuild time)
-
-1. Create new `.env*` in the NEW repo with the SAME variable names (copy values from OFF-repo password manager or the owning consoles; or from the legacy `.env*` files directly on your machine — not into git docs).
-2. Add `.env*` to `.gitignore`.
-3. Regenerate `google-services.json` per flavor; place in each flavor source set.
-4. Add `GoogleService-Info.plist` to iOS.
-5. Create release keystore; store securely; configure `signingConfigs.release`.
-6. Add Sentry DSN + Freshchat keys into the right env files.
-7. Verify no key is referenced by value anywhere in `docs/`.
-
-## 7. Guardrail for this documentation set
-
-- `01-project-inventory.md`, `08-environment-and-config.md`, and this file reference
-  variable NAMES and FILE PATHS only. If any VALUE appears, treat it as an error and redact.
+- `01-project-inventory.md`, `08-environment-and-config.md`, and this file reference variable
+  **NAMES** and **FILE PATHS** only. If any VALUE appears, treat it as an error and redact.
+- All key *values* in this project live only in the machine-local, gitignored `.env`.
+- Logs, screenshots, and verification artifacts must never capture a key value. Masked fragments
+  only (e.g. a truncated prefix) — never a full key.

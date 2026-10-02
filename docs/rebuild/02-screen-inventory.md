@@ -1,4 +1,22 @@
-# YAMAK MOBILE — 02. SCREEN INVENTORY
+# YAMAK MOBILE - 02. SCREEN INVENTORY
+
+> # ⚠️ LEGACY FUNCTIONAL REFERENCE — NON-CURRENT FOR ARCHITECTURE
+>
+> This screen list was reverse-engineered from the legacy **`yamak-mobile`** project, which is
+> **SUPERSEDED**. It is retained ONLY as the source of truth for **which screens exist, what each
+> one does, its entry/exit points, and its business behaviour**.
+>
+> The active project is **`YamakExpoNew` (Expo + Expo Router)** — see `REBUILD-PLAN.md` §0–§2.
+>
+> **Do not copy the legacy architecture described below.** `ScreenNames.ts`, `NavigationContainer`,
+> `createStackNavigator`, `createDrawerNavigator`, `createBottomTabNavigator` and the 4-deep nested
+> navigator stack are **legacy history**, not the rebuild's architecture. In the rebuild a screen is
+> a **file under `src/app/`** and a navigator is a **`_layout.tsx`** — there is no screen-registry
+> file and nothing is "registered" anywhere.
+>
+> Reading rule: every *screen + behaviour* entry is authoritative; every *navigation
+> implementation* note is historical. Current build order and statuses live in
+> `13-SCREEN-BY-SCREEN-REBUILD-PLAN.md` §12 and `11-rebuild-backlog.md`.
 
 > Reverse-engineered from the legacy `yamak-mobile` codebase. Evidence classification:
 > `CONFIRMED` (code seen) | `INFERRED` (deduced from usage) | `UNKNOWN` (not located) | `UNUSED?` (likely dead code)

@@ -31,10 +31,19 @@
 
 ## C. Data & lists
 
+> ℹ️ **Legacy mechanism vs rebuild mechanism.** The rules below describe legacy *behaviour* and are
+> authoritative. Where they name a Zustand store or an AsyncStorage key, that is legacy history:
+> the rebuild uses **hook-local state** (`src/hooks/use-*.ts`) and the shared owners
+> (`src/location/location-context.tsx`, `src/auth/auth-context.tsx`). Behaviour is preserved; the
+> mechanism is not.
+
 - **BR-020** Vehicles are paginated: default `{ page: 1, limit: 10 }`; merged with user location
-  (`latitude`, `longitude` from AsyncStorage `userLocation`) when fetching the list. (CONFIRMED)
-- **BR-021** Home screen shows services, adds, and vehicles — each loaded separately and stored in
-  its own Zustand store. (CONFIRMED)
+  (`latitude`, `longitude` from the shared location owner) when fetching the list. ✅ The rebuild
+  sends coordinates **only** as a finite `latitude`+`longitude` pair, and sends **no** `limit`
+  (server default 10). (CONFIRMED)
+- **BR-021** Home screen shows services, adds, and vehicles — each loaded separately. ✅ Implemented
+  in the rebuild as three independent hooks with local state; **no** per-section Zustand store.
+  (CONFIRMED)
 - **BR-022** Favorites are stored LOCALLY as vehicle id array in AsyncStorage key `favorites`
   (no favorites API). (CONFIRMED)
 - **BR-023** Favorite actions: add by id (no duplicates de-dup bug in legacy store — rebuild should

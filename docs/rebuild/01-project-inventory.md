@@ -1,4 +1,23 @@
-# Yamak Mobile — Phase 1: Project Inventory
+# Yamak Mobile - Phase 1: Project Inventory
+
+> # ⚠️ LEGACY FUNCTIONAL REFERENCE — NON-CURRENT FOR ARCHITECTURE
+>
+> This document inventories the legacy **`yamak-mobile`** project, which is **SUPERSEDED**. It is
+> retained ONLY as the source of truth for **functionality, business behavior, screens, flows, API
+> contracts, validation rules, assets/content, and required native capabilities**.
+>
+> The active project is **`YamakExpoNew` (Expo + Expo Router)** — see `REBUILD-PLAN.md` §0–§2.
+> The inventory below therefore records what legacy **is**, not what the rebuild **should be**.
+>
+> **Do not copy the legacy architecture described below.** React Navigation, Zustand, axios and
+> `react-native-config` appear throughout because that is what legacy *did* — they are historical
+> facts, **not** the rebuild's architecture. The rebuild uses **Expo Router file-based routes**,
+> **React Context** where shared state is genuinely needed, **SecureStore**, a **fetch**-based HTTP
+> client, and **`.env` / `EXPO_PUBLIC_*` / `app.config.ts`**.
+>
+> Reading rule: every *behaviour* statement below is authoritative; every *implementation*
+> statement is historical. Non-current file/folder paths (`src/screens`, `src/apis`, `src/store`,
+> `android/`, `ios/`) do **not** exist in the rebuild and must not be recreated.
 
 **Generated:** 2026-09-20  
 **Source Repository:** `yamak-mobile`  

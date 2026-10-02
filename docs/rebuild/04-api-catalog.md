@@ -1,8 +1,26 @@
-# YAMAK MOBILE — 04. API CATALOG
+# YAMAK MOBILE - 04. API CATALOG
+
+> # ⚠️ LEGACY FUNCTIONAL REFERENCE — NON-CURRENT FOR ARCHITECTURE
+>
+> This catalog was reverse-engineered from the legacy **`yamak-mobile`** project, which is
+> **SUPERSEDED**. It is retained ONLY as the source of truth for **endpoint paths, HTTP methods,
+> request payloads, response envelopes/shapes, query parameters and validation rules**.
+>
+> The active project is **`YamakExpoNew` (Expo + Expo Router)** — see `REBUILD-PLAN.md` §0–§2.
+>
+> **Do not copy the legacy transport described below.** `src/apis/axios.config.ts`, the axios
+> instance, and `API_URL` from `react-native-config` are **legacy history**. The rebuild uses the
+> **fetch**-based `src/api/http-client.ts` with typed `ApiError` (`src/api/api-error.ts`), feature
+> modules under `src/api/`, and a base URL from the **`EXPO_PUBLIC_API_URL`** env var
+> (`src/api/config.ts`). **Do not invent endpoints** — this catalog is the contract list.
+>
+> Reading rule: every *endpoint / payload / response* entry is authoritative; every *client
+> implementation* note is historical.
 
 > Reverse-engineered from `src/apis/*.ts`. Evidence: `CONFIRMED` (in code) | `INFERRED` | `UNKNOWN`.
-> Base URL (production): `https://yamak-kw.com/api/mobile/v1/` (see `08-environment-and-config.md`).
-> All calls go through `src/apis/axios.config.ts`. Auth: Bearer token + `device`, `language` headers.
+> Legacy base URL: `https://yamak-kw.com/api/mobile/v1/` (see `08-environment-and-config.md`).
+> All calls go through `src/apis/axios.config.ts` (**legacy transport — superseded**).
+> Auth: Bearer token + `device`, `language` headers.
 
 ---
 

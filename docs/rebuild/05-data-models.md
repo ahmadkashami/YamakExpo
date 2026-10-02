@@ -1,8 +1,26 @@
-# YAMAK MOBILE — 05. DATA MODELS & LOCAL STATE
+# YAMAK MOBILE - 05. DATA MODELS & LOCAL STATE
+
+> # ⚠️ LEGACY FUNCTIONAL REFERENCE — NON-CURRENT FOR ARCHITECTURE
+>
+> This document models the legacy **`yamak-mobile`** project's data and local state, which is
+> **SUPERSEDED**. It is retained ONLY as the source of truth for **response shapes, persisted
+> fields, and which values the app is expected to keep across restarts**.
+>
+> The active project is **`YamakExpoNew` (Expo + Expo Router)** — see `REBUILD-PLAN.md` §0–§2.
+>
+> **Do not copy the legacy state architecture described below.** Zustand v5 +
+> `zustand/middleware/persist` + AsyncStorage are **legacy history**. The rebuild uses
+> **React Context only where shared state is genuinely needed** (currently: auth session in
+> `src/auth/auth-context.tsx`, location in `src/location/location-context.tsx`), **SecureStore** for
+> secrets, and **hook-local state by default** (`src/hooks/use-*.ts`). There is **no Zustand store**
+> and **no** global selected-service / favorites / services / vehicles store.
+>
+> Reading rule: every *field shape / persisted value* entry is authoritative; every *store and
+> module path* (`src/store/*.ts`) is historical and must not be recreated.
 
 > Reverse-engineered from `src/store/*.ts`, `src/constants/data.ts`, `src/helpers/AppAsyncStoreage.ts`.
 > Evidence: `CONFIRMED` (code seen) | `INFERRED` | `UNKNOWN`.
-> State management: Zustand v5. Persistence: `zustand/middleware/persist` with AsyncStorage.
+> Legacy state management: Zustand v5. Legacy persistence: `zustand/middleware/persist` with AsyncStorage.
 > IMPORTANT: `UNKNOWN` fields below MUST be confirmed against the running backend during rebuild.
 
 ---
