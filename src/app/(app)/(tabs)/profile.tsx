@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     marginBottom: spacing.xxl,
   },
   avatarCircle: {
@@ -156,6 +156,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     fontSize: 36,
     color: colors.brandText,
+    textAlign: 'center',
   },
   identityTextWrap: {
     alignItems: 'center',
@@ -163,14 +164,14 @@ const styles = StyleSheet.create({
   },
   userName: {
     color: colors.title,
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
     marginBottom: spacing.xs,
     fontWeight: fontWeight.medium,
   },
   userEmail: {
     color: colors.subtitle,
-    fontSize: 12,
+    fontSize: 14,
     textAlign: 'center',
     fontWeight: fontWeight.medium,
   },
@@ -180,10 +181,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     shadowColor: 'black',
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 10,
     elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   menuItem: {
     flexDirection: 'row',
@@ -204,6 +207,7 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 24,
     color: colors.subtitle,
+    marginLeft: spacing.md,
   },
   footer: {
     alignItems: 'center',

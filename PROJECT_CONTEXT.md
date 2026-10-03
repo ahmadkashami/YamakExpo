@@ -1167,3 +1167,15 @@ only. Approved spec created at
 `docs/rebuild/approve-ui/profile/APPROVED-PROFILE-SPEC.md`. Profile design = APPROVED (structure);
 Profile UI code still needs A4.4 implementation. No product code changed; no backend; yamak-mobile
 untouched. Next approved step = A4.4 Profile UI Implementation. Commit = NOT YET.
+
+## PHASE A — A4.4 PROFILE HUB UI IMPLEMENTATION (implementation, 2026-10-03)
+
+Approved spec applied: `docs/rebuild/approve-ui/profile/APPROVED-PROFILE-SPEC.md`. Visual polish
+applied to `src/app/(app)/(tabs)/profile.tsx` (header spacing, avatar initials alignment, menu
+surface/card subtle border/shadow, chevron spacing, identity typography) while preserving all
+functional behavior (useAuth().user, signOut(), Share, Linking, Alert). No profile API fetch; no
+dead buttons; no future features; no backend/dependency/native changes. RTL-safe layout preserved.
+TypeScript: no new errors introduced by A4.4 (only existing baseline
+`src/components/app-tabs.web.tsx(27,38)`). Design matches approved structure with no intentional
+deviations. Functional behavior verified conceptually. Commit = NOT YET. Next step = A4 final
+acceptance / commit. A5 not started.
