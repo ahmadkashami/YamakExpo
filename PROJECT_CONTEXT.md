@@ -1179,3 +1179,234 @@ TypeScript: no new errors introduced by A4.4 (only existing baseline
 `src/components/app-tabs.web.tsx(27,38)`). Design matches approved structure with no intentional
 deviations. Functional behavior verified conceptually. Commit = NOT YET. Next step = A4 final
 acceptance / commit. A5 not started.
+
+## PHASE A - A5.1 BOTTOM TABS ANALYSIS (analysis only, 2026-10-03)
+
+**No product code changed. Analysis only: no `(tabs)/_layout.tsx` was created, no `src/` file was
+touched, no package was installed, no native build / Expo / Metro / tsc run, nothing committed.**
+Only this file changed. Read-only evidence was taken from the installed `node_modules`
+(`expo-router@57.0.23`, bundled `@react-navigation/bottom-tabs`) and from `src/`.
+
+### Current authenticated route tree (verified, 9 files)
+- `src/app/_layout.tsx` - root `Stack`, `headerShown: false`, wraps `AuthProvider` + `AuthReadyLayout`.
+- `src/app/index.tsx` - A1 cold-start gate -> `AUTHENTICATED_ENTRY_ROUTE`.
+- `src/app/register.tsx`, `src/app/email-otp.tsx` - unauthenticated area.
+- `src/app/(app)/_layout.tsx` - A1 session gate + `UserLocationProvider` + `<Slot />`. Its comment
+  already states: "Deliberately still no tabs and no drawer: A5 owns the navigator."
+- `src/app/(app)/(tabs)/home.tsx` -> `/home`
+- `src/app/(app)/(tabs)/map.tsx` -> `/map`
+- `src/app/(app)/(tabs)/profile.tsx` -> `/profile`
+- `src/app/(app)/vehicle/[id].tsx` -> `/vehicle/[id]`
+
+**`(tabs)/_layout.tsx` does NOT exist.** Today `(tabs)` has no layout, so in
+`expo-router/build/getRoutesCore.js` `flattenDirectoryTreeToRoutes` (a directory only becomes a route
+node when it holds a `_layout`, line 462) the three `(tabs)` files are hoisted into `(app)`'s `<Slot>`
+as ordinary siblings -> `(app)` currently has 4 flat screens and NO tab bar at all.
+
+### A1 gate destination stays `/home`
+`src/auth/app-routes.ts`: `AUTHENTICATED_ENTRY_ROUTE = '/home'`, and its own doc comment already
+anticipates A5: "A5 will add the `(tabs)` layout that turns `/home` and `/map` into tabs without
+moving either file; this constant does not need to change again." **A5 must not change this
+constant.** Typed routes in `.expo/types/router.d.ts` already contain `/home`, `/map`, `/profile`,
+`/vehicle/[id]` - the URLs are stable and correct today.
+
+### Navigator decision: Expo Router `Tabs` (NOT manual React Navigation)
+Use `Tabs` from `expo-router`. Do NOT reintroduce `NavigationContainer` /
+`createBottomTabNavigator` / a manual React Navigation root. This is already the written project
+rule: `docs/rebuild/EXPO-MIGRATION.md:37` ("Expo Router replaces `NavigationContainer`") and
+`docs/rebuild/03-navigation-map.md:265-273` ("Do NOT reintroduce").
+
+Import-path nuance to decide in A5.2: `expo-router/build/exports.d.ts:44` exports
+`export { Tabs } from './layouts/Tabs'`, but line 42 marks it
+`@deprecated Use 'import { Tabs } from 'expo-router/js-tabs' instead.`
+`node_modules/expo-router/js-tabs.d.ts` exists (`export * from './build/layouts/Tabs'`). Both point
+at the same module. The root import works and matches the A5 brief; the subpath is the
+non-deprecated spelling. Decide once in A5.2 - it is a one-line difference, not a blocker.
+
+### CRITICAL - tab order is NOT alphabetical
+`expo-router/build/sortRoutes.js` ends with the default comparator
+`return a.route.length - b.route.length;` - ordering is by **string length**, not alphabetically.
+With no explicit `<Tabs.Screen>` declarations the three files would auto-append in the order
+`map` (3) -> `home` (4) -> `profile` (7), i.e. **Map first and Home in the middle - wrong.**
+`build/layouts/withLayoutContext.js` passes `useOnlyUserDefinedScreens = false`, so undeclared files
+are still auto-appended after the declared ones.
+=> A5.2 MUST declare the screens explicitly in the desired order:
+`<Tabs.Screen name="home" />` then `name="map"` then `name="profile"`.
+Visible order = **Home | Map | Profile**. Initial tab = **Home** (first declared); also set
+`initialRouteName="home"` explicitly so it does not depend on declaration order, and so deep links
+and history restores stay predictable.
+
+### Tab bar on `/vehicle/[id]`: correctly hidden, no config needed
+`vehicle/[id]` lives in `(app)`, NOT inside `(tabs)`, so it can never appear as a tab.
+Once `(tabs)/_layout.tsx` exists, `(app)`'s `<Slot />` has exactly 2 children: `(tabs)` (a group,
+sorts first) and `vehicle/[id]` (dynamic, sorts last). `views/Navigator.js` `SlotNavigator` renders
+only `descriptors[state.routes[state.index].key].render()` - one child at a time - so the tab bar is
+structurally absent on `/vehicle/[id]`. **No `href: null` / `tabBarStyle: display:none` required.**
+`push('/vehicle/[id]')` appends to the `(app)` Stack history, so Back returns to `(tabs)` on the
+last active tab.
+Legacy divergence, recorded not replicated: in `yamak-mobile` the Vehicle Details screen was
+registered inside `HomeStackNAvigator`, so legacy kept the tab bar visible there.
+
+### State preservation across tab switches - sufficient
+`BottomTabView.js`: `lazy = true` by default (a tab mounts on first visit, not before),
+`detachInactiveScreens = true` on native, and `routes.map(...)` keeps every visited tab mounted.
+There is a `freezeOnBlur` option but no `unmountOnBlur`. Consequence: Home/Map/Profile local state,
+fetched data, and Map camera / selection / mapType / traffic settings all survive tab switches with
+no remount and no refetch. **No caching or state-hoisting changes are needed for A5.**
+
+### Android hardware Back (verified from installed source)
+`expo-router/build/fork/useBackButton.native.js` -> `navigation.canGoBack() ? goBack() : false`,
+recursing through parent navigators (`useNavigationHelpers.js:75-84`); otherwise the OS default runs
+(app backgrounds). `react-navigation/routers/TabRouter.js` `GO_BACK` consumes `state.history` with
+default `backBehavior: 'firstRoute'` (line 96, `getRouteHistory` line 34-41). So:
+- Back on **Home** -> nothing to pop -> app backgrounds (expected).
+- Back on **Map** or **Profile** -> returns to the **Home** tab.
+Legacy used `@react-navigation/bottom-tabs ^7.18.18` (same major, same default behaviour), so parity
+is expected - but legacy `node_modules` is absent, so this is a high-confidence inference to confirm
+at runtime in A5.2, not a verified fact.
+
+### Safe area: do NOT set a numeric `height`
+`expo-router/build/react-navigation/bottom-tabs/views/BottomTabBar.js:100-113` `getTabBarHeight`:
+if the flattened `tabBarStyle` contains a `height` and it is a number, that number is returned as-is
+and the bottom safe-area inset is NOT added. If no height is set, the bar is
+`TABBAR_HEIGHT_UIKIT + insets.bottom`. => **Leave `height` out of `tabBarStyle` and let
+`react-native-safe-area-context` (~5.7.0, already installed) handle the inset automatically.**
+Related cosmetic note (no action in A5.1, do not "fix" blindly in A5.2): `home.tsx:89` and
+`map.tsx:289` already add their own `insets.bottom` padding, so once a tab bar exists the bottom
+padding will effectively be counted twice. Flagged for the A5.2 visual pass.
+
+### Design source status: (B) indirectly approved via Home / Map - NOT a dedicated tabs design
+There is **no `docs/rebuild/approve-ui/tabs/` folder** (approve-ui contains only `home/`, `map/`,
+`profile/`, `register/`, `VehiclesDetails/`). But two already-approved screens contain a fully
+specified bottom tab bar, so the visual authority for the bar exists:
+- `docs/rebuild/approve-ui/home/code.html:409-444`
+  (`<!-- BEGIN: Bottom Tab Navigation (Faithful to Yamak Prototype) -->`,
+  `data-purpose="bottom-tab-navigation"`):
+  `absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 pb-6
+  flex justify-around items-center shadow-nav z-40`;
+  ACTIVE = gold dot `w-1.5 h-1.5 bg-[#E9A319] rounded-full mb-1` ABOVE the icon, solid house icon
+  `w-5 h-5 fill-[#0B2A4A]` (`M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z`), label
+  `text-[11px] font-bold text-[#0B2A4A]`;
+  INACTIVE = `text-slate-400` icon + `text-[11px] font-medium` label, `pt-2.5`;
+  icons 20x20, `viewBox 0 0 24 24`.
+- `docs/rebuild/approve-ui/map/code.html:334-362` (`data-purpose="bottom-nav"`): same system -
+  `relative z-30 bg-white border-t border-slate-200 px-6 py-2`, inactive `text-slate-400`, ACTIVE
+  `text-yamakNavy font-bold` + tiny gold dot, Map icon as a filled/outlined folded-map polygon.
+- The iOS home-indicator pill in `home/code.html:445-449` (`w-32 h-1 bg-slate-900/30`) is **device
+  chrome, not UI** - do not implement it; the real OS inset comes from safe-area-context.
+
+**WARNING - approved mocks show 4 tabs (Home | Map | Services | Profile) but the A5 target is 3 tabs
+(Home | Map | Profile).** The "Services" quick-grid tab has **no route and must NOT be invented.**
+A5.2 implements exactly Home / Map / Profile and does not add a Services placeholder.
+
+Provisional corroboration: `docs/rebuild/new-ui/design-system/navigation.md` section 3 proposes
+3 tabs Home/Map/Profile, icon+label, "active = deep blue + gold indicator dot, inactive muted", an
+explicit accessibility rule "do not use color-only active state: icon+label+dot", and height
+56-64 + bottom safe inset. **The gold dot is therefore required, not decorative.**
+
+### Icons: use `react-native-svg`, traced 1:1 from the approved HTML
+- `@expo/vector-icons` is **NOT installed** (`node_modules/@expo/vector-icons` is absent; SDK 57 `expo`
+  does not pull it in) and `@expo/ui` exposes no `./icons` subpath - so Ionicons / MaterialIcons are
+  unavailable without a package install, which A5.1 forbids and A5.2 should also avoid.
+- `expo-symbols` `SymbolView` is **iOS-only** (already used in `register.tsx`, `email-otp.tsx`,
+  `AuthBrandHeader.tsx`, `CountrySelectorModal.tsx`, `ui/collapsible.tsx`) so it must not be the only
+  icon source; Android needs real vectors.
+- The established project pattern is `react-native-svg` (15.15.4, installed), e.g.
+  `src/components/vehicle-details/icons.tsx` - whose own header says the icons are "traced 1:1 from
+  the approved `approve-ui/VehiclesDetails/code.html` SVGs" - plus `components/map/MapControls.tsx`,
+  `components/home/ViewMap.tsx`, `components/auth/AuthBrandHeader.tsx`.
+=> In A5.2, trace the three tab icons 1:1 from `approve-ui/home/code.html:416-441`:
+Home = solid house path, Map = Heroicons folded-map stroke-2 path, Profile = Material solid person
+path (`M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z`).
+Do NOT copy legacy's `react-native-vector-icons ^10.3.0`.
+
+### Colours: theme tokens only, no hardcoded brand hexes
+`src/theme/colors.ts` already carries every value the approved mocks use, so no new tokens are
+needed and no hex may be hardcoded in the layout:
+| Approved mock | Existing token |
+|---|---|
+| bar background `bg-white/95` | `colors.surface` `#FFFFFF` |
+| top border `border-slate-200` | `colors.border` `#E2E8F0` |
+| active icon + label `yamakNavy` `#0B2A4A` | `colors.navyDeep` `#0B2A4A` |
+| active gold dot `#E9A319` | `colors.wordmark` `#E9A319` |
+| inactive `text-slate-400` | `colors.subtitle` `#64748B` (closest existing token) |
+Reported mismatch to be aware of: the A5.1 brief mentioned brand gold `#EEB247` and near-black
+`#030303`; neither appears in any approved design file or in `src/theme/colors.ts`. Use the existing
+tokens above rather than introducing the brief's hexes.
+
+### Legacy bottom tabs (`yamak-mobile`, read-only reference)
+`src/navigations/TabNavigator.tsx`: `createBottomTabNavigator`, three screens in order
+`Home_Stack` (`HomeStackNAvigator`), `Map` (`MapScreen`, no nested stack), `Profile_Stack`
+(`ProfileStack`). `headerShown: false`, **`tabBarShowLabel: false`** (labels hidden),
+`tabBarInactiveTintColor: white (#fff)`,
+`tabBarActiveTintColor: AppColorsTheme2.secondary (#F7B123)`,
+`tabBarStyle.backgroundColor: AppColorsTheme2.primary (#002F6C)`. Icons are plain
+`AppIcon type='Ionicons'`: `home-outline`, `map`, `person`. There is **no custom `tabBarIcon`
+component, no custom `tabBar`, and no raised centre button** - Map is simply the 2nd of 3 (the centre
+position). No `initialRouteName`, so Home is the default first screen.
+Legacy drawer (`DrawerNavigator.tsx`) siblings were `Home` (-> TabNavigator), `Profile` (bare
+`ProfileScreen`), `Favorites`, `messages`.
+**Intended divergence:** the new bar follows the APPROVED white/label design, not legacy's navy/no-label
+design. The approved design outranks legacy here.
+
+### Special routes / future hidden tabs
+`Tabs.Screen options={{ href: null }}` (mapped by `TabsClient.js` to
+`tabBarItemStyle: { display: 'none' }` plus a null `tabBarButton`) is only needed for a FUTURE file
+added inside `(tabs)` that must stay hidden. It is **not** needed for `vehicle/[id]`, which is
+outside the group. Do not add it now.
+
+### Dead `create-expo-app` scaffold - NOT part of A5, do not fix here
+`src/components/app-tabs.web.tsx` and `src/components/app-tabs.tsx` are unused starter leftovers.
+A repo-wide grep shows `AppTabs` / `app-tabs` is imported by **nothing**; the only other references
+are documentation: `PROJECT_CONTEXT.md:88` (listed as a `create-expo-app` leftover) and
+`docs/rebuild/11-rebuild-backlog.md:184-185` (HS-001 remove `app-tabs*` scaffold leftovers; HS-002
+remove the pre-existing `app-tabs.web.tsx(27,38)` `"/explore"` TS2322 error, deliberately not fixed).
+`app-tabs.web.tsx` is a plain `create-expo-app` demo (`expo-router/ui` `Tabs/TabList/TabTrigger/
+TabSlot`, `SymbolView`, literal "Expo Starter" text, `href="/explore"` on line 27, `href="/"` on
+line 24); `app-tabs.tsx` is an `unstable-native-tabs` `NativeTabs` demo with only `index`/`explore`
+triggers and `assets/images/tabIcons/` starter PNGs (only `home` and `explore` exist).
+**`(tabs)/_layout.tsx` is completely independent of both files.** Baseline TS error to re-report
+verbatim and NOT fix in A5:
+`src/components/app-tabs.web.tsx(27,38) - error TS2322: Type '"/explore"' is not assignable...`
+
+### Dependencies - nothing to install
+Verified present in `package.json` / `app.json` / `app.config.ts`: `expo-router ~57.0.23`,
+`react-native-screens ~4.26.0`, `react-native-safe-area-context ~5.7.0`,
+`react-native-gesture-handler`, `react-native-reanimated 4.5.1`, `react-native-svg 15.15.4`,
+`react-native-maps 1.28.2`, `expo-symbols`, `@expo/ui ~57.0.20`;
+`experiments.typedRoutes: true`, `reactCompiler: true`. `@react-navigation/bottom-tabs` is bundled
+inside `expo-router/build/react-navigation/bottom-tabs/`, so it needs no separate install either.
+**A5.2 requires zero new packages.**
+
+### Scope boundaries (A5 vs A6 vs A7)
+- A5 = SHELL-009 = bottom tabs ONLY: create `src/app/(app)/(tabs)/_layout.tsx`, wire the existing
+  three screens, apply the approved bar. Confirmed by
+  `docs/rebuild/REBUILD-PLAN.md:181-183, 247-254`, `docs/rebuild/12-rebuild-order.md:51-53`,
+  `docs/rebuild/13-SCREEN-BY-SCREEN-REBUILD-PLAN.md:944-946`,
+  `docs/rebuild/11-rebuild-backlog.md:74-78` (SHELL-009 A5 tabs, SHELL-004 A6 onboarding,
+  SHELL-008 A7 conditional drawer).
+- A6 = onboarding. A7 = drawer, conditional on a Profile entry point existing later.
+  **Both explicitly EXCLUDED from A5 - no Onboarding, no Drawer, no future Profile screens.**
+- A5 must not change Home / Map / Profile behaviour, must not touch the backend, and must not add
+  nested stacks inside tabs (legacy's `Home_Stack` / `Profile_Stack` are NOT to be reproduced - the
+  approved design shows 3 flat tabs).
+- `docs/rebuild/approve-ui/profile/APPROVED-PROFILE-SPEC.md:7` records "no tabs/_layout (A5 owns)" -
+  A5 owns the navigator but must not change Profile's approved behaviour.
+- Do NOT add `(tabs)/index.tsx`: A3 already rejected it because it would collide with
+  `src/app/index.tsx` on `/`.
+
+### Risks / unknowns carried into A5.2
+- Tab ORDER is the single highest-risk item: it depends on explicit `<Tabs.Screen>` declarations
+  because of the length-based `sortRoutes` comparator. Missing them silently yields Map-first order.
+- Android Back behaviour and tab state retention are inferred from installed library source, not yet
+  observed on a device; confirm in the A5.2 runtime pass.
+- The double `insets.bottom` on `home.tsx` / `map.tsx` is a cosmetic risk that will only be visible
+  once the bar exists.
+- The approved mocks' 4th "Services" tab is an unresolved design/source-of-truth conflict; A5 must
+  implement 3 tabs and the discrepancy is recorded, not silently resolved.
+
+### Status
+- Analysis only. No `src/` file created or modified, no package installed, no native build / Expo /
+  Metro / tsc run, no backend change, no `yamak-mobile` change, nothing committed.
+- Only `PROJECT_CONTEXT.md` changed.
+- Commit = NOT YET. Next approved step = **A5.2 Bottom Tabs Implementation**.
