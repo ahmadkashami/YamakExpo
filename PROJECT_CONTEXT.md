@@ -1141,3 +1141,15 @@ change. Commit: NOT YET. Next approved step: A4.2 Profile Hub Implementation.**
 ### Status
 - No `src/` product code changed; no backend changed; no `yamak-mobile` change.
 - Next approved step = A4.2 Profile Hub Implementation. Commit = NOT YET.
+
+## PHASE A — A4.2 PROFILE HUB IMPLEMENTATION (implementation, 2026-10-03)
+
+**Functional scope only (no approved design).** Route `/profile` created at
+`src/app/(app)/(tabs)/profile.tsx`. Renders identity from `useAuth().user` (`name`, `email`) with
+initials fallback; no profile API fetch. Functional items: Share, About Us (external), Powered By
+Yamak (external), Logout (Alert confirm → `signOut()`, A1 gate redirects to `/register`). Deferred
+all future feature rows (no dead buttons). No backend/dependency/native changes. TypeScript: no
+new errors introduced by A4.2 (only existing baseline `src/components/app-tabs.web.tsx(27,38)`).
+Design status: provisional, not approved yet; requires approve-ui review. Commit = NOT YET.
+Next after functional acceptance: Profile Code Review + Design Review; A5 must NOT begin until A4
+accepted.
