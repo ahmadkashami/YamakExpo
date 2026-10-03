@@ -1153,3 +1153,17 @@ new errors introduced by A4.2 (only existing baseline `src/components/app-tabs.w
 Design status: provisional, not approved yet; requires approve-ui review. Commit = NOT YET.
 Next after functional acceptance: Profile Code Review + Design Review; A5 must NOT begin until A4
 accepted.
+
+## PHASE A — A4.3 PROFILE HUB DESIGN REVIEW (design review only, 2026-10-03)
+
+Design review completed. Current A4.2 UI structure reviewed against
+`docs/rebuild/new-ui/main/profile/index.html` (PROVISIONAL/PROPOSED) and legacy
+`yamak-mobile/src/screens/ProfileScreen.tsx` and Profile components. Fake/demo elements identified
+and rejected (no photo, no stats/badges/membership/provider status). Approved structure: centered
+identity (initials + name + email; phone optional), single menu surface card for functional rows
+only (no dead buttons), Logout as menu row with destructive confirmation (behavior unchanged),
+Powered By Yamak as footer branding (external also available). RTL-safe rules noted; real-data
+only. Approved spec created at
+`docs/rebuild/approve-ui/profile/APPROVED-PROFILE-SPEC.md`. Profile design = APPROVED (structure);
+Profile UI code still needs A4.4 implementation. No product code changed; no backend; yamak-mobile
+untouched. Next approved step = A4.4 Profile UI Implementation. Commit = NOT YET.
