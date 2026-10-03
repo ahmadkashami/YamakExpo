@@ -1,4 +1,4 @@
-# Project Context
+﻿# Project Context
 
 ## Project Name
 YamakExpoNew
@@ -1018,3 +1018,22 @@ Router there is no such implicit swap, so an explicit replace is required — A2
 - `git diff --stat` → `src/app/email-otp.tsx | 47 ++++---`, 1 file changed, 43 insertions(+), 4 deletions(-).
 - `git status --short` → `M src/app/email-otp.tsx` (only).
 - Metro (`npx expo start --dev-client --port 8081`) left running against the emulator.
+
+## PHASE A — A3 HOME ROUTE
+
+- Home route = /home
+- file = src/app/(app)/(tabs)/home.tsx
+- ServicesList, AddsList, VehiclesList, ViewMap reused
+- service  /map?serviceId=...
+- vehicle  /vehicle/[id]
+- Explore Map  /map
+- AUTHENTICATED_ENTRY_ROUTE changed /map  /home
+- A1 authenticated cold start  Home verified previously
+- A2 navigation now resolves to Home through the shared constant
+- runtime OTPHome was not re-run in the closure session because Metro was unstable; do not claim a new runtime test
+- Home API safe-state behavior was verified previously; not re-run in the closure session
+- no tabs/Profile/Onboarding/Drawer
+- no backend/dependency/native product changes
+- TypeScript only known baseline error
+- commit = NOT YET
+- next approved step = A4 Profile Hub

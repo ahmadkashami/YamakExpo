@@ -15,10 +15,14 @@ export const UNAUTHENTICATED_ENTRY_ROUTE = '/register';
 /**
  * Where an authenticated session is sent by the gate.
  *
- * A1 deliberately does NOT decide the final post-OTP screen and does NOT
- * create a Home route. Its only job is to place an authenticated session
- * inside the `(app)` group, and `/map` is the one entry route that already
- * exists there. When A3 adds Home and A5 adds the tab layout, this constant is
- * repointed at that entry — no other A1 file needs to change.
+ * A1 originally pointed this at `/map` only because that was the one entry
+ * route inside `(app)`; A3 created the real Home route
+ * (`src/app/(app)/(tabs)/home.tsx`, href `/home`) and repointed it there. Both
+ * the A1 cold-start gate (`src/app/index.tsx`) and the A2 post-OTP navigation
+ * (`src/app/email-otp.tsx`) consume this single constant, so `/home` is the only
+ * authenticated destination declared anywhere.
+ *
+ * A5 will add the `(tabs)` layout that turns `/home` and `/map` into tabs
+ * without moving either file; this constant does not need to change again.
  */
-export const AUTHENTICATED_ENTRY_ROUTE = '/map';
+export const AUTHENTICATED_ENTRY_ROUTE = '/home';
