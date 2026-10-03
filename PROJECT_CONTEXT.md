@@ -1037,3 +1037,107 @@ Router there is no such implicit swap, so an explicit replace is required — A2
 - TypeScript only known baseline error
 - commit = NOT YET
 - next approved step = A4 Profile Hub
+
+## PHASE A — A4.1 PROFILE HUB ANALYSIS (analysis only, 2026-10-03)
+
+**Verdict: A4.1 PROFILE HUB ANALYSIS PASS. No product code changed; no backend changed; no legacy
+change. Commit: NOT YET. Next approved step: A4.2 Profile Hub Implementation.**
+
+### Current authenticated Expo route tree (verified)
+- `src/app/_layout.tsx` root; `src/app/index.tsx` A1 gate → `AUTHENTICATED_ENTRY_ROUTE` = `/home`.
+- `src/app/register.tsx`, `src/app/email-otp.tsx` (unauthenticated).
+- `src/app/(app)/_layout.tsx` = A1 session gate + `UserLocationProvider`; **no tabs, no drawer**.
+- `src/app/(app)/(tabs)/home.tsx` → `/home` (A3).
+- `src/app/(app)/(tabs)/map.tsx` → `/map`.
+- `src/app/(app)/vehicle/[id].tsx` → `/vehicle/[id]`.
+- No `(tabs)/_layout.tsx` (A5 owns it). No Profile route or Profile components exist in `src/` yet.
+
+### Current auth user model (verified)
+- `RegisteredUser` (`src/api/auth.ts`): `id: number`, `_id: string`, `name: string`,
+  `email: string`, `phone: string`, `isEmailVerified: boolean`. No avatar/photo/language field.
+- `AuthProvider` (`src/auth/auth-context.tsx`) exposes `status`, `user`, `accessToken`,
+  `authenticate(token, user)`, `signOut()`.
+- Persistence (`src/auth/auth-storage.ts`): SecureStore keys `yamak_access_token` and
+  `yamak_auth_user` (JSON of `RegisteredUser`). `signOut()` = `clearSession()` (deletes both) plus
+  sets `unauthenticated`; the A1 gate then redirects to `/register`.
+
+### Legacy Profile Hub source files (read-only reference)
+- `yamak-mobile/src/screens/ProfileScreen.tsx` (composition)
+- `yamak-mobile/src/components/Profile/ProfileHeaders.tsx` (identity: avatar `person1.png`, name, email)
+- `yamak-mobile/src/components/Profile/ProfileMainButtons.tsx` (icon grid)
+- `yamak-mobile/src/components/Profile/ButtonSection.tsx` (list + logout/delete/language)
+- `yamak-mobile/src/components/Profile/ProfileLables.tsx` (row)
+- `yamak-mobile/src/navigations/ProfileStack.tsx` (stack destinations)
+- `yamak-mobile/src/navigations/TabNavigator.tsx` (registers Profile as the 3rd bottom tab)
+- `yamak-mobile/src/apis/users.api.ts` (profile get/update/delete)
+
+### Legacy Profile menu inventory (top → bottom, verified from source)
+1. Identity header — avatar + `user.name` + `user.email`; reads auth store, **no fetch on mount**.
+2. MyCar → `MyCar` screen (API: `user-cars` GET/POST/DELETE).
+3. Share → native `Share` sheet (external).
+4. Favorites → `Favorites` screen (no mobile favorites route found in `api_mobile.php` — dependency unverified).
+5. EditProfile → `EditProfile` screen (API: GET/PATCH `app-users/profile`; the only screen that fetches fresh profile).
+6. ContactUs → `ContactUs` screen.
+7. AboutUs → external `https://yamak-kw.com`.
+8. environment → **DEV ONLY**, hidden when `!isDev`.
+9. notifications → **commented out / dead** in legacy.
+10. AboutYamakApp → `AboutYamak` static screen.
+11. language → in-app language picker modal (local).
+12. JoinUs → `JoinUs` modal.
+13. DeleteAccount → `DELETE app-users/account`, confirm modal, then local sign-out.
+14. Logout → **confirm Alert → local sign-out only; no backend call**.
+15. "Powered By Yamak" → external `yamakWebsite`.
+- `PrivacyAndPolicy` is registered in `ProfileStack` but has **no menu button** in the verified source.
+
+### Logout behavior (verified)
+- Legacy: `Alert.alert("are you sure you want logout", …)` → `removeAuthentication()`, which only
+  clears the zustand/AsyncStorage auth store. No backend call, no token revoke.
+- Expo: `signOut()` already exists and clears SecureStore; A4 should reuse it. Minimum behavior =
+  confirm dialog → `signOut()` → A1 gate → `/register`.
+
+### Backend profile-related routes (READ ONLY, `routes/api_mobile.php`, `auth:sanctum`)
+- `GET  mobile/v1/app-users/profile` → `UserController::profile`
+- `PATCH mobile/v1/app-users/profile` → `UserController::updateProfile`
+- `DELETE mobile/v1/app-users/account` → `UserController::deleteAccount`
+- `GET/POST mobile/v1/user-cars`, `DELETE mobile/v1/user-cars/{userCar}`
+- `GET mobile/v1/user-notifications/mine`
+- **No logout endpoint.** `appUserResource` returns: `id, _id, name, phone, username, email, photo,
+  lastLogin, birthDay, gender, language, status, fcmToken, notificationToken, notificationsEnabled,
+  isEmailVerified, location{latitude,longitude}, createdAt`.
+
+### Recommended data ownership
+- **A. Render immediately from `AuthProvider.user`** (matches legacy; no fetch on the hub).
+- No Zustand, no duplicate auth store, no speculative caching. The existing `GET app-users/profile`
+  is the endpoint for the later Edit Profile (A4.x), where a fresh fetch belongs.
+
+### Proposed Expo route
+- `src/app/(app)/(tabs)/profile.tsx` → `/profile` (sibling of `home.tsx` / `map.tsx`). Fits the
+  current structure; `(tabs)/_layout.tsx` stays absent because **A5 owns the tab bar**.
+
+### Design source status
+- **C. NO APPROVED PROFILE DESIGN EXISTS.** `docs/rebuild/approve-ui/` contains only home, map,
+  register, VehiclesDetails. A provisional prototype exists at
+  `docs/rebuild/new-ui/main/profile/index.html`, but `new-ui/README.md` marks it
+  **PROPOSED / NEEDS REVIEW** and `UI-CATALOG.md` lists Profile hub as PROPOSED.
+- A4.2 must use the existing Yamak visual language + verified legacy content, then a dedicated UI
+  review; do not claim design parity.
+
+### A4 implementation boundaries + menu classification
+- IMPLEMENT NOW: identity header (name/email + static avatar), Logout.
+- ROUTE LATER: My Cars, Favorites, Edit Profile, Contact Us, Join Us, About Yamak, Language.
+- HIDE UNTIL IMPLEMENTED: Notifications (dead in legacy), Delete Account (sensitive, out of the
+  minimum), dev-only environment row.
+- EXTERNAL ACTION: Share, About Us (`https://yamak-kw.com`), Powered By Yamak.
+- Avoid dead buttons: show only destinations that exist or are external; do not create fake screens.
+- **A4 must NOT implement** Edit Profile, My Cars, Favorites, or Notifications screens.
+- Non-profit facilitator model preserved: no payment/provider-quality claims in Profile copy.
+
+### Blockers / unknowns
+- Favorites and Contact Us backend dependencies not confirmed in the mobile routes inspected.
+- `RegisteredUser` has no `photo` field, so an avatar cannot come from the session; legacy uses a
+  static `person1.png`.
+- No approved Profile design → A4.2 output needs a UI review.
+
+### Status
+- No `src/` product code changed; no backend changed; no `yamak-mobile` change.
+- Next approved step = A4.2 Profile Hub Implementation. Commit = NOT YET.
