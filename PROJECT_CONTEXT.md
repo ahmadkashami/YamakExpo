@@ -1595,3 +1595,8 @@ Intentional divergences recorded:
 
 ### Status
 - **Commit = NOT YET.** Next approved step = **A5 final review / acceptance**.
+
+
+### PHASE A — A6.1 FIRST-LAUNCH ONBOARDING ANALYSIS (summary)
+- Analysis complete (read-only). Legacy: AsyncStorage key 'isLunched', in-memory 'isFirstLunch', onboarding in DrawerStackNavigator after auth, 4 slides (selectServiceYouNeed/ViewNearbyCars/CallUsForHelp/WeWillReachYouAnyPlace), assets undraw1-4.png. Expo: SecureStore only for auth; no general storage. Recommend gate in (app)/_layout.tsx, route /onboarding in (app), use SecureStore for flag 'yamak_onboarding_completed', both Skip/Get Started mark complete, global per install. No product code changed. Commit = NOT YET. Next = A6.2.
+
