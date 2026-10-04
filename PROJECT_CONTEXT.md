@@ -1410,3 +1410,188 @@ inside `expo-router/build/react-navigation/bottom-tabs/`, so it needs no separat
   Metro / tsc run, no backend change, no `yamak-mobile` change, nothing committed.
 - Only `PROJECT_CONTEXT.md` changed.
 - Commit = NOT YET. Next approved step = **A5.2 Bottom Tabs Implementation**.
+
+## PHASE A - A5.2 BOTTOM TABS IMPLEMENTATION (implementation, 2026-10-03)
+
+**Verdict: A5.2 BOTTOM TABS PASS.** Exactly two files created, both new:
+`src/app/(app)/(tabs)/_layout.tsx` and `src/components/navigation/TabIcons.tsx`.
+No existing file was modified, no package was installed, no backend change, no native
+rebuild, nothing committed.
+
+### Layout file + Tabs import path
+- File = `src/app/(app)/(tabs)/_layout.tsx`.
+- Import = `import { Tabs } from 'expo-router/js-tabs'` (the non-deprecated spelling for the
+  installed `expo-router@57.0.23`; `exports.d.ts:42` marks the root `expo-router` `Tabs`
+  export `@deprecated Use 'import { Tabs } from 'expo-router/js-tabs' instead.`). This resolves
+  the open A5.1 import-path question.
+- **No `NavigationContainer`, no `createBottomTabNavigator`, no manual React Navigation root.**
+  The file is navigator configuration only, consistent with `docs/rebuild/EXPO-MIGRATION.md:37`
+  and `docs/rebuild/03-navigation-map.md:265-273`.
+- `src/app/(app)/_layout.tsx` was **not** touched: its `<Slot />` now has exactly two children
+  (`(tabs)` and `vehicle/[id]`).
+
+### Visible order and initial route
+- Explicit `<Tabs.Screen>` declarations, in order: `home`, `map`, `profile`.
+- `initialRouteName="home"` set explicitly.
+- `headerShown: false` kept.
+- **This is what defeats the `sortRoutes` length comparator** recorded in A5.1
+  (`return a.route.length - b.route.length;`, which would otherwise yield Map -> Home ->
+  Profile). Runtime confirmed Home | Map | Profile.
+- `AUTHENTICATED_ENTRY_ROUTE` **unchanged** = `/home`. No file moved or renamed, so `/home`,
+  `/map`, `/profile` kept their existing hrefs.
+- No `index.tsx`, no Services tab, no placeholder/hidden tabs.
+
+### Icons implementation
+- `src/components/navigation/TabIcons.tsx` (new, `react-native-svg`, the established project
+  pattern - mirrors `src/components/vehicle-details/icons.tsx`). **Zero packages installed**;
+  `@expo/vector-icons` remains absent and was not needed.
+- Three glyphs traced 1:1 from `docs/rebuild/approve-ui/home/code.html:416-441`:
+  Home = solid house `M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z`; Map = Heroicons folded-map
+  `fill="none" stroke-width="2"` round-cap/join outline; Profile = Material solid person
+  `M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z`.
+- All three 20x20 (`w-5 h-5`), `viewBox 0 0 24 24`, tinted from the navigator so icon and label
+  can never disagree.
+- The icon column is `accessibilityElementsHidden` + `importantForAccessibility="no-hide-descendants"`,
+  so the glyph and the dot never pollute the tab's accessible name.
+
+### Active-state treatment
+- Active: `colors.navyDeep` (#0B2A4A) icon + navy **bold** label + a 6px `colors.wordmark`
+  (#E9A319) gold dot above the icon. Inactive: `colors.subtitle` (#64748B) icon + slate
+  **medium** label, no dot.
+- Only `colors.*` tokens are used; no hardcoded brand hex. The single colour source is
+  `tabBarActiveTintColor` / `tabBarInactiveTintColor`, which feeds icon, dot slot and label.
+- Label rendered through a `tabBarLabel` **function** (11px) because a static `tabBarLabelStyle`
+  cannot vary font weight with focus.
+- **Alignment is structural, not padded**: the dot slot is always 6px tall and only its *content*
+  is conditional, so active and inactive tabs sit on identical baselines. The approved mock instead
+  pads inactive tabs with `pt-2.5` (`home/code.html:423,430,437`), which visibly shifts inactive
+  icons and labels out of line; that padding was deliberately not copied.
+- Verified by pixel probe: active dot `#E9A319`, active icon/label `#0B2A4A`, inactive `#64748B`,
+  inactive slots pure `#FFFFFF`.
+- **Not colour-only.** On-device accessibility dump: each tab is `clickable="true"`,
+  `focusable="true"`, `content-desc="Home"/"Map"/"Profile"`, and `selected="true"` on the focused
+  tab only. Touch targets 360x128px = 137x49dp each, well over the 48dp minimum.
+
+### Safe-area behaviour
+- **No numeric `height` in `tabBarStyle`** - `minHeight: 58` is used instead, so
+  `getTabBarHeight` still returns `TABBAR_HEIGHT_UIKIT + insets.bottom` and the bottom inset is
+  never suppressed. 58 sits inside the 56-64 range of
+  `docs/rebuild/new-ui/design-system/navigation.md` section 3.
+- Measured on a 1080x2400 @ 420dpi emulator: bar top border at y=2207, bar spans 2209-2400 =
+  191px = **58dp content + ~15dp bottom inset**. Label line box bottom + 5dp item padding + 15dp
+  inset lands exactly on 2400. No clipping, no double-counted inset.
+- `tabBarLabelPosition: 'below-icon'` pinned so a landscape phone cannot silently switch to
+  side-by-side labels and break the approved vertical layout.
+- Shadow uses the app-wide idiom already present in `map.tsx` / `vehicle/[id]` styles
+  (`elevation 4`, offset 0/2, opacity 0.15, radius 4) with `colors.navy` as the shadow colour
+  instead of introducing another hardcoded `#0C1E34`.
+
+### Vehicle Details behaviour (structural, no hacks)
+- `src/app/(app)/vehicle/[id].tsx` **stayed in `(app)`, outside `(tabs)`**. No `href: null`, no
+  `display: 'none'`, no conditional `tabBarStyle`.
+- Runtime: Home -> vehicle -> `/vehicle/[id]` shows **no tab bar at all** (the details screen owns
+  the full height; the tab slot positions show the details screen's own emerald/navy content, not
+  a white bar). Back returns to **Home** with the tab bar and Home's gold dot restored. No auth loop.
+
+### Android Back result (device-verified)
+- Back on **Profile** -> **Home** tab.
+- Back on **Map** -> **Home** tab.
+- Back on **Home** -> app **backgrounds** (`topResumedActivity` returned to the previous app;
+  `com.yamak.assist` process still alive, pid 5555).
+- Default `backBehavior: 'firstRoute'` was **kept**; `backBehavior` was not customised.
+
+### State preservation result
+- Home -> Map -> Home: **exact** retention. Home's scroll offset was identical before and after the
+  round-trip (marker chip y=234, "Vehicles Nearby" y=1001, "Nearby on radar" y=1504, "Recovery units
+  ready" y=2029). No remount, no refetch, no skeleton flash.
+- `lazy`, `detachInactiveScreens`, `freezeOnBlur`, `backBehavior` were all left at library
+  defaults. **No caching or state hoisting was added.**
+- Deviation recorded, not fixed: Home's `ScrollView` offset **does** reset after a push to
+  `/vehicle/[id]` and Back (react-native-screens detaches/reattaches the native view). This is
+  **not** a remount - data is intact and tab-switch retention is exact - so, per the brief
+  ("do not change screens to force state retention unless actual remount is observed"), nothing
+  was changed.
+
+### BOTTOM INSET ADJUSTMENT: NOT REQUIRED
+- Measured rather than guessed. Home has **no** bottom gap at all (content runs flush to the bar).
+- Map's footer (`map.tsx:391` `minHeight: 120`, approved 6B design) shows a white band, but the
+  duplicate `insets.bottom` contributes only a ~20px (7.6dp) upward shift of the chip row, not
+  excessive whitespace; the band itself is the pre-existing approved footer `minHeight`, which is
+  out of A5.2 scope.
+- **`home.tsx` and `map.tsx` were therefore left completely untouched.**
+
+### Scaffold app-tabs status
+- `src/components/app-tabs.tsx` and `src/components/app-tabs.web.tsx` were **not touched**
+  (`git diff --stat` on both = empty). They are independent of the real `(tabs)/_layout.tsx` and
+  nothing in A5.2 proved they interfere. **The known baseline error remains, unfixed and verbatim:**
+  `src/components/app-tabs.web.tsx(27,38): error TS2322: Type '"/explore"' is not assignable...`
+  (HS-002 in `docs/rebuild/11-rebuild-backlog.md`).
+
+### TypeScript result
+- `npx tsc --noEmit` -> **exactly one** error, the known baseline above.
+  **New errors from A5.2 = 0.**
+
+### Runtime result (Android emulator-5554, `com.yamak.assist` Development Build + Metro, no native rebuild)
+- CASE 1 cold authenticated launch -> **Home** selected, tab bar visible: PASS (re-confirmed at the
+  end of the session).
+- CASE 2 visible order Home | Map | Profile: PASS - a11y bounds Home `[0,2209][360,2337]`,
+  Map `[360,2209][720,2337]`, Profile `[720,2209][1080,2337]`.
+- CASE 3/4/5 active states on Home / Map / Profile: PASS (gold dot + navy on the focused tab;
+  slate on the other two; all three screens functioned).
+- CASE 6 Home -> Map -> Home state preserved: PASS.
+- CASE 7 Map local state: **PARTIAL** - tab-switch retention is proven by CASE 6, but the
+  `mapType` / `traffic` controls could not be exercised: Map's own `useServices()` stayed in its
+  loading skeleton throughout the session, so no service was selectable and no map control state
+  existed to retain.
+- CASE 8 Home -> vehicle -> Details -> Back: PASS (tab bar absent, then restored on Home).
+- CASE 9 Map marker -> Details: **NOT EXERCISED** - same cause as CASE 7 (no service selected, no
+  vehicle markers rendered, so there was no marker to tap). A gold blob near (984,216) was probed
+  and proved to be a Google POI icon, not a vehicle marker. The tab-bar-absence mechanism itself is
+  structural and was verified from Home in CASE 8.
+- CASE 10 Android Back: PASS (all three behaviours above).
+- CASE 11 Logout -> Register, tabs disappear: PASS (Register navy `#0C1C33` at all three tab slots,
+  no labels).
+- CASE 12 cold restart after logout: PASS - sampled at ~4s (Expo splash `#208AEF`), ~10s (black
+  transition), ~18s (Register). **No tab bar and no tab flash at any stage.**
+- CASE 13 unauthenticated deep links `yamakexponew://home`, `://map`, `://profile`: PASS - all three
+  stayed on Register via the A1 gate, no tab bar, no auth loop.
+- CASE 14 exactly three tabs, no Services/Explore/duplicate: PASS.
+- CASE 15 bottom safe area, no clipping, no excessive gap: PASS.
+- `logcat` across the session: no JS errors, no invariant violations, no unhandled rejections. The
+  only LogBox item was dev-client noise ("Cannot connect to Expo CLI", `10.0.2.2:8081`) from a
+  relaunch, not application code.
+- Method note: `uiautomator dump` could not reach idle on Home (the Adds carousel animates), so
+  screen identity came from `screencap` + Windows OCR + pixel probes; the a11y dump succeeded on
+  Profile, which has no carousel, and that is where the tab semantics above were verified.
+- The emulator's `SecureStore.xml` was backed up before the logout cases and **restored
+  byte-for-byte** afterwards, so the emulator is back in its original authenticated state.
+
+### Design comparison against the approved references
+Checked against `approve-ui/home/code.html:409-444` and `approve-ui/map/code.html:334-362`:
+3 tabs only, active navy, inactive slate, gold dot, icon + label, white/surface bar,
+slate-200 top border, subtle lift, safe area - **all matched**. No new Tabs design was invented.
+Intentional divergences recorded:
+- The mocks show a 4th **Services** tab; it has no route and was **not** implemented (current
+  approved functional target is exactly Home | Map | Profile).
+- Icons are the `home/code.html` set (one consistent nav block). The `map/code.html` mock draws
+  different, more decorative variants of the same glyphs.
+- `bg-white/95 backdrop-blur-md` is approximated with an opaque `colors.surface`; the bar sits on
+  opaque content in practice, so blur is not observable.
+- No iOS home-indicator pill was drawn (`home/code.html:445-449` is device chrome, not UI).
+- RTL: not exercisable - the project has no i18n/RTL locale wired up. No `row-reverse` or other
+  direction-specific code was added; the order is declared in markup, so a locale flip would mirror
+  the row without changing the route mapping.
+
+### Scope discipline
+- **No A6 (onboarding). No A7 (drawer).** No Edit Profile, My Cars, Favorites or Notifications.
+- No Home / Map / Profile redesign or behaviour change; no Vehicle Details change; no backend change.
+- No dependency install; no native rebuild; no prebuild; no migration; no `yamak-mobile` change.
+
+### Hygiene
+- `git diff --check` -> clean, exit 0.
+- `git status --short` -> `?? src/app/(app)/(tabs)/_layout.tsx`, `?? src/components/navigation/`
+  (two new files only; no tracked file modified).
+- HEAD = `e3cce21 docs: record bottom tabs analysis` (unchanged).
+
+### Status
+- **Commit = NOT YET.** Next approved step = **A5 final review / acceptance**.
