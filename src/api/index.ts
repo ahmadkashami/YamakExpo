@@ -7,6 +7,14 @@ export {
   type VerifyEmailOtpRequest,
   type VerifyEmailOtpResponse,
 } from './auth';
+export {
+  getOnboarding,
+  type ActiveOnboardingConfig,
+  type DisabledOnboardingConfig,
+  type OnboardingConfig,
+  type OnboardingResponse,
+  type OnboardingSlide,
+} from './onboarding';
 export { ApiError, extractBackendMessage, type ApiErrorKind } from './api-error';
 export { getAdds, type Add, type AddsMetaData, type AddsResponse } from './adds';
 export {
