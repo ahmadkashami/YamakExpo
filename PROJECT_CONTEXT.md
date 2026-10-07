@@ -1635,3 +1635,93 @@ Intentional divergences recorded:
 - **Safe-area gap found:** onboarding is the only full screen without inset handling (no SafeAreaView / useSafeAreaInsets) — spec requires top inset + bottom footer inset in A6.4.
 - **A6.4 plan (from spec checklist):** A6.4.1 layout/safe-area/background; A6.4.2 remote image presentation + fallback/loading; A6.4.3 typography/content resilience (null-desc guard, scroll region); A6.4.4 progress/actions polish (dots, skip removal, navy CTA); A6.4.5 RTL + small-screen + a11y verification; A6.4.6 final runtime verification (targeted A6.2E subset on an isolated backend) + tsc/git hygiene.
 - **No functional behavior changed; backend content remains authoritative; A6.3 did NOT start A6.4/A7. Commit = NOT YET.**
+
+## PHASE A - A6.4 ONBOARDING APPROVED-UI IMPLEMENTATION (runtime-verified on isolated backend, 2026-10-07)
+
+**Verdict: A6.4 ONBOARDING APPROVED-UI IMPLEMENTATION PASS.** Single product file changed: `src/app/(app)/onboarding.tsx` (rewritten visual implementation per APPROVED-ONBOARDING-SPEC.md; 311 insertions / 136 deletions). No Backend/Dashboard/Legacy/theme change; no package install; no migration; no commit. Next = A6 Final verification. Behavior contract (A6.2E backend-managed, versioned, seen-version storage, backend skippable, fail-open, inside (app) after auth, backend authoritative) verified unchanged.
+
+### Implementation (all spec sections, verified in file)
+- Module constants: `CONTENT_WIDTH = SCREEN_WIDTH - spacing.lg*2`, `PLATE_HEIGHT = Math.min(300, round(SCREEN_HEIGHT*0.34))`, `MAX_INLINE_DOTS = 9`, `DOTS_STEP = 30`.
+- Safe-area (spec §4 gap fixed): top `paddingTop = max(insets.top, spacing.md)`; footer `paddingBottom = spacing.lg + insets.bottom`; no hardcoded device padding.
+- `colors.phonePrefix` background; subtle brand row `YAMAK · يمك` (navyDeep + wordmark, `writingDirection: 'rtl'` on Arabic, same pattern as AuthBrandHeader, never a hero).
+- `SlideImage`: missing/empty URL or failed load -> navy `navyDeep` fallback plate with white `YAMAK`; valid URL -> white framed plate (`radius.lg`, hairline `colors.border`, `contain`, `maxWidth 400`) with `ActivityIndicator` while loading; `onLoad`/`onError` state machine.
+- Null-description fix (spec §13): `slide.description?.trim() ?? ''` before render; description Text omitted when empty (no empty gap).
+- Per-slide vertical ScrollView text region (`flex:1`, `nestedScrollEnabled`, content `flexGrow:1` + centered) so unbounded copy scrolls while the footer stays pinned.
+- `ProgressDots`: 8dp idle dots (`colors.border`), active navy 24x8 pill (`radius 999`), row hidden from screen reader; `>9` slides -> horizontal ScrollView row with auto-scroll (`activeIndex*DOTS_STEP - (CONTENT_WIDTH-DOTS_STEP)/2`), no pager dependency.
+- Actions: Skip only when `skippable && !isLastSlide` (no 60px spacer, `flex:1` fills row when Skip absent); Next rows constrained; full-width Get Started on final; Skip/Next/Get Started all go through one `handleComplete` -> `completeOnboarding()` BEFORE `router.replace('/home' as never)`; completing state disables buttons (`disabled` + `busy`), label "Loading…", and no double-complete.
+- a11y: `accessibilityRole="button"` + disabled state on all actions; hidden dots row; off-screen `accessibilityLiveRegion="polite"` "Slide n of N" in the footer; `handleScroll` keeps index synced via `onMomentumScrollEnd`; defensive `sort((a,b)=>a.order-b.order)` kept.
+
+### Bug caught by runtime verification (fixed in same step)
+- `handleNext` initially only set `currentIndex` without scrolling the pager (regression vs A6.2E which scrolled). Detected on-device (tap Next did not advance the slide); fixed by adding `pagerRef` -> `scrollTo({ x: next * CONTENT_WIDTH, animated: true })`. Re-verified on-device after fix.
+
+### Runtime verification (isolated temp-SQLite backend 127.0.0.1:8127, APP_ENV=testing, app `.env` repointed to http://10.0.2.2:8127/api/mobile/v1/ then restored from backup; Expo Go emulator; uiautomator a11y-dump + pixel probes since screenshots not viewable)
+- Pass A (3 slides + skippable): brand row YAMAK·يمك centered; background #F8FAFC everywhere; slide 1 (null description + missing image) renders title only, no crash, navy fallback plate (0B2A4A) with white YAMAK glyph; long multi-paragraph description on slide 2 inside scrollable text region; slide 3 live local image loads (spinner->ready) shown contained inside the white framed plate with hairline border; Skip (text, subdued) + Next (navy, minHeight 52) on non-final slides; full-width navy Get Started on final; dots row at 8dp.
+- Pass B (1 slide): single Get Started full-width [42,2159][1038,2295], no Skip/Next, no broken pager.
+- Pass C (10 slides): dots stay on-screen; active pill (#0B2A4A 24x8) + grey idle dots (#E2E8F0 8dp) observed; pill tracks index across swipes; footer stays Skip+Next until final, then full-width Get Started with no Skip.
+- Pass D (3 slides, skippable=false): only Next rendered, full-width navy (flex:1), Skip never appears even on slide 1.
+- Dead image URL (pass A slide 2): load fails fast -> navy fallback plate, no infinite spinner.
+- Buttons: Next tap scrolls pager (post-fix); Get Started tap completes -> API log shows /onboarding then /services,/adds,/vehicles fetch = Home mount (local-only SecureStore session; navigation regression PASS).
+- Fail-open regression: active onboarding disabled -> app logs /onboarding then Home endpoints; no onboarding screen, no crash.
+- Same-seen-version regression: seeded version 3 while app storage already had seen>=3 (from A6.2E) -> app went straight to Home (verified via API log + screen probe).
+- Small screen (wm size 720x1280 @320): plate scales down (bounded, ~29% of height), brand centered, title visible, CTA above bottom inset, footer stable, safe-area intact.
+- RTL/Arabic: Expo Go does not pick up emulator `system_locales` change for Accept-Language (Expo Go sends its own locale), so device-level RTL flip was NOT exercised; verified instead via (a) byte-accurate Arabic payload served by backend for `Accept-Language: ar` (titles "تجريبي عربي · عنصر N", descriptions), (b) Arabic glyph rendering on-device (يمك brand), and (c) declaratively RTL-safe layout (centered text, no directional glyphs/chevrons, row order mirrors automatically). Device-locale/animations/display settings restored afterwards.
+- TypeScript: `npx tsc --noEmit` -> only the pre-existing `src/components/app-tabs.web.tsx(27,38)` `/explore` route error; no new A6.4 errors.
+- `git diff --check` clean (only LF->CRLF informational warning); `git status --short` = `M src/app/(app)/onboarding.tsx` only; Backend/Dashboard/Legacy untouched (isolated DB only). `.env` restored to `http://192.168.8.125:8000/api/mobile/v1/`. Temp seed/rig under D:\OpenCodeTemp\opencode\a64 (outside repo; servers stopped). Emulator SecureStore seen-version = 99 (from test completion) remains in Expo Go sandbox only, not in code.
+- Commit = NOT YET. Next = A6 Final verification (A6.5/A6.6), then commit after user approval.
+
+## PHASE A - A6.5 FINAL CROSS-SYSTEM ONBOARDING VERIFICATION (isolated temp backend, 2026-10-07)
+
+**Verdict: A6.5 FINAL VERIFICATION PASS.** Full re-verification of the A6 gate matrix (CASES 1-16), content/visual matrix A-H, safe-area (+ smaller viewport), RTL (partial), a11y, completion safety, backend contract, dashboard->backend->mobile E2E (API-level), Home/A5 regression, typecheck. No code touched in this step (product file `src/app/(app)/onboarding.tsx` unchanged since A6.4); Backend/Dashboard/Legacy untouched; no commit. Next = A7 Drawer/Side Menu parity (commit still NOT YET, per standing instruction).
+
+### Rig (isolated, process-only overrides; NO prod DB ever used)
+- Fresh temp SQLite `D:\OpenCodeTemp\opencode\a65\a65.sqlite`; `APP_ENV=testing DB_CONNECTION=sqlite DB_DATABASE=<temp>` + `MAIL_MAILER=log` env overrides; `php artisan migrate --force` (migrations against temp DB only); backend `php artisan serve 127.0.0.1:8127`; image server `php -S 127.0.0.1:8128`; stub `php -S 127.0.0.1:8127 stub.php` for the malformed case; Metro 8081; app `.env` pointed at `http://10.0.2.2:8127/api/mobile/v1/` (backed up + restored byte-identical); Expo Go SDK 57 emulator; unauth clean state via `pm clear host.exp.exponent`; registration driven through the real UI (signup + DB-read OTP + verify); evidence = uiautomator dumps + PHP/GD pixel probes + backend request logs + curl contract checks.
+
+### Gate matrix (all PASS)
+- C1 unauth: Register; deep links /onboarding /home /map /profile /vehicle/1 all redirect to Register. PASS
+- C2 auth + disabled -> Home (services/adds/vehicles fetch = Home mount; no onboarding UI). PASS
+- C3 auth + active v1 + seen missing -> Onboarding shown. PASS
+- C4 complete v1 (Get Started) -> seen=1 persisted, Home mount. PASS
+- C5 true cold restart (force-stop) + v1 active -> straight Home (seen retained). PASS
+- C6 activate v2 (10 slides) -> cold restart -> Onboarding (no Home fetch in log). PASS
+- C7 Skip v2 -> seen=2, Home mount. PASS
+- C8 disable v2 -> cold restart -> Home; seen unchanged (proven by C9). PASS
+- C9 re-activate SAME v2 -> cold restart -> Home (seen=2 >= 2; proves disable did not reset seen). PASS
+- C10 v3 skippable=false (1 slide) -> Onboarding with NO Skip (Get Started only); complete -> seen=3, Home. PASS
+- C11 backend version older than seen (v2 < seen3) -> Home. PASS
+- C12 backend down (connection refused) -> fail-open -> Home (no block, no auth redirect; auth restore is local SecureStore). PASS
+- C13 malformed active payload (`{"enabled":true}` no version/slides, stub 8127) -> fail-open -> Home; no seen write. PASS
+- C14 direct /onboarding deep link after completion -> Home. PASS
+- C15 unseen deep links (/home /map /profile /vehicle/1 with v4 active, seen3<4) -> all land on Onboarding gating first. PASS
+- C16 logout (confirm dialog) -> Register; new user registered on same device -> straight Home, onboarding does NOT repeat (seen=4 retained). PASS
+
+### Content/visual matrix A-H (all PASS, pixel + a11y verified)
+- A (1 slide): single slide, Get Started full-width [42,2159][1038,2295], no Skip/Next. PASS
+- B (3 slides): brand YAMAK·يمك; bg #F8FAFC; navy fallback plate/white glyph; dots row y~2100 = navy active pill (#0B2A4A 24x8) + 2 idle dots (#E2E8F0 8dp); Skip+Next -> final Get Started. PASS
+- C (10 slides): dots row scrolls with auto-scroll; active pill tracks index (left -> middle positions verified after Next taps and on slide 5); final slide Get Started, no Skip. PASS
+- D (null description): slide renders title only, no gap, no crash. PASS
+- E (long description): inside its own scroll region (swipe-up moves copy, footer/dots stay pinned). PASS
+- F (long title ~120 chars): wraps across lines in centered text region, no clipping. PASS
+- G (dead image URL): fast-fail -> navy fallback plate, no infinite spinner. PASS
+- H (live image): loads -> contained in white framed plate (letterbox bands), no stuck spinner. PASS
+
+### Safe area / small viewport / RTL / a11y / completion safety
+- Safe area: own insets top (paddingTop=max(insets.top, md)) + bottom (lg+insets.bottom); verified no hardcoded padding at 1080x2400; bottom inset spacer below CTA. PASS
+- Smaller viewport (720x1280 @240 = 480x853 DIP): plate scales down (bounded ~ min(300, ~29%H)), title/desc region fits, CTA fully on-screen above bottom inset, no overflow. PASS
+- RTL: PARTIAL (declared): Expo Go sends its own Accept-Language, so no forced device flip; verified (a) byte-level Arabic payload (262/263 \u escapes in Arabic range; decoded title "اختبر الشبكة الأكثر موثوقية..."), (b) يمك brand renders on-device, (c) layout declaratively RTL-safe (centered, flex row mirrors, no directional glyphs).
+- a11y: actions expose role button (android.widget.Button, clickable/enabled/focusable); Skip/Get Started labelled; dots non-focusable empty containers (not individually noisy); "Slide n of N" live-region Text present in code (approved A6.4 pattern) BUT off-window (left:-10000) so it is pruned from the uiautomator tree -> runtime announcement NOT provable without TalkBack: code-verified, partial runtime.
+- Completion safety: write-before-navigate in completeOnboarding (persists seen FIRST, flips state after; throws on failed write so screen stays); isCompleting guard + disabled/busy state prevent duplicate completion; runtime: every completion (Get Started x3, Skip x1) wrote once and navigated once across the matrix. PASS (code + runtime).
+
+### Backend contract (read-only; temp DB only) + dashboard E2E
+- Enabled payload keys: data.enabled / version / skippable / slides[] with id / order / title / description / imageUrl (null when absent). Disabled payload: data.enabled=false only. Verified via curl on the isolated backend. PASS
+- Dashboard E2E (API-level; no dashboard browser automation - state verified by API responses + mobile behavior): admin login -> create draft (version auto=4, slides with en/ar + image) -> publish -> activate -> mobile v4 shown to a seen=3 device; admin disable -> mobile contract {enabled:false} -> app Home. Write/read through the real admin API on the isolated backend. PASS (level: API, clearly stated)
+
+### Home / A5 regression
+- Tabs Home/Map/Profile render + navigate (active-tab icon moves; Map shows map tiles #F0EDE5; Profile shows user info + menu rows). Home itself verified via pixel probes + API logs (radar animation wedges uiautomator idle, known). PASS
+- Vehicle details outside tabs: deep link /vehicle/1 -> "Vehicle details" header with Go back, NO tab bar, no onboarding; isolated empty temp DB made the vehicles endpoint 500 -> app showed graceful Retry state (no crash). PASS
+- Logout: confirmation dialog -> Register screen (app hidden). PASS
+
+### Typecheck / hygiene / cleanup
+- `npx tsc --noEmit` -> ONLY pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` "/explore" error; no new errors. PASS
+- `git diff --check` clean (LF->CRLF info warnings only); `git status --short` = `M PROJECT_CONTEXT.md`, `M src/app/(app)/onboarding.tsx` only (same two files as precheck); Backend/Dashboard/Legacy untouched.
+- Cleanup: all temp servers stopped (8127 backend, 8128 image, 8081 Metro, stub); app `.env` restored byte-identical to `http://192.168.8.125:8000/api/mobile/v1/` (verified against backup); emulator display (1080x2400@420) + animation scales restored to 1; temp dir `D:\OpenCodeTemp\opencode\a65` removed. Pre-existing emulator APKs (com.yamak.assist / com.yamakmobilenew / com.yamak.mobdev) and legacy `yamak-mobile` untracked `docs/` observed but NOT touched/cleaned.
+- Commit = NOT YET (standing instruction). Next = A7 Drawer/Side Menu parity.
