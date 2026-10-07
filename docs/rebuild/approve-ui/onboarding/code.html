@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>Onboarding — Design Review Mock (A6.3) | Yamak Kuwait</title>
+<style>
+  /* ============================================================
+     A6.3 ONBOARDING DESIGN MOCK — replace/show layout only.
+     COLORS REPLICATE src/theme tokens (approved Yamak language):
+       navyDeep #0B2A4A · navyDeepDark #071B30 · wordmark #E9A319
+       surface #FFFFFF · phonePrefix #F8FAFC · title #0F172A
+       subtitle #64748B · border #E2E8F0 · brandText #FFFFFF
+     This mock is a DESIGN SAMPLE. Backend owns all slide copy.
+     ============================================================ */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #ECEEF2;
+    font-family: "Segoe UI", Roboto, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 32px 16px;
+  }
+  .banner {
+    max-width: 860px;
+    width: 100%;
+    background: #FFF8EB;
+    border: 1px solid #FBEED4;
+    color: #15406F;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .banner strong { color: #6B4E00; }
+  h1 { font-size: 18px; color: #0B2A4A; margin-top: 4px; }
+  h1 .gold { color: #E9A319; }
+  .stage { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; }
+  .capt { font-size: 12px; color: #64748B; text-align: center; margin-top: 8px; }
+
+  /* ------------- Phone frame (mirrors register mock shell) ------------- */
+  .phone {
+    width: 390px; min-height: 760px;
+    background: #F8FAFC;
+    border-radius: 44px; border: 8px solid #0C1C33;
+    overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 25px 60px -15px rgba(16,42,69,.35);
+  }
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 22px 6px; font-size: 14px; font-weight: 600; color: #0F172A;
+  }
+  .status-bar .dots { letter-spacing: 1px; font-size: 12px; color: #0F172A; }
+
+  .screen { flex: 1; display: flex; flex-direction: column; padding: 0 16px; }
+
+  /* ---- brand mark (subtle, top center) ---- */
+  .wordmark {
+    text-align: center; padding: 10px 0 4px;
+    font-size: 16px; font-weight: 900; letter-spacing: 1px; color: #0B2A4A;
+  }
+  .wordmark .gold { color: #E9A319; font-weight: 700; }
+
+  /* ---- slide ---- */
+  .slide { flex: 1; display: flex; flex-direction: column; }
+
+  /* image plate: fixed ratio, rounded, hairline, contain */
+  .image-plate {
+    min-height: 238px; max-height: 300px;
+    margin: 6px 0 16px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .image-plate svg { width: 100%; height: 100%; }
+
+  /* text region: scrollable, never pushes footer */
+  .text-region {
+    flex: 1; overflow-y: auto;
+    display: flex; flex-direction: column; justify-content: center;
+    padding-bottom: 12px;
+  }
+  .title { font-size: 24px; line-height: 32px; font-weight: 700; color: #0F172A; text-align: center; }
+  .desc { margin-top: 8px; font-size: 15px; line-height: 22px; font-weight: 400; color: #64748B; text-align: center; }
+  .sample-note { font-size: 11px; color: #64748B; margin-top: 8px; text-align: center; font-style: italic; }
+
+  /* ---- footer (fixed) ---- */
+  .footer { padding: 6px 4px 16px; }
+  .dots { display: flex; justify-content: center; align-items: center; gap: 6px; margin-bottom: 20px; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; background: #E2E8F0; }
+  .dot.on { width: 24px; background: #0B2A4A; border-radius: 999px; }
+
+  .actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .skip {
+    border: 0; background: transparent; color: #64748B;
+    font-size: 15px; font-weight: 500;
+    padding: 14px 16px; min-height: 52px; cursor: pointer;
+  }
+  .next {
+    border: 0; border-radius: 12px; background: #0B2A4A; color: #FFFFFF;
+    font-size: 14px; font-weight: 700; letter-spacing: .6px;
+    padding: 0 26px; min-height: 52px; cursor: pointer;
+  }
+  .next:active, .start:active { background: #071B30; }
+  .actions.solo .next { flex: 1; }
+  .start {
+    flex: 1; border: 0; border-radius: 12px; background: #0B2A4A; color: #FFFFFF;
+    font-size: 14px; font-weight: 700; letter-spacing: .6px;
+    min-height: 52px; cursor: pointer;
+  }
+
+  /* fallback plate (missing / failed image) */
+  .fallback {
+    width: 100%; height: 100%;
+    background: #0B2A4A; border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    color: #FFFFFF; font-weight: 900; font-size: 28px; letter-spacing: 4px;
+  }
+  .note { font-size: 10px; color: #94A3B8; text-align: center; padding-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <strong>DESIGN SAMPLE — representative layout only.</strong> Slide titles, descriptions and artwork
+  below are placeholder copy used solely to visualize the design. The Backend
+  (<code>GET /api/mobile/v1/onboarding</code>) owns all real content. Behaviour contract: A6.2E.
+  Business-model guardrail: Yamak is a free non-profit facilitator/connector — no pricing, commission,
+  payment, guarantee, or "Yamak driver" wording may ever appear in slide content.
+</div>
+
+<h1>YAMAK <span class="gold">| يَمَك</span> — Approved Onboarding Direction (A6.3)</h1>
+
+<div class="stage">
+
+  <!-- ============ VARIANT 1: NON-FINAL SLIDE (Skip + Next, dots) ============ -->
+  <div>
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><span class="dots">●●●●</span></div>
+      <div class="screen">
+        <div class="wordmark">YAMAK <span class="gold">· يَمَك</span></div>
+        <div class="slide">
+          <div class="image-plate">
+            <!-- remote-image placeholder: inline route motif (Yamak navy/gold), sample only -->
+            <svg viewBox="0 0 340 238" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Remote image placeholder — design sample">
+              <rect width="340" height="238" fill="#FFFFFF"/>
+              <circle cx="170" cy="114" r="74" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>
+              <path d="M30,180 C110,168 150,78 235,102 C285,116 320,92 330,72"
+                    stroke="#E9A319" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 8"/>
+              <circle cx="235" cy="102" r="10" fill="#0B2A4A"/>
+              <circle cx="235" cy="102" r="16" stroke="#F4A817" stroke-opacity=".5" stroke-width="2"/>
+              <text x="170" y="200" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="middle">sample illustration area</text>
+            </svg>
+          </div>
+          <div class="text-region">
+            <div class="title">Sample slide title — choose the help you need</div>
+            <div class="desc">Sample description. Browse nearby independent road-help providers and
+              contact the one you prefer. Multi-line sample copy designed to show how the text region
+              behaves — it scrolls on small screens instead of pushing the buttons away.</div>
+            <div class="sample-note">(design sample text — replaced by backend content)</div>
+          </div>
+        </div>
+        <div class="footer">
+          <div class="dots"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+          <div class="actions">
+            <button class="skip" type="button">Skip</button>
+            <button class="next" type="button">Next</button>
+          </div>
+          <div class="note">LTR shown; row + text mirror automatically in RTL</div>
+        </div>
+      </div>
+    </div>
+    <div class="capt">Variant 1 — non-final slide · skippable=true (Skip + Next, active-dot pill)</div>
+  </div>
+
+  <!-- ============ VARIANT 2: FINAL SLIDE (Get Started, no Skip) ============ -->
+  <div>
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><span class="dots">●●●●</span></div>
+      <div class="screen">
+        <div class="wordmark">YAMAK <span class="gold">· يَمَك</span></div>
+        <div class="slide">
+          <div class="image-plate">
+            <!-- missing-image fallback demonstration -->
+            <div class="fallback">YAMAK</div>
+          </div>
+          <div class="text-region">
+            <div class="title">You're ready to get help</div>
+            <div class="desc">When a slide ships without artwork, this branded plate is shown instead —
+              understated, no broken glyph, no crash.</div>
+            <div class="sample-note">(design sample; also demos the missing-image fallback)</div>
+          </div>
+        </div>
+        <div class="footer">
+          <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot on"></span></div>
+          <div class="actions solo">
+            <button class="start" type="button">Get Started</button>
+          </div>
+          <div class="note">Final slide — Skip is fully removed (no spacer), CTA is full width</div>
+        </div>
+      </div>
+    </div>
+    <div class="capt">Variant 2 — final slide · Get Started · missing-image fallback plate</div>
+  </div>
+
+</div>
+
+</body>
+</html>
