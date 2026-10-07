@@ -1725,3 +1725,88 @@ Intentional divergences recorded:
 - `git diff --check` clean (LF->CRLF info warnings only); `git status --short` = `M PROJECT_CONTEXT.md`, `M src/app/(app)/onboarding.tsx` only (same two files as precheck); Backend/Dashboard/Legacy untouched.
 - Cleanup: all temp servers stopped (8127 backend, 8128 image, 8081 Metro, stub); app `.env` restored byte-identical to `http://192.168.8.125:8000/api/mobile/v1/` (verified against backup); emulator display (1080x2400@420) + animation scales restored to 1; temp dir `D:\OpenCodeTemp\opencode\a65` removed. Pre-existing emulator APKs (com.yamak.assist / com.yamakmobilenew / com.yamak.mobdev) and legacy `yamak-mobile` untracked `docs/` observed but NOT touched/cleaned.
 - Commit = NOT YET (standing instruction). Next = A7 Drawer/Side Menu parity.
+
+## PHASE A — A7.1 DRAWER / SIDE-MENU LEGACY PARITY ANALYSIS (read-only, 2026-10-07)
+
+**Verdict: A7.1 DRAWER PARITY ANALYSIS PASS.** Analysis only — no product code, no package, no Backend, no Legacy change, no commit. Only this file updated. Precheck: **A6 CLOSED** (latest A6 UI commit `2b60b97 feat(onboarding): apply approved onboarding UI`); `git status --short` CLEAN; HEAD `2b60b97`. Required report sections A–Z all in this section.
+
+### Legacy Drawer route tree (yamak-mobile, verified in source)
+- `AuthedReadyApp` → `DrawerStackNavigator` (`src/navigations/drawerStackNavigator.tsx`, stack, headerShown:false; screens: `onboarding` when store `isFirstLunch` else none, always `drawer` = `DrawerNavigator`).
+- `DrawerNavigator` (`src/navigations/DrawerNavigator.tsx`) = `createDrawerNavigator`, `initialRouteName="Home"`, custom `drawerContent` = `CustomDrawerContent`; style: label font 600/15/marginLeft −20, inactive black, **active gold block (secondary #F7B123) + white text**, header bg primary #002F6C. Registered routes:
+  - `Home` (headerShown:false, title t("Home"), icon home-outline) → `TabNavigator` (3 tabs: `Home_Stack`=HomeStackNavigator, `Map`=MapScreen, `Profile_Stack`=ProfileStack — all tabs live under drawer Home).
+  - `Profile` (headerShown:false, icon person-outline) → **bare `ProfileScreen`** (same component as the Profile tab inside `ProfileStack`, DIFFERENT stack — legacy duplicate-entry inconsistency; its sub-screen buttons MyCar/EditProfile/Favorites/ContactUs/AboutYamakApp/JoinUs are **dead no-ops** from the drawer: `navigate()` bubbles drawer→stack→root where none of those names exist).
+  - `Favorites` (header SHOWN, title `t("Favorties")` — **EN label typo "Favorties"**, headerLeft md-menu→`openDrawer`, icon favorite-outline MaterialIcons) → `FavotiesScreen` (reads local `Favorites.store`; **no favorites API exists backend-wide**).
+  - `messages` (route KEY "messages", header SHOWN, title `t("notifications")`="Notifications", headerLeft md-menu→`openDrawer`, icon chatbox-ellipses-outline) → `NotificationsScreen`.
+- Nothing hidden/conditional/dev/modal: all 4 registered drawer routes are visible; no dev-only item, no modal, no commented drawer screen.
+
+### Exact legacy visible drawer content (`CustomDrawerContent`, top→bottom)
+- HEADER: `ImageBackground bg3.png` (primary navy); static `profile2.png` avatar 80×80 (**not the user's photo**); `user?.name` (auth store); green `ellipse` + literal `"online"` (**hardcoded, not a real status**). No email, phone, close button, YAMAK wordmark text, or language control.
+- MENU (DrawerItemList, exact order): **Home · Profile · Favorites · Notifications** (labels/icons above).
+- FOOTER: **Share** → native `Share.share` "Try Yamak the first application in Kuwait for roads helping and more" + **WRONG store URLs** (`play.google.com/store/games` Android / `apple.com/kw/app-store/` iOS — generic landing pages; Profile's share uses the correct app links — legacy inconsistency); **Sign Out** → Alert(t("Logout"), t("DoYouWantToLogout"), Cancel/Logout) → `removeAuthentication()`; centered `t("Version") {appCurrentVersion}` — `appCurrentVersion` is imported from `CommonConsstats` but **never exported** (only `appVersion` exists) ⇒ `undefined` ⇒ **legacy drawer shows no real version number** (defect pre-flagged at 01-project-inventory.md:316).
+
+### Entry points / gestures (legacy, verified — no assumptions)
+- `openDrawer` appears exactly 3× in all of legacy src: Favorites header hamburger, messages header hamburger, and **MapScreen's "md-menu" (COMMENTED OUT — dead)**. Home header (`HomeStackNAvigator`) has **NO hamburger** — headerLeft = map-marker-radius-outline → Map tab, headerRight = app logo. **From Home the legacy drawer opened ONLY by edge-swipe.**
+- No `swipe/width/position/type/edge/overlay/backBehavior` override anywhere ⇒ library defaults, verified from the installed source family the rebuild will use: swipe edge **32dp** (min distance 60, min velocity 500); position **left, right under RTL** (legacy Arabic Flips via `I18nManager.forceRTL`); width `max(screenW−56, 360)` capped 360dp; **backdrop tap closes**; **Android hardware Back closes an open drawer** (listener added only while open); per-screen lazy mount, mounted screens stay mounted.
+
+### Current Expo route shell (`YamakExpoNew` @ `2b60b97`)
+- Root: splash + AuthProvider + Stack(headerShown:false) + `index.tsx` startup gate + `register` (guarded) + `email-otp` (ungated) + `(app)`.
+- `(app)/_layout.tsx`: **gate = auth first, then remote onboarding** (Redirects), wraps `<UserLocationProvider><Slot/></UserLocationProvider>`. Children: `onboarding.tsx`, `(tabs)/` (home·map·profile, `expo-router/js-tabs`, explicit order, initialRouteName home), `vehicle/[id].tsx` (above tabs → no tab bar).
+- Trigger surfaces TODAY: **Home has no header** (approved header/ hamburger deferred — "step 2 of YAMAK-SCREEN-010"); **Map app bar has an inert ☰** (`accessibilityLabel "Open menu"`, `onPress={() => {}}` — 4B placeholder explicitly awaiting a drawer); Profile is a self-contained hub (no app bar).
+
+### Installed drawer capability — ZERO new packages required
+- `expo-router ~57.0.23` **VENDORS the drawer stack**: subpath `expo-router/drawer` (= `build/layouts/Drawer`, a file-based `<Drawer>`) re-exports the vendored `@react-navigation/drawer` v7 API (`createDrawerNavigator`, `DrawerContentScrollView`, `DrawerItem`, `DrawerItemList`, `useDrawerStatus`, `DrawerToggleButton`) from `expo-router/build/react-navigation/drawer/`.
+- `react-native-drawer-layout@4.2.10` INSTALLED (transitive of expo-router; the gesture engine). `react-native-gesture-handler ~2.32.0` + `react-native-reanimated 4.5.1` are **direct deps**. `@react-navigation/drawer` is NOT (and need not be) a direct dependency. Caveat: `react-native-drawer-layout` is transitive-only — if A7 ever imported it directly it must be promoted to package.json; **Option A below needs nothing** (imports `expo-router/drawer` only).
+
+### Architecture options (evaluated, NOT implemented)
+- **OPTION A (RECOMMENDED) — file-`<Drawer>` around tabs**: keep `(app)/_layout.tsx` gate byte-identical (auth→onboarding→`<Slot/>`); add `(app)/(drawer)/_layout.tsx` = `<Drawer>` with custom `drawerContent`; move `(tabs)/` into `(app)/(drawer)/(tabs)/` and `vehicle/[id].tsx` into `(app)/(drawer)/vehicle/[id].tsx` (**route groups are URL-transparent: `/home /map /profile /vehicle/{id}` unchanged**); `onboarding.tsx` stays a direct `(app)` child **outside** the drawer → onboarding NEVER mounts inside a drawer, gate untouched, no swipe-on-onboarding (A6 regression-free). Future `favorites.tsx`/`notifications.tsx` = new drawer children when routes land. Deep links unchanged; tab state preserved (drawer keeps mounted screens); Android Back = drawer-open→close else A5 semantics; gestures/backdrop/RTL free from `react-native-drawer-layout`; complexity LOW–MED (one layout + one drawerContent component + folder moves); **dependency impact ZERO**. Matches the intended shape pre-recorded at `13-SCREEN-BY-SCREEN-REBUILD-PLAN.md:667-668,706` (`<Drawer>` from `expo-router/drawer` inside `(app)`), refined so onboarding stays structurally outside.
+- **OPTION B — custom side-sheet/context overlay**: full visual control but hand-rolls swipe, scrim, Android Back, RTL mirroring, focus/a11y trapping, transitions; more code to verify; diverges from recorded plan. NOT recommended.
+- **OPTION C — raw `react-native-drawer-layout` view around `<Slot/>`**: free gestures/back/RTL without a navigator, but no drawer-route semantics, promotes a transitive dep, duplicates `expo-router/drawer`. NOT recommended.
+
+### Route ownership / placement decisions (recommendation for A7.2)
+- **Onboarding: outside drawer entirely** (unchanged gate).
+- **Vehicle Details: INSIDE the drawer shell but OUTSIDE tabs** — legacy had the drawer as VehicleDetail's ancestor (parity: edge-swipe/hamburger/backdrop available on details); tab bar stays absent (5C design). Caveat recorded: as a drawer route, a no-history deep-link hardware Back on `/vehicle/{id}` will reach the drawer's backBehavior `firstRoute` → **Home tab**, not 5C's verified in-screen `→/map` (the in-screen "Go back" button logic is screen-owned and unchanged); flag for A7.4 verification + user decision.
+- First-release drawer menu = **all-real-routes**: **Home · Map · Profile** (same entries the tabs provide — the legacy drawer was exactly this shell) + auth-identity header + truthful Version footer (via `expo-constants`; fixes the legacy undefined-version defect). **NO dead buttons** (project rule): no Favorites/Notifications placeholders until routes exist.
+- **Share + Sign out: omitted from drawer** (already in Profile hub — "represent once" parity rule; legacy duplicated them; document as decision Q). **Version: drawer-footer-only** (no other home). **Language: NOT added** (legacy never had it in the drawer — Profile-only `LanguagePicker`; do not invent).
+- Business model: drawer adds nothing commercial (no payments/booking/commission/Driver/marketplace) — matches legacy drawer exactly.
+
+### Parity classification (legacy drawer function → class → new app home)
+| Legacy drawer function | Class | Lives in new app |
+| --- | --- | --- |
+| Home entry | A — exists | Tab Home; drawer item → tabs |
+| Profile / identity entry | A — exists | Tab Profile; drawer item → tabs |
+| Favorites entry | B — roadmap | drawer → future `/favorites` (ONE place; legacy double-placed it) |
+| Notifications ("messages") entry | B — roadmap | drawer → future `/notifications` (ONE place) |
+| Share (footer) | A — exists | Profile hub Share (native share) |
+| Sign out (footer) | A — exists | Profile hub Logout |
+| Version (footer) | C — drawer-only | drawer footer, truthful value |
+| Header identity (avatar/name/"online") | A — exists, restyled | drawer header from `AuthProvider.user`; **no fake "online" pill** (legacy hardcoded) |
+
+### State-preservation / regression notes
+- Drawer open/close is an overlay — never unmounts Home/Map/Profile (A5 tab retention preserved). Map `mapType`/`trafficEnabled`/selected-marker are `map.tsx` local state and survive drawer navigation; runtime check scheduled for A7.4.
+- A7.2 folder moves are build-time only; URLs + behavior must be re-verified at runtime (A7.4). `onboarding.tsx` and `(app)/_layout.tsx` gate NOT touched.
+- Onboarding gate not duplicated inside drawer (Step 28 satisfied by Option A structure).
+
+### Design-reference status
+- **Approved Home ALREADY designs the hamburger**: `approve-ui/home/code.html` `data-purpose="top-navigation-header"` = ☰ Menu (left) · brand pill (center) · bell (right) ⇒ the approved Home-header implementation (deferred "step 2") and the drawer trigger can land together. **Approved Map** `approve-ui/map/code.html` app bar also has ☰ — the current inert Map ☰ becomes the real trigger.
+- **NO approved drawer design exists** (`approve-ui/` has no drawer folder). Only the PROPOSED `docs/rebuild/new-ui/main/drawer/index.html` (header avatar/name/demo phone; nav Home·Profile·Favorites + "More": Settings·Join us·About·Contact; footer Share/Sign out/Version 1.0.0 demo) and `design-system/navigation.md` §4 (avatar/name/status header, gold-tinted active item, footer Share/Sign out/Version; doc says "5 drawer entries" then lists 4 — **actual legacy = 4**). Legacy visual is NOT the final authority. **⇒ A7 requires its own Drawer Design Review (A7.6) before final acceptance.**
+
+### Revised A7 micro-plan (proposal)
+- **A7.1** — THIS STEP (legacy parity analysis). DONE.
+- **A7.2** — Drawer architecture + route-shell: `(app)/(drawer)/_layout.tsx` file-`<Drawer>` + custom drawerContent skeleton; folder moves (tabs + vehicle into (drawer)); onboarding + gate untouched; zero deps.
+- **A7.3** — Functional drawer content: Home·Map·Profile menu, AuthProvider identity header, truthful Version footer.
+- **A7.4** — Runtime navigation/state verification: gates matrix (unauth / onboarding-required / completed), deep links, Android Back (drawer-open→close, tabs root background, vehicle deep-link back→home-tab caveat), edge-swipe + RTL, tab + Map state retention (mapType/traffic/selection), A6 gate regression subset, `tsc` + `git diff --check`.
+- **A7.5** — Code review / learning (expo-router Drawer layout, vendored drawer API, drawer-layout gesture defaults, back interoperability with tabs).
+- **A7.6** — **Drawer Design Review (REQUIRED — no approved drawer design)**: adopt `new-ui/main/drawer` + `navigation.md` §4 as base, or request an `approve-ui/drawer` reference; decide Share/Sign-out duplication + header email.
+- **A7.7** — Approved-UI implementation (visual).
+- **A7.8** — Final runtime + commit (after user approval; standing rule).
+
+### Open user decisions
+1. Drawer footer: omit Share + Sign out (Profile-only — recommended) vs duplicate legacy footer.
+2. Drawer header: name + initials (+ email, already on AuthProvider) vs name/initials only.
+3. Vehicle Details placement: inside drawer shell (recommended; deep-link back lands Home-tab) vs outside drawer (keeps 5C →/map deep-link back) — A7.4 decides after user choice.
+4. Future Favorites/Notifications: one place (drawer) when routes exist — confirm no Profile-side duplicate later.
+5. A7.6 Drawer Design Review scope: `new-ui` drawer as base vs new `approve-ui/drawer` reference.
+
+### Status
+- Analysis only. No `src/` file created or modified, no package installed, no build / Metro / tsc run, no backend change, no `yamak-mobile` change (its untracked `docs/` pre-existing, untouched), nothing committed.
+- Commit = **NOT YET.** Next approved step = **A7.2 Drawer architecture + route-shell implementation** (after the user decisions above).
