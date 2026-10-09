@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
@@ -61,6 +61,7 @@ function parseServiceIdParam(value: string | string[] | undefined): number | nul
  */
 export default function MapScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams<{ serviceId?: string | string[] }>();
   const rawServiceId = params.serviceId;
 
@@ -86,6 +87,14 @@ export default function MapScreen() {
   // Layers/Traffic are LOCAL to this screen (no global store, not persisted).
   const [mapType, setMapType] = useState<MapType>('standard');
   const [trafficEnabled, setTrafficEnabled] = useState(false);
+
+  // A7.2: the app-bar ☰ opens the drawer. The action is dispatched from this
+  // tab screen and bubbles up to the parent Drawer navigator (react-navigation
+  // standard action bubbling — the same mechanism the drawer's own toggle
+  // button uses). No custom context, no global state.
+  const openDrawer = useCallback(() => {
+    navigation.dispatch({ type: 'OPEN_DRAWER' });
+  }, [navigation]);
 
   // One explicit location request on first open (the shared provider never
   // auto-requests — mounting any screen must not prompt). The approved
@@ -194,9 +203,9 @@ export default function MapScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open menu"
-          // The drawer is out of scope for Step 4B — placeholder keeps the
-          // approved header geometry without inventing a drawer route.
-          onPress={() => {}}
+          // A7.2: wired to the app's Drawer (was an inert placeholder awaiting
+          // the drawer, per Step 4B).
+          onPress={openDrawer}
           style={styles.iconButton}
         >
           <Text style={styles.iconText}>☰</Text>

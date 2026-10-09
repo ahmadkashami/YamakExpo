@@ -1,0 +1,48 @@
+import { Drawer } from 'expo-router/drawer';
+
+import { AppDrawerContent } from '@/components/navigation/AppDrawerContent';
+
+/**
+ * AUTHENTICATED DRAWER SHELL — Phase A / Step A7.2 (architecture only).
+ *
+ * This file turns the authenticated shell into the legacy DrawerNavigator
+ * shape without any new dependency: `expo-router/drawer` re-exports the drawer
+ * stack EXPOS ships vendored inside `expo-router` (the same library family the
+ * tabs use), and `react-native-drawer-layout` is already installed
+ * transitively as the gesture engine.
+ *
+ * ## Route architecture (URL-transparent route groups)
+ *
+ * The `(drawer)` group is invisible in URLs. The tabs group lives physically
+ * under it — `src/app/(app)/(drawer)/(tabs)/` — so the drawer's ONLY screen is
+ * `(tabs)`, and Home / Map / Profile keep their exact hrefs:
+ *   /home  /map  /profile  (unchanged since A1–A5)
+ *
+ * The auth + onboarding gate stays untouched in `(app)/_layout.tsx`; this
+ * drawer can only ever mount AFTER onboarding completes (the gate's `<Slot/>`
+ * renders this layout). `onboarding.tsx` and `vehicle/[id].tsx` remain direct
+ * `(app)` children, physically OUTSIDE this group:
+ *   - Onboarding must never appear inside a drawer.
+ *   - Vehicle Details keeps the A5 "outside tabs" stack behaviour AND stays
+ *     outside the drawer, so the drawer's `backBehavior` never changes the
+ *     details screen's back flow.
+ *
+ * ## Drawer surface (minimal, NOT the approved visual)
+ *
+ * The drawer itself is a functional side sheet: custom content (identity
+ * header, Home · Map · Profile, Version footer — see AppDrawerContent), no
+ * automatic route list, no dead rows. Visual parity with
+ * `docs/rebuild/new-ui/main/drawer/` is intentionally NOT attempted here;
+ * that is the A7.6 design-review + A7.7 implementation scope.
+ *
+ * Gestures / position / width / RTL: all library defaults (no override), so
+ * RTL mirroring and the swipe-edge behaviour verified in A7.1 apply as-is.
+ */
+export default function DrawerLayout() {
+  return (
+    <Drawer
+      drawerContent={(props) => <AppDrawerContent {...props} />}
+      screenOptions={{ headerShown: false }}
+    />
+  );
+}

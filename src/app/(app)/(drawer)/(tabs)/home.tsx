@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Service, Vehicle } from '@/api';
@@ -9,7 +9,7 @@ import { ServicesList } from '@/components/home/ServicesList';
 import { VehiclesList } from '@/components/home/VehiclesList';
 import { ViewMap } from '@/components/home/ViewMap';
 import { useUserLocation } from '@/location';
-import { spacing } from '@/theme';
+import { colors, spacing } from '@/theme';
 
 /**
  * AUTHENTICATED HOME — Phase A / Step A3.
@@ -44,8 +44,16 @@ const HOME_BACKGROUND = '#fafafa';
 
 export default function Home() {
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { status: locationStatus, requestLocation } = useUserLocation();
+
+  // A7.2: the app-bar ☰ opens the drawer. The action is dispatched from this
+  // tab screen and bubbles up to the parent Drawer navigator (react-navigation
+  // standard action bubbling). No custom context, no global state.
+  const openDrawer = useCallback(() => {
+    navigation.dispatch({ type: 'OPEN_DRAWER' });
+  }, [navigation]);
 
   // One explicit location request on first open, the same single-shot pattern
   // already runtime-verified in `/map` and `/vehicle/[id]`. The shared provider
@@ -82,19 +90,36 @@ export default function Home() {
   );
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + spacing.lg },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      <ServicesList onServicePress={handleServicePress} />
-      <AddsList />
-      <VehiclesList onVehiclePress={handleVehiclePress} />
-      <ViewMap />
-    </ScrollView>
+    <View style={styles.screen}>
+      {/* Minimal A7.2 header: the ☰ drawer trigger only, in the Map app-bar
+          geometry. The approved Home header (brand pill / greeting / bell) is
+          step 2 of YAMAK-SCREEN-010 and stays out of scope here — this is the
+          smallest functional drawer access, not a Home redesign. */}
+      <View style={[styles.appBar, { paddingTop: insets.top + spacing.sm }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
+          onPress={openDrawer}
+          style={styles.iconButton}
+        >
+          <Text style={styles.iconText}>☰</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.lg },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <ServicesList onServicePress={handleServicePress} />
+        <AddsList />
+        <VehiclesList onVehiclePress={handleVehiclePress} />
+        <ViewMap />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -102,6 +127,28 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: HOME_BACKGROUND,
+  },
+  appBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: HOME_BACKGROUND,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    minHeight: 52,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.title,
   },
   // Legacy `HomeScreen` used `contentContainerStyle={{ flexGrow: 1 }}` so the
   // last section could sit flush when the content is short.

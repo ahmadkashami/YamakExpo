@@ -1810,3 +1810,46 @@ Intentional divergences recorded:
 ### Status
 - Analysis only. No `src/` file created or modified, no package installed, no build / Metro / tsc run, no backend change, no `yamak-mobile` change (its untracked `docs/` pre-existing, untouched), nothing committed.
 - Commit = **NOT YET.** Next approved step = **A7.2 Drawer architecture + route-shell implementation** (after the user decisions above).
+
+## PHASE A — A7.2 DRAWER ROUTE SHELL (implemented & runtime-verified, 2026-10-07)
+
+**Verdict: A7.2 DRAWER ROUTE SHELL PASS.** Drawer architecture + route shell delivered and runtime-verified. No drawer *visual* design (A7.6/7.7), no A7.3-only content beyond the functional shell, no commit. Precheck: A6 CLOSED, A7.1 committed `05b65a1`, tree clean. Post-slice: 4 file renames + 2 new files + edits to `home.tsx`/`map.tsx` only; Backend/Dashboard/Legacy untouched; `git status --short` shows ONLY the intended changes; nothing committed.
+
+### User decisions applied (settles A7.1 "Open user decisions" 1–3)
+1. **Footer = Version only** (no duplicate Share/Sign out — those stay Profile-only). Applied.
+2. **Identity header = initials + name + email from AuthProvider** (no image fetch, no fake avatar). Applied.
+3. **Vehicle Details stays OUTSIDE the drawer AND OUTSIDE the tabs** (the user's A7.2 requirement overrides A7.1's "inside drawer shell" recommendation; deep-link back therefore keeps the screen-owned `→/map`/in-screen flow of 5C). Applied — `vehicle/[id].tsx` is a direct `(app)` child.
+4. Favorites/Notifications: NOT implemented (no dead buttons). Applied.
+5. A7.6 Drawer Design Review still required before final acceptance.
+
+### What shipped (architecture only)
+- `src/app/(app)/(drawer)/_layout.tsx` — file-`<Drawer>` from `expo-router/drawer` (vendored, zero new deps; `react-native-drawer-layout@4.2.10` transitive engine uses GestureHandlerRootView self-wrapping, no app setup), `drawerContent={<AppDrawerContent/>}`, `screenOptions={{headerShown:false}}`. All other drawer options are library defaults (edge 32dp, min distance 60dp, velocity 500, width ≈360dp max, front type, left / right-in-RTL, backBehavior `firstRoute`, per-screen lazy mount).
+- `src/app/(app)/(drawer)/(tabs)/*` — the four A5 files `git mv`'d under `(drawer)` (build-time only; groups URL-transparent → `/home /map /profile` unchanged).
+- `src/components/navigation/AppDrawerContent.tsx` — functional shell: AuthProvider identity header (initials logic replicated from Profile A4), Home·Map·Profile `DrawerItem`s with true focus highlight (navyDeep active), `CLOSE_DRAWER` dispatch after `router.navigate` (single-route drawer never auto-closes via its own route state), Version footer from `Constants.expoConfig?.version` (no footer when null — never invented data).
+- Triggers: Home app bar gains a minimal ☰ (`OPEN_DRAWER` action); Map's previously-inert ☰ wired to the same; Profile untouched (no redesign — recorded as A7.3/A7.7 decision). Raw typed action `{type:'OPEN_DRAWER'|'CLOSE_DRAWER'}` bubbles to the drawer navigator (DrawerActions is not exported publicly by expo-router; the raw action typechecks against the vendored `NavigationAction`).
+- `onboarding.tsx` + `(app)/_layout.tsx` gate + UserLocationProvider: untouched.
+
+### Runtime verification matrix (Expo Go 57.0.9 / SDK 57 / Android emulator-5554 / Metro :8081 / persisted session `a66tester@yamak.test`)
+- C3 authenticated+completed → drawer shell present on Home/Map/Profile (tabs nested in drawer): PASS.
+- C4 Home hamburger ☰ → drawer opens (identity header, Home·Map·Profile, Version 1.0.0): PASS.
+- C5 backdrop tap (outside drawer) → closes: PASS.
+- C6 Android back with drawer open → closes, stays in-app: PASS.
+- C7 drawer → Home: PASS (drawer closes via explicit CLOSE_DRAWER).
+- C8 drawer → Map: PASS. C9 drawer → Profile: PASS.
+- Tapping the already-focused Home row: closes drawer, stays on Home (no navigation loop): PASS.
+- C10 tab bar Home↔Map↔Profile cycle under `(drawer)` root: PASS.
+- C12/C14 deep link `/vehicle/1`: renders full-screen vehicle details with its own app bar — NO bottom tabs, NO drawer content (vehicle outside drawer+tabs); app back returns to Home tab: PASS.
+- C13 cold start (force-stop + relaunch to `/`): persisted session restored → lands on /home, no onboarding, no register, drawer closed: PASS.
+- Edge-swipe from left edge opens drawer: PASS. Map ☰ trigger: PASS.
+- Focus highlight only on active route (navy #0B2A4A band pixel-verified on active row only): PASS.
+- C1 (unauthenticated → no drawer) / C2 (onboarding-required → no drawer): NOT re-run this slice (needs session destroy + register+OTP). Structurally guaranteed — `(drawer)` mounts only inside `(app)`'s gate after onboarding; onboarding/auth are `(app)` siblings outside the group. Gate behavior previously runtime-verified under A6.5.
+- C11 Map state retention: tab screens stay mounted under the A5 tabs navigator (instant return to Map content observed); deep state (markers/camera) not observable this slice (backend returns 500 for services/vehicles — pre-existing, unrelated).
+
+### Environment notes
+- Expo Go dev-menu floating button can overlay the app-bar ☰ and intercept taps (opens the dev sheet); moved via drag for testing. Not an app defect.
+- Android gesture-nav edge swipe from the extreme edge triggers system Back before the drawer; mid-edge swipes (≈26–29dp) reach the drawer. Not an app defect.
+
+### Hygiene
+- `npx tsc --noEmit`: only the pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error (unchanged since before A7.2) — PASS.
+- `git diff --check`: clean (LF/CRLF warnings only). `git status --short`: 4 `R` renames + 2 untracked new files (`(drawer)/_layout.tsx`, `AppDrawerContent.tsx`) + modified `home.tsx`/`map.tsx` (renamed+modified). No Backend/Dashboard/Legacy change.
+- Commit = **NOT YET** (standing rule). Next step = **A7.3 functional drawer content / trigger polish decisions**; **A7.6 Drawer Design Review required before visual acceptance.**
