@@ -80,7 +80,10 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
   return (
     <DrawerContentScrollView contentContainerStyle={styles.scrollContent}>
       <View style={styles.identity}>
-        <View style={styles.avatar}>
+        {/* Decorative: the initials are a visual echo of `displayName`, which
+            is read separately — hiding them keeps the header from being
+            announced twice (functional a11y baseline, not final styling). */}
+        <View accessible={false} style={styles.avatar}>
           <Text style={styles.avatarText}>{initialsOf(displayName)}</Text>
         </View>
         {displayName.length === 0 ? null : <Text style={styles.name}>{displayName}</Text>}
@@ -101,6 +104,10 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
               inactiveTintColor={colors.title}
               labelStyle={styles.itemLabel}
               style={styles.item}
+              // The vendored DrawerItem already renders `role="button"` and
+              // `aria-selected`; an explicit label keeps the row name
+              // meaningful even if a future visual pass replaces the text.
+              accessibilityLabel={route.label}
             />
           );
         })}

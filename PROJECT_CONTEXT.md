@@ -1853,3 +1853,47 @@ Intentional divergences recorded:
 - `npx tsc --noEmit`: only the pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error (unchanged since before A7.2) — PASS.
 - `git diff --check`: clean (LF/CRLF warnings only). `git status --short`: 4 `R` renames + 2 untracked new files (`(drawer)/_layout.tsx`, `AppDrawerContent.tsx`) + modified `home.tsx`/`map.tsx` (renamed+modified). No Backend/Dashboard/Legacy change.
 - Commit = **NOT YET** (standing rule). Next step = **A7.3 functional drawer content / trigger polish decisions**; **A7.6 Drawer Design Review required before visual acceptance.**
+
+## PHASE A — A7.3 FUNCTIONAL DRAWER CONTENT (finalized & runtime-verified, 2026-10-09)
+
+**Verdict: A7.3 FUNCTIONAL DRAWER CONTENT PASS.** A7.2 delivered the functional shell; A7.3 verified every content requirement, closed the accessibility baseline, and re-committed nothing. Precheck: tree clean at `954d686 feat(navigation): add authenticated drawer shell`; `git status --short` empty. Only product change this slice: `src/components/navigation/AppDrawerContent.tsx` (a11y baseline — see below). Backend/Dashboard/Legacy untouched; no commit.
+
+### Final functional Drawer content (exact)
+- **Header** — `AuthProvider` only: initials avatar (decorative, `accessible={false}`) + `user.name` + `user.email`. No profile API, no avatar URL, no fake image.
+- **Rows (exact order)** — `Home → /home`, `Map → /map`, `Profile → /profile` via `router.navigate` (preserves Tabs ownership) + explicit `CLOSE_DRAWER`; vendored `DrawerItem` supplies `role="button"`, `aria-selected`; explicit `accessibilityLabel` added.
+- **Footer** — only `Version {Constants.expoConfig?.version}`; row hidden entirely when version is `null` (never "Version undefined").
+
+### Decisions recorded
+- **Initials rule**: replicated the Profile hub (A4) rule — first letters of the first two name parts; single-word name → first letter (test user `a66tester` → `A`); empty/missing name → `'YA'` (the fallback A4 already shows), never a crash. Deliberately NOT changed to the illustrative "first+last" (`AK`) so Drawer and Profile render the SAME initials for the same session user; not over-engineered for international names.
+- **Missing name/email**: renders nothing for that field (no "undefined").
+- **Duplicates deliberately omitted** (not bugs): Share / Sign out stay Profile-only (A4 hub already surfaces them); Drawer footer = Version only.
+- **Favorites / Notifications**: legacy-real functions whose routes do not exist — recorded as FUTURE Drawer destinations; no placeholder/dead rows.
+- **Profile trigger**: no new Profile hamburger added (would require visual redesign) — Profile reachable via Bottom Tab and Drawer item; full trigger consistency deferred to A7.6 design review.
+
+### Version source verification (Section 18 of task)
+- `app.json` → `expo.version: "1.0.0"` (static source of truth). `app.config.ts` spreads the resolved config and only appends the react-native-maps plugin — does NOT override version. `expo-constants@~57.0.19` (direct dep) → `Constants.expoConfig?.version` = `"1.0.0"` at runtime. This is the **user-facing app version** (distinct from SDK 57 / JS runtime / Android build codes). Runtime OCR of the footer: "Version 1.0.0".
+- A7.1/A7.2 sections untouched.
+
+### Accessibility baseline (only functional additions)
+- Avatar block `accessible={false}` (initials are a visual echo of the announced name — prevents double announcement).
+- Drawer rows get explicit `accessibilityLabel={row label}` (labels already meaningful; exact-row a11y styling deferred to A7.6/7.7).
+
+### Runtime verification matrix (Expo Go / SDK 57 / emulator-5554 / fresh Metro :8081 bundle 2177 modules)
+- CASE 1 authenticated → Home: PASS (persisted session).
+- CASE 2 Home hamburger ☰ → Drawer opens: PASS.
+- CASE 3 header initials + `A66tester` + `a66tester@yamak.test`: PASS (OCR).
+- CASE 4 Version truthful "Version 1.0.0" (not undefined, not hardcoded elsewhere): PASS.
+- CASE 5 Home row → Home + closes: PASS (from Map tab).
+- CASE 6 Map row → Map + closes: PASS. CASE 7 Profile row → Profile + closes: PASS.
+- CASE 8 active-route tap (Home while on Home) → closes, no remount/loop: PASS.
+- CASE 9 bottom tabs Home↔Map↔Profile still work: PASS.
+- CASE 10 Map state retained after drawer open/close + tab round-trip (content instant, no reload; tab screens remain mounted — deep marker state not observable, backend 500s pre-existing): PASS (modest claim).
+- CASE 11 Vehicle Details deep link `/vehicle/1` → full screen with own app bar, NO tabs, NO drawer; back → Home: PASS.
+- CASE 12 Profile → Logout → confirm → REGISTER (auth stack); left-edge swipe produces no drawer (screen byte-identical pre/post): PASS.
+- Env notes carried forward: Expo Go dev-menu FAB can overlay rows (moved via drag — not an app defect); extreme-edge swipe = system Back on gesture nav (not an app defect).
+
+### Hygiene
+- `npx tsc --noEmit`: ONLY the pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error — PASS.
+- `git diff --check`: clean. `git status --short` (below). No Backend/Dashboard/Legacy change.
+- Emulator state note: the runtime session was logged out by CASE 12 — a future runtime slice needs re-registration (register + OTP) before authenticated cases.
+- Commit = **NOT YET** (standing rule). Next step = **A7.4 runtime navigation/state verification gate**; **A7.6 Drawer Design Review required before visual acceptance.**
