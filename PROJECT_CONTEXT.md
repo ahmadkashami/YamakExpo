@@ -2012,3 +2012,62 @@ Precheck: repo `YamakExpoNew`; HEAD `47907b0 docs(drawer): approve drawer design
 
 ## PHASE A - A7 CLOSURE
 A7 (Drawer) is functionally and visually complete and verified: A7.1 architecture, A7.3 functional content, A7.4 navigation/state, A7.6 design approval, A7.7 approved-UI implementation, A7.8 final verification. **A7 = CLOSED (pending user approval to commit).** No further A7 work; All Vehicles NOT started.
+
+## PHASE B - B1.1 ALL VEHICLES ANALYSIS (read-only, 2026-10-12)
+
+**Verdict: B1.1 ALL VEHICLES ANALYSIS PASS.** Analysis only: no product/Backend/Dashboard/Legacy code changed, no package installed, no All Vehicles UI built, no commit (standing rule). Precheck: repo `YamakExpoNew`; HEAD `faf9ac2 feat(navigation): apply approved drawer UI`; `git status --short` empty (tree CLEAN). This section records verified findings only; no Phase A history is rewritten.
+
+### Starting state
+- Phase A (drawer) CLOSED. Phase B / Feature B1 = "All Vehicles". No route, hook, or screen for All Vehicles exists in `YamakExpoNew`.
+- `YAMAK-SCREEN-011` (All Vehicles) = **NOT STARTED**, Phase C1 per `13-SCREEN-BY-SCREEN-REBUILD-PLAN.md:744`; backlog `11-rebuild-backlog.md:113`. Navigation map marks the route **TODO — Phase C1** (`03-navigation-map.md:262`).
+
+### Legacy implementation (evidence: `yamak-mobile`)
+- Route: `ALL_VEHICLES_SCREEN="ALL_VEHICLES"` (`constants/ScreenNames.ts`), registered **only** in `HomeStackNAvigator`. Entry point: legacy Home `VehiclesList.tsx` "View All" → `navigation.navigate(ScreenNames.ALL_VEHICLES_SCREEN)` (line 70). No other call sites.
+- Screen `screens/AllVicelessScreen.tsx`: `Screen` + `HeaderList showSearch={false}` + `AllVehiclesList`; `ActivityIndicator` while loading. State: `totalCount`, `currentPage`, `allVehicles`, `sortType`.
+- List `components/AllVeiclesList/AllVehiclesList.tsx`: `FlatList` (react-native-gesture-handler) with `RefreshControl`; `onEndReached` guarded by a momentum ref; pull-to-refresh calls `getAllVehicles({page:1,limit:10})` (merges AsyncStorage-stale location) after a 1500ms `setTimeout`; the infinite-scroll `handleEndReach` block is **commented out**.
+- Header `components/HeaderList.tsx`: sort icon toggles `asc`↔`desc` (label A/Z); count `t("YouHaveNREsult",{count})`; notification bell → Notifications; filter button is **dead** (`console.log("filters")`); `showSearch={false}` hides search + filter row.
+- Legacy defects (do NOT replicate): (1) pagination is **broken** — `useFetchV2` effect deps are `[method,url]` only, so `page`/`sort`/`latitude`/`longitude` changes do **not** refetch; the `[currentPage]` effect re-appends **page 1**; only sort works (explicit `refetch()` on `[sortType]`), so infinite scroll never advances. (2) distance cell renders the backend Euclidean **degrees** value as "KM" (`fixNumbers(item?.distance)` + `t("KM")`). (3) `item.branch.name` / `item.services.length` are **unguarded** and crash on a null branch/services. (4) filter is dead. No search, no real filters, no favorites, no contact actions on the list.
+- Card `components/home/VehicleItem.tsx` (legacy): `iconMap` image, `Name : branch.name`, `Services : services.length`, distance+KM row, gold `FillledButton` "View"; press pushes `Vehicle_Details_Screen` with `{_id: item._id}`.
+
+### Current implementation (evidence: `YamakExpoNew`)
+- No All Vehicles route. `components/home/VehiclesList.tsx` is the reusable list: props `title`, `horizontal`, `excludeId`, `onVehiclePress`, `onViewAllPress`, `onRefetchReady`; **`onViewAllPress` is optional and only renders "View All" when supplied** (line 75). Home (`(app)/(drawer)/(tabs)/home.tsx`) mounts `<VehiclesList onVehiclePress={handleVehiclePress} />` — **no `onViewAllPress`**, so "View All" is currently hidden. Vehicle press → `router.push('/vehicle/[id]')` with `String(vehicle.id)`.
+- Data: `hooks/use-vehicles.ts` → `GET /vehicles`; Strategy A location wait (don't fetch while `unknown`/`resolving`; freeze decision per cycle; `available`→with coords else coordinate-less fallback). `api/vehicles.ts` `getVehicles(params)` sends **only** `latitude`/`longitude` as a finite PAIR — **never `page`/`limit`/`sort`/`query`**; parses envelope `data.{list,metaData}`.
+- Card `components/home/VehicleItem.tsx`: guarded `branch?.name` (row hidden if null), `services?.length ?? 0`, distance = client **Haversine km** only when `userCoords !== null` AND `isUsableVehicleGeo(geoLocation)`; otherwise blank (no fake 0 km); whole card is the press target with a static gold "View". `excludeId` uses `vehicle.id` (number).
+- Home entry point: legacy "View All" affordance is **currently absent**; enabling B1 requires passing an `onViewAllPress` from Home.
+
+### Backend contract (evidence: `yamak-backend`, inspection only)
+- `GET /vehicles` → `Api\Mobile\VehicleController@index`, route `routes/api_mobile.php:50`, **public** (registered before the `auth:sanctum` group at line 56).
+- Hardcoded filters: `work_status='online'` AND `current_driver_id IS NOT NULL`. Eager loads `branch,company,services,drivers,currentDriver`.
+- Query params (all optional, **no validation**): `latitude`, `longitude`, `sort` (`'desc'` else `'asc'`), `page` (default 1), `limit` (default 10), `query` (`label_number LIKE %q%`).
+- Ordering: **no `orderBy`** — DB default order, unless lat+lng present, in which case `distance = sqrt((v.lat-lat)²+(v.lng-lng)²)` (**Euclidean degrees**, not km) is added and it `sortBy('distance')` asc/desc.
+- Pagination: manual `forPage($page,$limit)`. `limit=0` or non-numeric → **HTTP 500**.
+- Envelope: `{success,message,data:{list,metaData},errors:null}`; `metaData = totalCount,currentCount,currentPage,itemsPerPage,lastPage`.
+- `GET /vehicles/{id}` → `show`, route line 51, public; unknown id → **HTTP 500** (ModelNotFound text), not 404 (already handled by the app's `extractBackendMessage`).
+- `vehicleResource` fields: `id,_id,status,companyId,company|null,branchId,branch|null,drivers[],services[],createdAt,workStatus,lastActiveDate,currentDriver|null,iconMap,labelNumber,modelName,geoLocation{latitude,longitude,coordinates:[lon,lat]}` (missing coords coerce to 0).
+
+### Identifier consistency
+- Current app navigates with **`id` (number)** to `/vehicle/[id]`; backend resource also mirrors string `_id`; legacy used `_id`. B1 must keep using `vehicle.id` for consistency with the existing `VehiclesList`/`VehicleItem` and Vehicle Details.
+
+### Services / filters / search / favorites / contact actions (business-model check)
+- Services list exists (`ServicesList`, `useServices`) and Home already routes a service press to `/map?serviceId=`. All Vehicles has **no** service filter in current code.
+- Search: backend supports `query` (label_number LIKE), but the app's `getVehicles` does not send it; there is no client search UI for vehicles. Legacy All Vehicles had search **hidden** (`showSearch={false}`).
+- Favorites: **no backend routes at all** (`13-...:780`); no favorites in current code or legacy All Vehicles. Not part of a faithful B1.
+- Contact actions: belong to Vehicle Details (already built), not the list.
+
+### Design status
+- `approve-ui/` has **no All Vehicles folder** (only drawer, home, map, onboarding, profile, register, VehiclesDetails) ⇒ **no approved All Vehicles design exists**.
+- `docs/rebuild/new-ui/main/all-vehicles/index.html` exists but `new-ui/UI-CATALOG.md:32` classifies it **PROPOSED** (grid+list, filter chips, skeleton, empty, error+retry). ⇒ **B1.6 Design Review is required before any visual acceptance** (mirrors the A7.6 gate).
+
+### Route placement (decision pending, must be recorded in B1.2)
+- `13-...:749` offers two options: `(app)/(tabs)/vehicles.tsx` **or** a pushed route (legacy reached it from a "see more" affordance). Current route tree: `(app)/(drawer)/(tabs)/{home,map,profile}`; direct `(app)` children `vehicle/[id].tsx` and `onboarding.tsx` sit **outside** drawer/tabs. Drawer rows (`DRAWER_ROUTES`) are Home/Map/Profile only.
+- Legacy semantics ("see more" pushed screen with back) argue for a **pushed `(app)` route** (e.g. `(app)/vehicles.tsx`) so it has its own app bar and **no bottom tabs/drawer** — consistent with how `/vehicle/[id]` is placed. A bottom tab route would change the tab contract, which no approved design covers. Recommendation recorded; **final choice belongs to B1.2.**
+
+### Recommended B1 scope + micro-plan (proposal only — not executed)
+- Recommended B1 scope for a first verified slice: route + full list of `GET /vehicles` with real, working pagination (page/limit), sort, honest distance, pull-to-refresh, loading skeleton, empty + error/retry, vehicle tap → `/vehicle/[id]`; service filter only if chosen (local state, mirroring Map — **no** global store); **no** search, **no** favorites, **no** contact actions unless separately approved.
+- Micro-plan (each step RUN → VERIFY → STOP): (1) record route decision + enable Home "View All" via `onViewAllPress`; (2) extend `api/vehicles.ts` to send `page`/`limit`(/`sort`) safely and expose `metaData`; (3) list hook with append-on-page + refresh; (4) screen with header (back + count), list, states; (5) vehicle tap → Vehicle Details; (6) filter step only if in scope; (7) B1.6 design review gate where a visual design is applied.
+- Backend change requirement: **none strictly required** for step 1–5 (params already exist). Gaps to note, not fix: no `orderBy` (unstable default order), Euclidean-degrees `distance`, `limit=0`/non-numeric → 500, `query` unvalidated. Any backend change needs separate explicit approval.
+
+### Hygiene
+- Read-only: no file changed except this `PROJECT_CONTEXT.md` append. No `src/`, Backend, Dashboard, or Legacy change; no package installed; no build/Metro/tsc.
+- Baseline TypeScript error unchanged (reported, not fixed): `src/components/app-tabs.web.tsx(27,38)` `Type '"/explore"'` TS2322.
+- Commit = **NOT YET** (standing rule). Next step = **B1.2 route decision + basic All Vehicles route** (RUN → VERIFY → STOP) only after user approval; B1.2 not started here.
