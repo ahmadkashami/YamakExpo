@@ -1923,3 +1923,92 @@ Intentional divergences recorded:
 ### Hygiene
 - Files changed: `PROJECT_CONTEXT.md` (append only; A7.1–A7.5 untouched) + new `docs/rebuild/approve-ui/drawer/APPROVED-DRAWER-SPEC.md` + `docs/rebuild/approve-ui/drawer/code.html`. No `src/` change.
 - Commit = **NOT YET** (standing rule). Next step = **A7.7 Approved-UI drawer implementation** (visual only), then **A7.8** runtime + commit after user approval.
+
+## PHASE A — A7.7 APPROVED DRAWER UI IMPLEMENTATION (product UI only, 2026-10-12)
+
+**Verdict: A7.7 APPROVED DRAWER UI PASS.** Visual implementation of the A7.6 approved design. No functional change (same rows/triggers/navigation/auto-close), no menu item added/removed, no Backend/Dashboard/Legacy change, no package installed, A7.8 NOT started, nothing committed. Precheck: tree clean at HEAD `47907b0 docs(drawer): approve drawer design`.
+
+### Files changed (product only)
+- `src/components/navigation/AppDrawerContent.tsx` — visuals rewritten to the approved design (identity cap, avatar, rows, footer).
+- `src/app/(app)/(drawer)/_layout.tsx` — added `colors` import + `screenOptions={{ headerShown:false, overlayColor: colors.scrim }}`. Width/position/type/corner radius remain library defaults (no `drawerStyle.width`).
+- `src/components/navigation/TabIcons.tsx` — exported the bare `TabGlyph` (+JSDoc) so the drawer reuses the exact bottom-tab Home/Map/Profile glyphs; `TabIcon`/dot unchanged.
+
+### Applied design (existing tokens only — no invented hex)
+- **Identity cap:** full-bleed `colors.navyDeep` (#0B2A4A), `paddingTop = insets.top + spacing.lg`, `paddingHorizontal = spacing.xl`, centred.
+- **Avatar:** 72 outer ring (`borderWidth 2` `colors.wordmark` #E9A319 + `padding 2`) around a 64 avatar (`radius 32`, `colors.glass` fill, hairline `colors.glassBorder`); initials 22/28 bold `colors.brandText`.
+- **Identity text:** name 16/22 semibold `colors.brandText`; email 12/16 regular `colors.tagline` (#94A9C3); centred; conditional render preserved.
+- **Rows:** `DrawerItem` kept (role button + `aria-selected` + label semantics). Active = `activeBackgroundColor colors.goldTint` (#FDF7E6) + container `borderWidth 1 borderColor colors.goldTintBorder` (#FBEED4) + logical `borderStartWidth 3 borderStartColor colors.wordmark` + `activeTintColor colors.navyDeep`; inactive label `colors.fieldText`, icon `colors.subtitle`. Rows `minHeight 52`, `radius.md`, `gap spacing.xs`; menu `flex:1`.
+- **Footer:** `Version {Constants.expoConfig?.version}` 12/16 medium `colors.subtitle`, `paddingTop spacing.lg`, `paddingBottom spacing.md + insets.bottom`; hidden when version is null. Truthful `Version 1.0.0`.
+- **Pressed:** `pressOpacity = interactionOpacity.pressed` (no animation dependency).
+- **Scrim:** `colors.scrim` (rgba(12,28,51,0.55)) via `_layout` `overlayColor`.
+- **Safe area:** zeroed all `DrawerContentScrollView` injected top/side/bottom padding (`flexGrow:1`) and re-applied `insets.top` inside the cap and `insets.bottom` inside the footer — no global SafeAreaView, so the navy cap bleeds to the screen top.
+
+### Functional contract (unchanged)
+Header initials/name/email (AuthProvider session); rows Home/Map/Profile only; version footer. No Favorites/Notifications/Share/Logout/Language/dead rows (Profile hub keeps Share/Logout). Triggers: Home ☰ + Map ☰ only; **Profile has no hamburger**. Navigation `router.navigate` + explicit `CLOSE_DRAWER`; **same-route tap closes only**; scrim tap closes.
+
+### Runtime verification (Expo Go + Metro; no native build)
+Authenticated session obtained via a temporary **local stub API** (scratch, outside the repo) so register→OTP→Home worked without touching the shared backend/SMTP/DB; `.env` restored byte-identical afterwards (SHA256 verified). The emulator's a11y tree wedges over the map `TextureView` and the display lags, so the **drawer was verified by pixel-sampling `adb exec-out screencap`** against exact tokens:
+- Opened from **Home ☰** and **Map ☰**; stable across repeated captures.
+- Cap `#0B2A4A` full-bleed; gold ring `#E9A319` + `#1E3B58` glass fill (= rgba(255,255,255,0.08) over navyDeep) + white initials; name white (`#FFFFFF` brandText), email `#94A9C3` (tagline). Session identity `AA77 Tester` / `a77tester@yamak.test` / initials `AT` also confirmed via Profile a11y text.
+- Active row `#FDF7E6` + `#FBEED4` border + 3dp `#E9A319` **leading** bar; exactly **3** rows; active row tracked the route (Home→row1, Map→row2).
+- Scrim `#78808D` (= rgba(12,28,51,0.55) over #FAFAFA) right of the drawer; width ≈ library default (`max(W−56,…)`).
+- Footer `Version 1.0.0` in `subtitle` colour, centred above the bottom inset.
+- Same-route tap closed the drawer and stayed on the route; Profile confirmed hamburger-free.
+- **Verification level (honest):** strong pixel evidence for cap/avatar/name/email/active row/leading bar/3 rows/scrim/footer + both triggers + Profile no-hamburger. Pressed-state and RTL mirroring were not captured as screenshots (emulator instability) — guaranteed by `interactionOpacity.pressed` and the logical `borderStart*` edge. A small viewport (`wm size 720x1280`) rendered Home with its ☰ + tabs, but the drawer capture there did not stabilise, so small-screen fit rests on the design (flex menu + insets cap/footer), not a captured screenshot.
+
+### Hygiene
+- `npx tsc --noEmit`: only the pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error — PASS.
+- `git diff --check`: clean (line-ending warnings only). `git diff --stat`: 3 files, +111/−46. `git status --short`: only the 3 files above. `.env` not in the final diff (stub URL reverted). Backend/Dashboard/Legacy untouched; no package installed.
+- Commit = **NOT YET** (standing rule). Next step = **A7.8** runtime + commit after user approval.
+
+## PHASE A - A7.8 DRAWER FINAL VERIFICATION + A7 CLOSURE (verification only, 2026-10-12)
+
+**Verdict: A7 FINAL VERIFICATION PASS.** Verification only - no redesign, no feature, no Drawer row added/removed, no Backend/Dashboard/Legacy change, no package installed, no native build (no native change occurred), All Vehicles NOT started, nothing committed (standing rule). Only a proven regression would have been fixed; none was found.
+
+Precheck: repo `YamakExpoNew`; HEAD `47907b0 docs(drawer): approve drawer design`; `git status --short` = the 4 expected files (`PROJECT_CONTEXT.md`, `(drawer)/_layout.tsx`, `AppDrawerContent.tsx`, `TabIcons.tsx`); `git diff --check` exit 0 (LF→CRLF warnings only); `git diff --stat` = 4 files, +148/-46.
+
+### 1. Route ownership (final)
+- `(drawer)` group's ONLY screen is `(tabs)` - `src/app/(app)/(drawer)/(tabs)/{_layout,home,map,profile}.tsx`; hrefs unchanged `/home` `/map` `/profile`.
+- `(app)/_layout.tsx` gate: `onboarding.tsx` and `vehicle/[id].tsx` are direct `(app)` children, physically OUTSIDE `(drawer)`. `<Slot/>` renders the drawer's `(tabs)` OR vehicle OR onboarding - never both. So `/vehicle/{id}` has NO drawer and NO bottom tabs.
+
+### 2. Functional Drawer contract (fixed, unchanged)
+- Rows: exactly Home `/home`, Map `/map`, Profile `/profile` (`DRAWER_ROUTES`). No Favorites/Notifications/Share/Logout/Language/dead rows.
+- Header: initials (`initialsOf(user.name)`, fallback `YA`) + `user.name` + `user.email` from `AuthProvider` - no profile API, no image fetch, no fake avatar, no "online" pill.
+- Footer: `Version {Constants.expoConfig?.version}`; footer omitted entirely when version is null (never "Version undefined").
+
+### 3. Triggers
+- Home ☰ and Map ☰ ONLY (`openDrawer` → `navigation.dispatch({type:'OPEN_DRAWER'})` in `home.tsx` / `map.tsx`).
+- Profile: no hamburger (`profile.tsx` has no `openDrawer` / no "Open menu"). Edge-swipe + scrim tap still work (library defaults).
+
+### 4. Identity cap / rows / states
+- Cap: full-bleed `colors.navyDeep`, `paddingTop: insets.top + spacing.lg`; 72 ring (`colors.wordmark`, 2dp) + 64 glass avatar (`colors.glass`/`colors.glassBorder`); initials 22/28 bold `brandText`; name 16/22 semibold `brandText`; email 12/16 regular `tagline`; name/email conditional.
+- Rows: `minHeight: 52`, `radius.md`, `gap spacing.xs`, bare `TabGlyph` (20pt, exact bottom-tab glyphs).
+- Inactive: white, `inactiveTintColor colors.fieldText`, icon `colors.subtitle`. Active: `activeBackgroundColor colors.goldTint` (#FDF7E6) + `borderWidth 1 colors.goldTintBorder` (#FBEED4) + logical `borderStartWidth 3 borderStartColor colors.wordmark` (#E9A319 leading bar) + `activeTintColor colors.navyDeep` + semibold.
+- Pressed: `pressOpacity = interactionOpacity.pressed` (0.7).
+
+### 5. RTL / small-screen / safe area / scrim / version / a11y
+- RTL-safe: leading accent uses LOGICAL `borderStart*`; width/position/type/corner stay library defaults → automatic mirroring; logical `paddingStart/End` zeroed.
+- Safe area: all `DrawerContentScrollView` injected paddings zeroed (`flexGrow:1`); `insets.top` re-applied in cap, `insets.bottom` in footer; no global SafeAreaView → cap bleeds to screen top.
+- Small screen: no fixed drawer width; `menu {flex:1}` + insets pin cap/footer.
+- Scrim: `_layout` `screenOptions.overlayColor = colors.scrim` (rgba(12,28,51,0.55)); tap-to-close.
+- Version: truthful from `expo-constants` (`1.0.0`).
+- a11y: rows are `DrawerItem` (role button + `aria-selected`) with `accessibilityLabel`; avatar `accessible={false}` (name/email not double-announced); tab glyphs `accessibilityElementsHidden`.
+- Same-route: `handleNavigate` navigates only when NOT focused, then always `CLOSE_DRAWER` → same-route tap closes only (no reset).
+
+### 6. Regression surfaces (structurally verified)
+- Bottom tabs `(tabs)/_layout.tsx` unchanged (3 tabs, same glyphs); drawer wraps it without re-URL-ing. Home/Map stay mounted under the tabs navigator - drawer only opens/closes over them. Auth/onboarding gate unchanged; `(drawer)` mounts only after onboarding. Deep links `/home` `/map` `/profile` `/vehicle/{id}` (and `/`, `/register`, `/email-otp`) unchanged.
+
+### Runtime verification (Expo Go + Metro; no native build)
+- Fresh cold start (force-stop → `exp://127.0.0.1:8081`) reached the **authenticated Home** against the real dev backend (`Services` Wench/Flat Tires/Flat Battery/Unlock Key; ads; Explore Map) - auth restore + onboarding gate both passed. No stub API was served in A7.8.
+- **Home ☰ opens the drawer** (pixel: navy cap `[0,0]-[932,..]`, glass `#1E3B58`, gold ring `#E9A319`, active row 1 `#FDF7E6`+`#FBEED4` at y≈588-724, scrim `#78808D` right of x≈933). **Backdrop tap closes**; **Android Back closes**.
+- On the **Map** route the drawer's active row is **row 2 (Map)** (`#FDF7E6` at y≈736-870) - active row tracks the route. **Profile has no hamburger** (a11y); Map app bar ☰ at (94,209).
+- **Honest verification level:** the emulator degraded badly this session (Expo Go cold start hung on its loader for minutes; `uiautomator` returned `null root node` while the drawer was open; stray input jumped to Calendar / GMS `PreAddAccountActivity` / launcher; multi-second input lag). A7.8 therefore RE-OBSERVED only: cold-start→Home, Home ☰ open, backdrop close, Back close, Map active row, Profile no hamburger. **Pressed state, RTL mirroring, small-screen, version text, bottom-tab taps, state retention, vehicle-details and deep-link navigation were NOT re-observed at runtime in A7.8** - they rest on the code above and/or A7.7 runtime. No PASS is claimed for a runtime item that was not actually observed.
+
+### Hygiene
+- `npx tsc --noEmit`: only the pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error - PASS.
+- `git diff --check`: clean (line-ending warnings only). `git status --short`: the same 4 files, no untracked artifacts. `.env` byte-identical (SHA256 `226F50A6…3A45D85`). Backend/Dashboard/Legacy untouched.
+- Cleanup: temp Metro (port 8081) stopped; no PHP stub served; emulator size/density/RTL unchanged; scratch only under `D:\OpenCodeTemp\opencode\a78` (outside the repo). Emulator-only side effect: onboarding "seen" was marked by tapping Skip against the real backend (device app-data, not a repo artifact); location permission was pre-granted as in A7.7.
+- Commit = **NOT YET** (standing rule).
+
+## PHASE A - A7 CLOSURE
+A7 (Drawer) is functionally and visually complete and verified: A7.1 architecture, A7.3 functional content, A7.4 navigation/state, A7.6 design approval, A7.7 approved-UI implementation, A7.8 final verification. **A7 = CLOSED (pending user approval to commit).** No further A7 work; All Vehicles NOT started.

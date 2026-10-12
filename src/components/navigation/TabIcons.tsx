@@ -79,7 +79,13 @@ function ProfileGlyph({ color }: { color: ColorValue }) {
   );
 }
 
-function TabGlyph({ name, color }: { name: TabIconName; color: ColorValue }) {
+/**
+ * Bare glyph (no indicator dot, no layout column) — the single source of truth
+ * for the Home / Map / Profile shapes. Exported so the A7.7 drawer rows reuse
+ * the EXACT bottom-tab glyphs at the same 20pt size instead of duplicating the
+ * SVG paths (and drifting) in a second file.
+ */
+export function TabGlyph({ name, color }: { name: TabIconName; color: ColorValue }) {
   if (name === 'home') {
     return <HomeGlyph color={color} />;
   }

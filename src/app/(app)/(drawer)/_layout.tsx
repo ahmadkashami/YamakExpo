@@ -1,6 +1,7 @@
 import { Drawer } from 'expo-router/drawer';
 
 import { AppDrawerContent } from '@/components/navigation/AppDrawerContent';
+import { colors } from '@/theme';
 
 /**
  * AUTHENTICATED DRAWER SHELL — Phase A / Step A7.2 (architecture only).
@@ -27,13 +28,14 @@ import { AppDrawerContent } from '@/components/navigation/AppDrawerContent';
  *     outside the drawer, so the drawer's `backBehavior` never changes the
  *     details screen's back flow.
  *
- * ## Drawer surface (minimal, NOT the approved visual)
+ * ## Drawer surface (approved visual)
  *
- * The drawer itself is a functional side sheet: custom content (identity
- * header, Home · Map · Profile, Version footer — see AppDrawerContent), no
- * automatic route list, no dead rows. Visual parity with
- * `docs/rebuild/new-ui/main/drawer/` is intentionally NOT attempted here;
- * that is the A7.6 design-review + A7.7 implementation scope.
+ * The drawer content implements the A7.6 approved design
+ * (`docs/rebuild/approve-ui/drawer/APPROVED-DRAWER-SPEC.md`): a white body with
+ * a navy identity cap, a gold-tinted active row and a version-only footer — see
+ * `AppDrawerContent`. Only the scrim colour is set here (`colors.scrim`) via
+ * `overlayColor`; width / position / type / radius stay library defaults so RTL
+ * mirroring and the vendored `front` corner radius apply as-is.
  *
  * Gestures / position / width / RTL: all library defaults (no override), so
  * RTL mirroring and the swipe-edge behaviour verified in A7.1 apply as-is.
@@ -42,7 +44,7 @@ export default function DrawerLayout() {
   return (
     <Drawer
       drawerContent={(props) => <AppDrawerContent {...props} />}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ headerShown: false, overlayColor: colors.scrim }}
     />
   );
 }

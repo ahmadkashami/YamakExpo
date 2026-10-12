@@ -6,9 +6,11 @@ import {
 } from 'expo-router/drawer';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/auth';
-import { colors, fontWeight, radius, spacing } from '@/theme';
+import { colors, fontWeight, interactionOpacity, radius, spacing } from '@/theme';
+import { TabGlyph, type TabIconName } from './TabIcons';
 
 /**
  * First-release drawer menu — ALL REAL ROUTES, no dead rows (project rule).
@@ -22,12 +24,12 @@ import { colors, fontWeight, radius, spacing } from '@/theme';
  * approved decision: version-only footer, no duplicate Share, no duplicate
  * Sign Out).
  */
-type DrawerRoute = { href: Href; label: string };
+type DrawerRoute = { href: Href; label: string; icon: TabIconName };
 
 const DRAWER_ROUTES: readonly DrawerRoute[] = [
-  { href: '/home', label: 'Home' },
-  { href: '/map', label: 'Map' },
-  { href: '/profile', label: 'Profile' },
+  { href: '/home', label: 'Home', icon: 'home' },
+  { href: '/map', label: 'Map', icon: 'map' },
+  { href: '/profile', label: 'Profile', icon: 'profile' },
 ];
 
 /** Same initials logic the Profile hub (A4) already uses — replicated, not shared. */
@@ -44,23 +46,27 @@ function initialsOf(name: string): string {
 }
 
 /**
- * A7.2 functional drawer content.
+ * A7.2 functional drawer content — A7.7 approved visual language (design
+ * authority: `docs/rebuild/approve-ui/drawer/APPROVED-DRAWER-SPEC.md`).
  *
- * - Identity header: initials + name + email straight from AuthProvider (the
- *   session user already carries both) — no image fetch, no profile API, no
- *   fake avatar, no invented "online" pill (legacy hardcoded one).
- * - Menu: Home · Map · Profile with the focused row highlighted.
+ * - Identity cap: full-bleed navy band (`colors.navyDeep`) carrying the
+ *   safe-area top inset, with the glass/ gold-ring initials avatar plus the
+ *   name + email straight from AuthProvider. No profile API, no image fetch,
+ *   no fake avatar, no invented "online" pill (legacy hardcoded one).
+ * - Menu: Home · Map · Profile on a white body; focused row = gold-tint card
+ *   with a logical 3dp gold leading edge + navy content (NOT a full navy fill).
  * - Footer: truthful app version from `expo-constants` (fixes the legacy
  *   undefined-version defect); no footer at all if the config version is
  *   unavailable — never invented data.
  *
- * Presentation is minimal on purpose; the A7.6 design review + A7.7 define the
- * final look (approved drawer design pending at `docs/rebuild/approve-ui/`).
+ * Behaviour is UNCHANGED from A7.3: same routes, same active-key logic, same
+ * `OPEN_DRAWER` / `CLOSE_DRAWER` contract, same version source.
  */
 export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
   const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
 
   const displayName = user?.name ?? '';
   const displayEmail = user?.email ?? '';
@@ -78,13 +84,19 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
   };
 
   return (
+    // `DrawerContentScrollView` injects `paddingTop/Bottom/Start/End` from the
+    // safe-area insets. We zero it here so the navy cap can bleed to the very
+    // top edge and re-apply the insets ourselves (top inside the cap, bottom
+    // inside the footer) — no double insets, no visible white sliver.
     <DrawerContentScrollView contentContainerStyle={styles.scrollContent}>
-      <View style={styles.identity}>
+      <View style={[styles.cap, { paddingTop: insets.top + spacing.lg }]}>
         {/* Decorative: the initials are a visual echo of `displayName`, which
             is read separately — hiding them keeps the header from being
-            announced twice (functional a11y baseline, not final styling). */}
-        <View accessible={false} style={styles.avatar}>
-          <Text style={styles.avatarText}>{initialsOf(displayName)}</Text>
+            announced twice. */}
+        <View accessible={false} style={styles.avatarRing}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initialsOf(displayName)}</Text>
+          </View>
         </View>
         {displayName.length === 0 ? null : <Text style={styles.name}>{displayName}</Text>}
         {displayEmail.length === 0 ? null : <Text style={styles.email}>{displayEmail}</Text>}
@@ -99,22 +111,32 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
               label={route.label}
               focused={focused}
               onPress={() => handleNavigate(route.href, focused)}
-              activeTintColor={colors.brandText}
-              activeBackgroundColor={colors.navyDeep}
-              inactiveTintColor={colors.title}
-              labelStyle={styles.itemLabel}
-              style={styles.item}
+              activeTintColor={colors.navyDeep}
+              inactiveTintColor={colors.fieldText}
+              activeBackgroundColor={colors.goldTint}
+              labelStyle={focused ? styles.itemLabelActive : styles.itemLabel}
+              style={focused ? styles.itemActive : styles.item}
+              pressOpacity={interactionOpacity.pressed}
               // The vendored DrawerItem already renders `role="button"` and
               // `aria-selected`; an explicit label keeps the row name
-              // meaningful even if a future visual pass replaces the text.
+              // meaningful even though the text is already visible.
               accessibilityLabel={route.label}
+              // Same glyph set the bottom tabs use (20pt). The drawer has no
+              // gold indicator dot, so it renders the bare `TabGlyph` and picks
+              // its own colour: navy when focused, muted otherwise.
+              icon={({ focused: itemFocused }) => (
+                <TabGlyph
+                  name={route.icon}
+                  color={itemFocused ? colors.navyDeep : colors.subtitle}
+                />
+              )}
             />
           );
         })}
       </View>
 
       {appVersion === null ? null : (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
           <Text style={styles.version}>Version {appVersion}</Text>
         </View>
       )}
@@ -124,23 +146,40 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
 
 const styles = StyleSheet.create({
   scrollContent: {
+    // `flexGrow` keeps the `menu: flex 1` spacer working so the footer sits at
+    // the bottom; the zeroed paddings let the cap bleed to the top/sides (the
+    // component's own safe-area padding is re-applied inside cap/footer).
     flexGrow: 1,
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingStart: 0,
+    paddingEnd: 0,
   },
-  identity: {
-    alignItems: 'center',
+  cap: {
+    backgroundColor: colors.navyDeep,
+    paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
-    marginBottom: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    alignItems: 'center',
+  },
+  avatarRing: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    borderColor: colors.wordmark,
+    padding: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatar: {
     width: 64,
     height: 64,
-    borderRadius: radius.xl,
-    backgroundColor: colors.navyDeep,
+    borderRadius: 32,
+    backgroundColor: colors.glass,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
   },
   avatarText: {
     fontSize: 22,
@@ -149,10 +188,11 @@ const styles = StyleSheet.create({
     color: colors.brandText,
   },
   name: {
+    marginTop: spacing.md,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: fontWeight.semibold,
-    color: colors.title,
+    color: colors.brandText,
     textAlign: 'center',
   },
   email: {
@@ -160,25 +200,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontWeight: fontWeight.regular,
-    color: colors.subtitle,
+    color: colors.tagline,
     textAlign: 'center',
   },
   menu: {
     flex: 1,
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
   },
   item: {
-    marginHorizontal: spacing.xs,
+    borderRadius: radius.md,
+    minHeight: 52,
+  },
+  itemActive: {
+    borderRadius: radius.md,
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: colors.goldTintBorder,
+    // Logical leading edge → mirrors automatically under RTL. A real 3dp gold
+    // bar rather than a corner-radius-sensitive absolute child.
+    borderStartWidth: 3,
+    borderStartColor: colors.wordmark,
   },
   itemLabel: {
     fontSize: 15,
     lineHeight: 20,
     fontWeight: fontWeight.medium,
   },
+  itemLabelActive: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: fontWeight.semibold,
+  },
   footer: {
-    marginTop: 'auto',
-    alignItems: 'center',
     paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
+    alignItems: 'center',
   },
   version: {
     fontSize: 12,
