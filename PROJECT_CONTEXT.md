@@ -1897,3 +1897,29 @@ Intentional divergences recorded:
 - `git diff --check`: clean. `git status --short` (below). No Backend/Dashboard/Legacy change.
 - Emulator state note: the runtime session was logged out by CASE 12 — a future runtime slice needs re-registration (register + OTP) before authenticated cases.
 - Commit = **NOT YET** (standing rule). Next step = **A7.4 runtime navigation/state verification gate**; **A7.6 Drawer Design Review required before visual acceptance.**
+
+## PHASE A — A7.6 DRAWER DESIGN REVIEW (design/docs only, 2026-10-12)
+
+**Verdict: A7.6 DRAWER DESIGN REVIEW PASS.** Documentation only. No product TS/TSX change, no Backend/Dashboard/Legacy change, no package installed, no build/Metro/tsc, A7.7 NOT implemented, nothing committed. Precheck: tree clean at HEAD `d7a98bd`; `git status --short` empty.
+
+### Deliverables
+- `docs/rebuild/approve-ui/drawer/APPROVED-DRAWER-SPEC.md` — approved drawer design spec, 24 numbered sections (purpose, fixed functional contract, authority, anatomy, surface/width/position/type, color tokens, typography, identity cap, avatar, identity text, row anatomy, active row, inactive row + icons, footer, scrim, gestures/triggers/auto-close, device fit, RTL, safe areas, empty/long data, a11y, motion, KEEP/POLISH/CHANGE table, A7.7 checklist), plus non-goals + DESIGN-SAMPLE label. **No approved drawer design existed before this** (`approve-ui/` had no drawer folder) — this is the first drawer authority.
+- `docs/rebuild/approve-ui/drawer/code.html` — visual reference mock, explicitly labelled **DESIGN SAMPLE** (placeholder identity/version only).
+
+### Approved design direction (A7.6)
+- **Light drawer body** `colors.surface` white + **navy identity cap header** `colors.navyDeep` (#0B2A4A) full-bleed to the top (trusted from the approved Home header language) + **gold accents** (`colors.wordmark` #E9A319 avatar ring + active leading bar).
+- **Active row = gold tint, not a navy/gold fill:** background `colors.goldTint` (#FDF7E6) + border `colors.goldTintBorder` (#FBEED4) + 3dp gold leading accent bar + navy content (`colors.navyDeep`, semibold). Explicitly rejects the legacy "full gold block + white text" contrast defect and the A7.3 temporary "full navy fill + white text".
+- **Inactive rows:** white body, `colors.fieldText` label, `colors.subtitle` icon, 20pt SVG glyphs reused from `TabIcons.tsx` (Home/Map/Profile) — **zero new dependencies** (no icon package).
+- **Footer:** version-only (`colors.subtitle`), hidden when `Constants.expoConfig?.version` is null (never "Version undefined").
+- **Scrim:** `overlayColor: colors.scrim` (rgba(12,28,51,0.55)); tap-to-close kept.
+- **Width/position/type/radius:** keep all library defaults (no `drawerStyle.width` override) so RTL mirroring + the vendored 16dp `front` corner come for free.
+
+### Decisions recorded
+- **Profile trigger:** no Profile hamburger (option A) — drawer triggers stay Home ☰ + Map ☰; Profile reached via bottom tab + drawer row and by edge-swipe. (Consistent with legacy Home having no hamburger; adding a Profile ☰ would need a screen redesign, out of scope.)
+- **Safe-area bleed:** zero `DrawerContentScrollView` top/side padding; consume `insets.top` inside the navy cap and `insets.bottom` inside the footer/horizontal inset inside the body (A7.7).
+- **Functional contract UNCHANGED:** header initials+name+email (AuthProvider), rows Home/Map/Profile, version footer; no Favorites/Notifications/Share/Logout/Language/dead rows (Profile hub keeps Share/Logout).
+- Open question for implementation: A7.7 may either restyle `DrawerItem` or use an equivalent Pressable row — row semantics (`role`/`aria-selected`) + navigation/`CLOSE_DRAWER` behavior stay identical either way.
+
+### Hygiene
+- Files changed: `PROJECT_CONTEXT.md` (append only; A7.1–A7.5 untouched) + new `docs/rebuild/approve-ui/drawer/APPROVED-DRAWER-SPEC.md` + `docs/rebuild/approve-ui/drawer/code.html`. No `src/` change.
+- Commit = **NOT YET** (standing rule). Next step = **A7.7 Approved-UI drawer implementation** (visual only), then **A7.8** runtime + commit after user approval.
