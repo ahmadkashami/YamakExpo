@@ -2071,3 +2071,40 @@ A7 (Drawer) is functionally and visually complete and verified: A7.1 architectur
 - Read-only: no file changed except this `PROJECT_CONTEXT.md` append. No `src/`, Backend, Dashboard, or Legacy change; no package installed; no build/Metro/tsc.
 - Baseline TypeScript error unchanged (reported, not fixed): `src/components/app-tabs.web.tsx(27,38)` `Type '"/explore"'` TS2322.
 - Commit = **NOT YET** (standing rule). Next step = **B1.2 route decision + basic All Vehicles route** (RUN → VERIFY → STOP) only after user approval; B1.2 not started here.
+
+## PHASE B - B1.2 ALL VEHICLES DATA/API ARCHITECTURE (data layer only, 2026-10-12)
+
+**Verdict: B1.2 ALL VEHICLES DATA ARCHITECTURE PASS.** Data/API layer only: no screen, no route, no visual UI, no Home wiring, no Backend/Dashboard/Legacy change, no package installed, B1.3 not started, nothing committed. Precheck: HEAD `f4994cb docs(vehicles): record all vehicles analysis`; `git status --short` empty (tree CLEAN). Approved B1 decisions applied: pushed authenticated route (B1.3), Home "View All" entry later (B1.3), existing `GET /vehicles` sufficient, client Haversine is the only display distance, B1 excludes search/favorites/contact/`POST /requests`/pricing/payment, FlatList + pagination + refresh, **no Backend change**.
+
+### API contract finalized (`src/api/vehicles.ts`)
+- New `VehicleListParams = VehiclesQueryParams & { sort?: VehicleSort; page?: number; limit?: number; query?: string }` — only backend-supported params. `VehiclesQueryParams` (`latitude?`,`longitude?`) kept and still used by `getVehiclesByService`. No `serviceId` (backend has no such filter).
+- `VehicleSort = 'asc' | 'desc'`.
+- `VehiclesMetaData` confirmed (unchanged): `totalCount,currentCount,currentPage,itemsPerPage,lastPage`.
+- Extracted `VehiclesListData { list: Vehicle[]; metaData: VehiclesMetaData }`; `VehiclesResponse.data` is now `VehiclesListData | null` (envelope `{success,message,data,errors}` unchanged). No new fields invented.
+- Envelope `data.list` + `data.metaData` confirmed by source re-check of `Mobile\VehicleController@index` and `routes/api_mobile.php:50`.
+
+### Param validation + defaults
+- `getVehicles` now builds the query via a private `buildVehiclesQuery` that emits ONLY defined+valid params: coords as a finite PAIR; `sort` only `'asc'|'desc'`; `page`/`limit` only integers `>= 1` (so it can never emit the `limit=0`/non-numeric values that make the backend 500); `query` only when a non-empty trimmed string. The function never invents a page or page size.
+- `DEFAULT_VEHICLE_PAGE_SIZE = 10` exported from the hook (matches legacy `AppLimitList` and the backend default); invalid `options.pageSize` falls back to 10. No new global constants system.
+
+### New hook: `src/hooks/use-paginated-vehicles.ts`
+- Decision: **keep `useVehicles` for Home unchanged; add a separate paginated hook** (minimal regression risk to verified Home).
+- Exposes: `vehicles`, `metaData`, `isLoading`, `isRefreshing`, `isLoadingMore`, `error`, `loadMoreError`, `isEmpty`, `hasMore`, `sort`, `refresh`, `loadMore`, `setSort`, `refetch` (=`refresh`).
+- Location: same Strategy A as `useVehicles` — hold while `unknown`/`resolving`; first fetchable state → `available` with coords, else coordinate-less. **One frozen location decision per cycle** (`decisionRef`), so page 1 and later pages never mix coordinate modes (backend nearest-first ordering cannot shift mid-cycle). `refresh`/`setSort` start a new cycle and re-read current location state.
+- Refresh: new cycle, page 1, **replaces** accumulated rows, refreshes the location decision, preserves `sort`, never blanks the existing list while running (`isRefreshing` separate from `isLoading`).
+- Load-more: ignored when already loading/refreshing, when the cycle errored, or when `currentPage >= lastPage`; appends, **dedupes by `vehicle.id`** (`mergeVehiclesById`, pure/exported); a later-page failure sets `loadMoreError` and **keeps** the existing rows.
+- Sort: no-op if unchanged; otherwise resets to page 1 and replaces the list (never appends a new order onto old rows). Sort UI is deferred to B1.3.
+- Stale-request safety: `cycleIdRef` invalidates any older cycle, so a slow page-1 or load-more response can never corrupt a newer cycle (no AbortController — smallest mechanism matching project style).
+- Error model: `error` = initial/blocking (list cleared); `loadMoreError` = later page (list preserved). Empty = successful page 1 with `list.length === 0`, exposed via `isEmpty` (never an error).
+
+### Compatibility / scope
+- Home compatibility: `useVehicles` and `components/home/*` untouched. `getVehicles({latitude,longitude})` and `getVehicles()` still behave identically (same envelope, same finite-pair rule); `VehiclesResponse`/`VehiclesMetaData`/`VehiclesQueryParams` remain exported.
+- Identifier: `vehicle.id` (number) stays canonical for keys/dedupe/details. `Vehicle` type unchanged; the backend's Euclidean-degree `distance` is not mapped into the model.
+- Null safety: no assumptions about `branch`/`services`/`geoLocation`/`image`; the raw nullable fields are preserved and presentation fallbacks stay in the UI (B1.3).
+- Query: backend `query` supported and typed, but **not sent** by the B1 hook (search UI out of scope). Service filter: **not implemented** — no backend contract for it; local filtering of paginated data would be misleading. No route/`vehicles.tsx` created; no UI change.
+
+### Hygiene
+- Files changed: `src/api/vehicles.ts`, `src/api/index.ts`, new `src/hooks/use-paginated-vehicles.ts`, and this `PROJECT_CONTEXT.md` append.
+- `npx tsc --noEmit`: ONLY the pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error — PASS.
+- Optional live HTTP contract check: **not performed** — the `.env` base URL is an unverifiable LAN dev server while the compiled default is the Production domain, so the backend's DB environment could not be confidently confirmed; the contract was already verified by source inspection in B1.1. No DB access attempted.
+- Backend/Dashboard/Legacy untouched. Commit = **NOT YET**. Next step = **B1.3** (pushed All-Vehicles route + screen + Home "View All" wiring), RUN → VERIFY → STOP, after user approval.

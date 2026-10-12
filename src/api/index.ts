@@ -34,11 +34,14 @@ export {
   type DriverResource,
   type Vehicle,
   type VehicleGeoLocation,
+  type VehicleListParams,
   type VehicleResponse,
   type VehiclesByServiceResponse,
+  type VehiclesListData,
   type VehiclesMetaData,
   type VehiclesQueryParams,
   type VehiclesResponse,
+  type VehicleSort,
 } from './vehicles';
 export { API_BASE_URL, buildApiUrl, resolveApiBaseUrl } from './config';
 export {
