@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<!--
+  DESIGN SAMPLE — NOT APP CONTENT.
+  All-Vehicles approved design reference (B1.6). Self-contained (no build, no JS, no network).
+  Representative placeholder names/counts only; no price/rating/badge/guarantee.
+  States shown: normal list, distance present, distance absent, missing-image fallback,
+  load-more spinner, empty state, initial error, load-more error footer.
+-->
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yamak · All Vehicles — DESIGN SAMPLE (B1.6)</title>
+<style>
+  :root{
+    --navy:#0C1C33; --navy-deep:#0B2A4A; --gold:#FBBF24; --wordmark:#E9A319;
+    --primary:#15406F; --surface:#FFFFFF; --title:#0F172A; --subtitle:#64748B;
+    --border:#E2E8F0; --bg:#F8FAFC; --error:#EF4444; --brand-text:#FFFFFF;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#dfe5ec;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+       color:#0F172A;padding:24px 16px 48px;display:flex;flex-direction:column;align-items:center;gap:24px}
+  .banner{max-width:420px;width:100%;background:#fff7e6;border:1px solid #f3d79a;color:#7a5410;
+          border-radius:10px;padding:10px 12px;font-size:12px;line-height:16px}
+  .banner b{font-weight:800}
+  .phone{width:100%;max-width:420px;background:var(--bg);border-radius:28px;overflow:hidden;
+         border:8px solid #101828;box-shadow:0 20px 40px rgba(8,28,49,.25);display:flex;flex-direction:column}
+  .statusbar{background:var(--surface);display:flex;justify-content:space-between;align-items:center;
+             padding:8px 20px 4px;font-size:12px;font-weight:600;color:#0F172A}
+  /* App bar */
+  .appbar{background:var(--surface);border-bottom:1px solid var(--border);padding:6px 16px 8px;
+          display:flex;align-items:center;min-height:52px}
+  .iconbtn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--subtitle);
+           background:none;border:0;cursor:pointer}
+  .bar-center{flex:1;text-align:center;line-height:1.05}
+  .bar-title{font-size:16px;line-height:22px;font-weight:700;color:var(--title)}
+  .bar-count{font-size:12px;line-height:16px;font-weight:500;color:var(--subtitle);margin-top:2px}
+  .bar-spacer{width:40px;height:40px}
+  /* List */
+  .list{padding:16px 16px 24px;display:flex;flex-direction:column;gap:12px}
+  /* Card */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+        box-shadow:0 1px 3px rgba(12,30,52,.06);display:flex;height:120px;cursor:pointer}
+  .card:active{opacity:.7}
+  .card-img{flex:1.5;display:flex;align-items:center;justify-content:center;background:var(--surface)}
+  .card-img .thumb{width:88%;height:78%;border-radius:8px;background:linear-gradient(135deg,#DCE6F0,#C9D8E6)}
+  /* missing-image fallback plate (vertical only) */
+  .card-img.missing{background:var(--bg)}
+  .card-img.missing .ph{font-size:11px;color:var(--subtitle);font-weight:600;letter-spacing:.3px}
+  .divider{width:1px;height:80%;align-self:center;background:var(--border)}
+  .card-body{flex:2;padding:10px;display:flex;flex-direction:column}
+  .card-main{flex:2;display:flex;flex-direction:column;justify-content:center}
+  .name{font-size:16px;line-height:22px;font-weight:500;color:var(--title);text-transform:capitalize;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .services{font-size:14px;line-height:20px;font-weight:500;color:var(--title)}
+  .card-foot{flex:1;display:flex;flex-direction:column;justify-content:flex-end}
+  .foot-sep{height:1px;background:var(--border)}
+  .foot-row{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+  .distance{font-size:14px;line-height:20px;font-weight:500;color:var(--title)}
+  /* when distance is absent the View chip is pushed to the trailing edge */
+  .view{margin-left:auto;background:var(--gold);color:#111827;border-radius:10px;width:60px;height:30px;
+        margin:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;
+        text-transform:capitalize}
+  /* footer states */
+  .footer{display:flex;align-items:center;justify-content:center;padding:16px 0;color:var(--primary)}
+  .spinner{width:22px;height:22px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--primary);
+           animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .err-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 0}
+  .err-text{color:var(--error);font-size:11px;line-height:16px;font-weight:500}
+  .retry{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-weight:600;color:var(--title)}
+  /* empty / initial error blocks */
+  .state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+         padding:56px 16px;text-align:center}
+  .empty-text{font-size:16px;line-height:24px;color:var(--subtitle)}
+  .state-card{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:16px;width:100%}
+  .caption{max-width:420px;width:100%;font-size:12px;color:#5b6675}
+  .sep{max-width:420px;width:100%;border-top:1px dashed #b7c0cc;margin-top:8px}
+  .sec-title{max-width:420px;width:100%;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px}
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <b>DESIGN SAMPLE — not app content.</b> Approved All-Vehicles reference (B1.6). Placeholder
+  names/counts visualize layout only; no price/rating/badge/guarantee. Backend is the only data source.
+</div>
+
+<!-- ============ STATE 1: normal list, distance present/absent, missing image, load-more ============ -->
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>▮▮▮ · 5G · 🔋</span></div>
+
+  <div class="appbar">
+    <button class="iconbtn" aria-label="Go back">&#8249;</button>
+    <div class="bar-center">
+      <div class="bar-title">All Vehicles</div>
+      <div class="bar-count">23 vehicles</div>
+    </div>
+    <div class="bar-spacer"></div>
+  </div>
+
+  <div class="list">
+    <!-- distance present -->
+    <div class="card">
+      <div class="card-img"><div class="thumb"></div></div>
+      <div class="divider"></div>
+      <div class="card-body">
+        <div class="card-main">
+          <div class="name">Name : Wench</div>
+          <div class="services">Services : 3</div>
+        </div>
+        <div class="card-foot">
+          <div class="foot-sep"></div>
+          <div class="foot-row">
+            <span class="distance">1.2 km</span>
+            <span class="view">View</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- distance absent -> View still trailing -->
+    <div class="card">
+      <div class="card-img"><div class="thumb"></div></div>
+      <div class="divider"></div>
+      <div class="card-body">
+        <div class="card-main">
+          <div class="name">Name : Flat Battery</div>
+          <div class="services">Services : 2</div>
+        </div>
+        <div class="card-foot">
+          <div class="foot-sep"></div>
+          <div class="foot-row">
+            <span class="view">View</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- missing image -> neutral plate; zero services -->
+    <div class="card">
+      <div class="card-img missing"><span class="ph">NO IMAGE</span></div>
+      <div class="divider"></div>
+      <div class="card-body">
+        <div class="card-main">
+          <div class="name">Name : Flat Tires</div>
+          <div class="services">Services : 0</div>
+        </div>
+        <div class="card-foot">
+          <div class="foot-sep"></div>
+          <div class="foot-row">
+            <span class="distance">0.4 km</span>
+            <span class="view">View</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- long name -> single line ellipsis -->
+    <div class="card">
+      <div class="card-img"><div class="thumb"></div></div>
+      <div class="divider"></div>
+      <div class="card-body">
+        <div class="card-main">
+          <div class="name">Name : Al-Sayer Motor Recovery &amp; Flatbed Services</div>
+          <div class="services">Services : 5</div>
+        </div>
+        <div class="card-foot">
+          <div class="foot-sep"></div>
+          <div class="foot-row">
+            <span class="distance">2.8 km</span>
+            <span class="view">View</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- ============ STATE 2: load-more error footer ============ -->
+<div class="sec-title">Load-more error (rows preserved)</div>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>▮▮▮ · 5G · 🔋</span></div>
+  <div class="appbar">
+    <button class="iconbtn" aria-label="Go back">&#8249;</button>
+    <div class="bar-center"><div class="bar-title">All Vehicles</div><div class="bar-count">23 vehicles</div></div>
+    <div class="bar-spacer"></div>
+  </div>
+  <div class="list">
+    <div class="card">
+      <div class="card-img"><div class="thumb"></div></div>
+      <div class="divider"></div>
+      <div class="card-body">
+        <div class="card-main"><div class="name">Name : Unlock Key</div><div class="services">Services : 1</div></div>
+        <div class="card-foot"><div class="foot-sep"></div>
+          <div class="foot-row"><span class="distance">3.1 km</span><span class="view">View</span></div></div>
+      </div>
+    </div>
+    <div class="err-row">
+      <span class="err-text">The next page could not be loaded.</span>
+      <span class="retry">Retry</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STATE 3: empty ============ -->
+<div class="sec-title">Empty (header stays)</div>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>▮▮▮ · 5G · 🔋</span></div>
+  <div class="appbar">
+    <button class="iconbtn" aria-label="Go back">&#8249;</button>
+    <div class="bar-center"><div class="bar-title">All Vehicles</div></div>
+    <div class="bar-spacer"></div>
+  </div>
+  <div class="state"><div class="empty-text">No vehicles available right now.</div></div>
+</div>
+
+<!-- ============ STATE 4: initial error ============ -->
+<div class="sec-title">Initial error (blocking, Retry)</div>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>▮▮▮ · 5G · 🔋</span></div>
+  <div class="appbar">
+    <button class="iconbtn" aria-label="Go back">&#8249;</button>
+    <div class="bar-center"><div class="bar-title">All Vehicles</div></div>
+    <div class="bar-spacer"></div>
+  </div>
+  <div class="state">
+    <div class="state-card">
+      <div class="err-row">
+        <span class="err-text">Vehicles are temporarily unavailable.</span>
+        <span class="retry">Retry</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+<div class="caption">
+  Design sample only. Distance is client Haversine km (never the backend Euclidean value);
+  absent distance renders nothing. No sort, search, filter, favorite or contact action appears.
+</div>
+
+</body>
+</html>

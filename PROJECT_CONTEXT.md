@@ -2187,3 +2187,27 @@ A7 (Drawer) is functionally and visually complete and verified: A7.1 architectur
 - `npx tsc --noEmit`: ONLY the baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error - PASS.
 - Dirty tree = the B1.3 files + `PROJECT_CONTEXT.md`; `src/app/(app)/vehicles.tsx` now also carries the B1.4 guard fix. `git diff --check` clean. `.env` restored byte-identical; stub/temp files removed. Backend/Dashboard/Legacy untouched.
 - Commit = **NOT YET**. Next = **B1.5** only after explicit approval; **B1.6 Design Review** remains the mandatory visual gate.
+
+## PHASE B - B1.6 ALL VEHICLES DESIGN REVIEW (design review only, 2026-10-13)
+
+**Verdict: B1.6 ALL VEHICLES DESIGN REVIEW PASS.** Design/docs only: NO product TS/TSX changed, NO Backend/Dashboard/Legacy change, no package, no migration, no Metro/Android/Gradle, no commit. Precheck: HEAD `b14e2d2 feat(vehicles): add functional all vehicles screen`; `git status --short` empty (tree CLEAN — the functional B1.3/B1.4 work is committed). B1.5 was review-only (no section, no file change).
+
+### Design direction (recorded)
+- Final direction: **"Home list, expanded"** — a clean light browse list that reads as Home's vehicle section grown to a full screen (NOT a marketplace/catalog). Light `colors.phonePrefix` page; white single-surface app bar (same language as the shipped Vehicle Details bar); white full-width cards with `radius.md` + 1px `colors.border` hairline + subtle shadow; gold `View` affordance. No navy header, no gradient, no chips row.
+- App bar: back + centered `All Vehicles` + **muted count subtitle under the title** (`metaData.totalCount`, `typography.caption`/`colors.subtitle`, singular/plural; hidden until metaData exists). No bell/search/filter/sort/favorites.
+- Card strategy: **reuse `VehicleItem` with `orientation="vertical"`** (one source of business presentation). B1.7 adds a vertical-only card shell (radius.md + border + shadow + `overflow: hidden`), a neutral `phonePrefix` missing-image plate, and trailing `View`; Home horizontal stays byte-identical. Services stay **count only** (`Services : N`); distance stays optional (client Haversine; absent → nothing, never "0.0 km").
+- Loading: `VehiclesListSkeleton` gains a vertical/card variant (Home look unchanged). Empty/error/load-more keep `ApiErrorRow` + retry, restrained and mutually distinct. Pull-to-refresh stays native. Safe area: `insets.top` inside the app bar, `insets.bottom` in the list padding.
+- Still EXCLUDED (unchanged): sort UI (backend sort is directionless without coords/`orderBy`), search, filter chips, service filter, favorites, and any call/WhatsApp/request/pricing/payment. Partial-data local filtering is explicitly forbidden (would be incomplete/misleading).
+- Accessibility POLISH recorded: explicit composed card `accessibilityLabel`, image `accessible={false}`, back label kept, count not a live region. RTL note: the `BackIcon` glyph must become direction-aware when RTL is enabled (verify in B1.7.4).
+
+### Artifacts
+- Spec: `docs/rebuild/approve-ui/all-vehicles/APPROVED-ALL-VEHICLES-SPEC.md` (27 sections: purpose, functional constraints, direction, page anatomy, background, app bar, count, card, image, identity, services, distance, view affordance, list spacing, loading, empty, error, load-more, pull refresh, safe area, small screen, RTL, a11y, business-model constraints, KEEP/POLISH/CHANGE/REMOVE, non-goals, B1.7 checklist).
+- Mock: `docs/rebuild/approve-ui/all-vehicles/code.html` (**DESIGN SAMPLE**) showing normal list, distance present, distance absent, missing-image fallback, long name, load-more spinner, load-more error footer, empty, and initial error.
+- Authority used: `src/theme/*`, `approve-ui/{home,map,VehiclesDetails,drawer,onboarding,profile}`, and the shipped `vehicle/[id].tsx` app bar. The provisional `new-ui/main/all-vehicles/index.html` (grid + filter chips + price + "Available" pill) is PROPOSED and **rejected**; legacy `AllVicelessScreen`/`AllVehiclesList`/`HeaderList`/`VehicleItem` were used for structure only (visuals rejected; legacy distance-as-KM, dead filter, unsafe nulls, broken pagination not ported).
+
+### B1.7 plan (proposal only — NOT started)
+- B1.7.1 page background + app bar + count; B1.7.2 vertical `VehicleItem` polish; B1.7.3 loading/empty/error/load-more; B1.7.4 small-screen/RTL/a11y; B1.7.5 runtime visual verification (Expo Go + isolated stub or safe LAN dev backend, `tsc` baseline-only, `git diff --check`).
+
+### Hygiene
+- Files changed by B1.6: NEW `docs/rebuild/approve-ui/all-vehicles/APPROVED-ALL-VEHICLES-SPEC.md`, NEW `docs/rebuild/approve-ui/all-vehicles/code.html`, and this `PROJECT_CONTEXT.md` append. **No `src/` change**; no tracked config churn; no `.env` touch.
+- Commit = **NOT YET**. Next = **B1.7** only after explicit approval; no functional decision above is changed by this design pass.
