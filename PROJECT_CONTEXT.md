@@ -2108,3 +2108,82 @@ A7 (Drawer) is functionally and visually complete and verified: A7.1 architectur
 - `npx tsc --noEmit`: ONLY the pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error — PASS.
 - Optional live HTTP contract check: **not performed** — the `.env` base URL is an unverifiable LAN dev server while the compiled default is the Production domain, so the backend's DB environment could not be confidently confirmed; the contract was already verified by source inspection in B1.1. No DB access attempted.
 - Backend/Dashboard/Legacy untouched. Commit = **NOT YET**. Next step = **B1.3** (pushed All-Vehicles route + screen + Home "View All" wiring), RUN → VERIFY → STOP, after user approval.
+
+## PHASE B - B1.3 ALL VEHICLES SCREEN — FUNCTIONAL IMPLEMENTATION (2026-10-12)
+
+**Verdict: B1.3 FUNCTIONAL ALL VEHICLES PASS.** Pushed authenticated `/vehicles` screen implemented, Home "View All" wired, runtime-verified in Expo Go on the Android emulator against the safe LAN dev backend. No Backend/Dashboard/Legacy change, no package installed, no migration, no native build (`run:android`/Gradle untouched), nothing committed. Precheck: HEAD `c3fa2e7 feat(vehicles): add paginated vehicles data layer` (B1.2 committed), tree CLEAN.
+
+### Route & screen (`src/app/(app)/vehicles.tsx`, NEW)
+- Pushed authenticated route **outside** `(drawer)`/`(tabs)` exactly like `/vehicle/[id]` — its own app bar, so **no bottom tabs and no drawer** (legacy "see more" semantics; confirmed by runtime dump — no tab labels present).
+- App bar: `BackIcon` ("Go back", `accessibilityLabel`) → `router.canGoBack() ? router.back() : router.replace('/home')`; centered title "All Vehicles"; right slot shows `<totalCount> vehicle(s)` ONLY when `metaData.totalCount` is present (verified live: "2 vehicles").
+- `FlatList` + `keyExtractor={String(item.id)}` (canonical `id`), refresh via native `RefreshControl` (`refreshing`/`onRefresh`), load-more via `onEndReached` → `loadMore` (threshold 0.5).
+- Single-screen **momentum guard** (`onMomentumScrollBegin`/ref) limits `onEndReached` to once per gesture; the hook remains sole authority for concurrency/page advancement (no duplicate concurrency logic).
+- States in one shared slot (mutually exclusive): loading+empty → `VehiclesListSkeleton` ×3 (now exported from `VehiclesList.tsx`); blocking error → `ApiErrorRow` + retry; empty success → "No vehicles available right now." Footer: load-more `ActivityIndicator`, or `ApiErrorRow`+retry for a later-page failure (existing rows retained). `ListEmptyComponent`/`ListFooterComponent` both memoized.
+- Card press → `router.push({ pathname: '/vehicle/[id]', params: { id: String(vehicle.id) } })`; passes frozen `coordsUsed` from the hook as `userCoords` and `orientation="vertical"`.
+
+### Home wiring (`src/app/(app)/(drawer)/(tabs)/home.tsx`)
+- `handleViewAllVehicles` → `router.push('/vehicles')`; passed as `onViewAllPress` to the existing `VehiclesList` (previously-hidden affordance made functional; no Home redesign; `tsc`-verified typed route). Runtime-verified end-to-end: View All tap on Home → `/vehicles`.
+
+### Hook exposure (`src/hooks/use-paginated-vehicles.ts`)
+- Now also returns **`coordsUsed: UserCoords | null`** — the frozen per-cycle coordinates (set on page-1 success from the decision, cleared to `null` on error). Mirrors `useVehicles`/`useMapVehicles` so `VehicleItem` shows Haversine km ONLY for the cycle actually fetched with coords (a late location change can never make distances appear/shift on rendered rows).
+
+### Component reuse (minimal, backwards-compatible)
+- `VehicleItem`: new optional `orientation?: 'horizontal' | 'vertical'` prop; default `'horizontal'` is byte-identical (Home unaffected); `'vertical'` = full-width card (`width: '100%'`, no right carousel gap). No other change.
+- `VehiclesListSkeleton` exported. `ApiErrorRow` reused for initial + load-more errors.
+
+### Sort — DEFERRED/EXCLUDED from B1.3 (recorded decision)
+- Backend `sort=asc|desc` ordering is only meaningful when a `distance` sort can run (coords present on every item) — without coords the backend order is DB-dependent, so a sort toggle on this screen would show an arbitrary order. Hook `sort`/`setSort` stays ready but **no sort UI is exposed**. Recorded here so B1.4/B1.6 does not assume sort shipped.
+
+### Runtime verification (Expo Go 57.0.9 on emulator-5554, Metro local, dev backend confirmed SAFE)
+- **Dev backend confirmed safe + reachable:** `.env` `EXPO_PUBLIC_API_URL=http://192.168.8.125:8000/api/mobile/v1/` is the host machine's own Wi-Fi IP (a LAN dev service; cloudinary `dev/` path, not the Production `yamak-kw.com` domain). Only **read-only GET** requests made (incl. `/vehicles?page=1&limit=10`, `page=2`, and coords+sort probes). No DB access attempted. B1.2's "live check not performed" note is now superseded by this live confirmation.
+- Live data: `totalCount: 2`, `lastPage: 1` — vehicles ids **3, 6**, both with valid `geoLocation`, `branch`, `services` (no missing-geo/branch/empty-services fixtures exist in dev).
+- Verified live (automation-driven, uiautomator dumps + coordinate navigation):
+  1. **View All on Home** → `/vehicles` (gold "View All" located by pixel scan; tap landed on the screen) — Home→route entry works with no tabs/drawer.
+  2. `/vehicles` renders page-1 cards — "All Vehicles", "Go back", "2 vehicles" count, two full-width cards (VehicleItem vertical).
+  3. Card tap → **Vehicle Details** (`/vehicle/[id]`, Yamak-b1 etc.) — confirmed.
+  4. Back (app-bar "Go back") → returns to `/vehicles` with list intact — confirmed.
+  5. No bottom tabs / no drawer on `/vehicles` — confirmed (dump shows no tab labels).
+  6. Pull-to-refresh issued — list retained, no crash; replacement not visually distinguishable (same 2 records).
+  7. **No fake distance:** with the emulator's location provider unresolved (10s grace `timed-out`; emulator GPS never produces a fix), the coordinate-less cycle ran and cards showed **no "0.0 KM"** — the legacy defect is deliberately absent.
+- NOT runtime-exercisable here (recorded, not code failures): page-2 append, dedupe across pages, end-of-list (dev DB has 2 rows, `lastPage=1` → `hasMore=false` and no repeated fetch observed across repeated dumps), empty-list, missing-geo/Haversine-distance card (emulator provides no GPS fix even with `adb emu geo fix`; distance logic is the same guard already verified in Phase A and is `tsc`-closed here via `coordsUsed`). Initial skeleton state was too fast to capture (code-inspected: `ListEmptyComponent` skeleton stack).
+- Baseline web note (unchanged, out of scope): web bundle fails on the pre-existing `codegenNativeComponent is not a function`; Android bundle builds cleanly (2176 modules).
+
+### Hygiene
+- Files changed: `M src/app/(app)/(drawer)/(tabs)/home.tsx`, `M src/components/home/VehicleItem.tsx`, `M src/components/home/VehiclesList.tsx`, `M src/hooks/use-paginated-vehicles.ts`, `?? src/app/(app)/vehicles.tsx`. No tracked config churn (`expo-env.d.ts`/`tsconfig` untouched; `.expo/types/router.d.ts` regenerated — gitignored).
+- `npx tsc --noEmit`: ONLY the pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error (now with `/vehicles` in the union) — PASS.
+- `git diff --check`: clean. Backend/Dashboard/Legacy untouched. No DB access, no migrations.
+- Commit = **NOT YET** (standing rule - waiting on user approval). Next = the user's follow-on B1.4 step (not started); **B1.6 Design Review remains the mandatory gate before any visual acceptance** (`new-ui/main/all-vehicles` is only PROPOSED).
+
+## PHASE B - B1.4 ALL VEHICLES PAGINATION + STATE RUNTIME VERIFICATION (2026-10-13)
+
+**Verdict: B1.4 ALL VEHICLES RUNTIME VERIFICATION PASS.** Verification-first; ONE small B1.3 frontend defect found and fixed. No Backend/Dashboard/Legacy change, no package, no migration, no native build, nothing committed. Precheck: HEAD `c3fa2e7` (B1.2); dirty tree = intended B1.3 files + `PROJECT_CONTEXT.md` only.
+
+### Test environment (isolated stub, OUTSIDE the repo)
+- Temporary Node stub `D:\OpenCodeTemp\opencode\stub-server.js` (port 8099) mimicking the real envelope `{success,message,data:{list,metaData:{totalCount,currentCount,currentPage,itemsPerPage,lastPage}},errors}` on `GET /api/mobile/v1/vehicles` (plus `/onboarding`,`/services`,`/adds`). 23 fixtures, pages 10/10/3; edge rows: id5 `iconMap:null`, id7 broken-image URL, id8 `geoLocation(0,0)`+`services:[]`, id12 `branch:null`, id15 `services:null`, id18 `services:[]`. Control `/__control?mode=&delay1=&delay2=&reset=` + `/__log`. Modes: `normal|empty|fail1|fail2|malformed|dedupe`.
+- `.env` temporarily -> `http://10.0.2.2:8099/api/mobile/v1/` (backup + **byte-identical restore**, SHA256 `226F50A6...A45D85` verified). Metro `--clear`; Expo Go on `emulator-5554`. No Production DB, no writes, no migrations, no repo artifacts.
+
+### Smallest B1.4 fix (genuine defect)
+- `src/app/(app)/vehicles.tsx`: the screen-level once-per-gesture guard was armed ONLY by `onMomentumScrollBegin`, but RN fires `onEndReached` DURING the drag (before any momentum) - so a normal drag-to-bottom swallowed the trigger and load-more never ran (reproduced: 3 drags to bottom -> 0 page-2 requests). Fix: also arm on `onScrollBeginDrag` (`handleScrollGestureBegin` bound to both props). After the fix + a clean bundle the identical drag gesture loads page 2. Once-per-gesture semantics and hook-owned concurrency are unchanged.
+
+### Runtime results
+- **Page sequence:** `1 -> 2 -> 3` exactly once each (no `2->2`, no `3->3`, no parallel duplicates); end-of-list -> no page-4 across repeated drags; 23 unique rows (last = Branch 23). Page 1 request: `GET /vehicles?sort=asc&page=1&limit=10` -> 200; header "All Vehicles" + "23 vehicles".
+- **Dedupe (runtime-verified):** stub `dedupe` mode returned a page-2 overlap (id 10 repeated across pages; 24 rows over 10/10/4) - the rendered list kept 23 unique rows, Branch 10 appeared exactly once (immediately followed by Branch 11), the list ended at Branch 23, and Metro showed no duplicate-key warning. `mergeVehiclesById` keys on canonical `vehicle.id`, preserving first-occurrence order.
+- **Refresh:** one pull -> exactly one `page=1` (delayed 6s proved a real in-flight/indicator window); existing rows kept during refresh; on success the accumulated pages are REPLACED by the new page 1; next end-reached loads page 2 of the NEW cycle.
+- **Stale request:** page-2 delayed 20s then superseded by two newer page-1 cycles; the late page-2 was **IGNORED** (list still ended at Branch 10, no stale append) - verifies `cycleIdRef`.
+- **Initial error (`fail1`):** skeleton ends -> blocking "Vehicles are temporarily unavailable" + Retry, no rows/count; Retry -> page 1 loads.
+- **Load-more error (`fail2`):** page-1 rows remain, list NOT replaced, footer "Page two failed to load" + Retry; footer Retry -> page 2 appends.
+- **Empty (`empty`):** "No vehicles available right now.", header "0 vehicles", no error, no load-more.
+- **Malformed 200 (bad JSON):** graceful empty state, no crash (app alive) - API error safety.
+- **Null/missing data:** `services:null` and `services:[]` -> "Services : 0" (no invented count); `branch:null` -> "Name :" row omitted, card renders; missing-image (null) and broken-image URL cards render without crashing (existing no-image fallback, unchanged).
+- **Distance verification level - CODE-LEVEL only:** emulator location never yields a fix (`unknown` -> `timed-out` -> coordinate-less cycle; `adb emu geo fix` did not help). `isUsableVehicleGeo` rejects null/non-finite/`(0,0)`; `haversineDistanceKm` (client, km) + `formatDistanceKm` (never `0`/`NaN`; `<0.1 km`). Runtime negative confirmed: no distance label, no `0 KM`/`NaN`/`Infinity`. Backend Euclidean `distance` is never displayed (not mapped into the model).
+- **Location-cycle consistency:** every cycle logged coordinate-less requests (no `latitude`/`longitude`) -> one frozen decision per cycle; code freezes `{withCoords,coords}` in `decisionRef` reused by `loadMore`.
+- **Sort:** no UI (deferred); code-verified `setSort` -> new cycle -> page-1 replace when locked + fetchable.
+- **Home regression:** `VehicleItem` default `orientation='horizontal'`, Home passes none -> horizontal. Runtime contrast: Home = single gold "View" row; `/vehicles` = 6 stacked gold rows (vertical) - B1.3 did not turn Home vertical.
+- **View All / back:** Home gold "View All" tap -> `/vehicles`; Back -> Home. **Details/back:** card tap -> `/vehicle/1` (fetch `/vehicles/1`) "Vehicle details"; Back -> `/vehicles`; Back -> Home (no forced Home, no custom BackHandler).
+- **Route shell:** `/vehicles` is under the `(app)` auth+onboarding gate; no bottom tabs / no drawer (no tab labels, no "Open menu").
+- **Network audit:** `page`/`limit` always integers >= 1; no `limit=0`/NaN/undefined; no `query` param. **Rendering:** FlatList only; no nested-`ScrollView`/`VirtualizedLists`/duplicate-key/`Warning:` in Metro logs; no render loop.
+
+### Hygiene
+- `npx tsc --noEmit`: ONLY the baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error - PASS.
+- Dirty tree = the B1.3 files + `PROJECT_CONTEXT.md`; `src/app/(app)/vehicles.tsx` now also carries the B1.4 guard fix. `git diff --check` clean. `.env` restored byte-identical; stub/temp files removed. Backend/Dashboard/Legacy untouched.
+- Commit = **NOT YET**. Next = **B1.5** only after explicit approval; **B1.6 Design Review** remains the mandatory visual gate.

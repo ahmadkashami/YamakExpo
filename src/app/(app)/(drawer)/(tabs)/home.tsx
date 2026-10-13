@@ -89,6 +89,13 @@ export default function Home() {
     [router],
   );
 
+  // Legacy's "View All" opened the All-Vehicles screen; the pushed `/vehicles`
+  // route now exists, so the existing (previously hidden) affordance becomes
+  // functional — no Home redesign.
+  const handleViewAllVehicles = useCallback(() => {
+    router.push('/vehicles');
+  }, [router]);
+
   return (
     <View style={styles.screen}>
       {/* Minimal A7.2 header: the ☰ drawer trigger only, in the Map app-bar
@@ -116,7 +123,7 @@ export default function Home() {
       >
         <ServicesList onServicePress={handleServicePress} />
         <AddsList />
-        <VehiclesList onVehiclePress={handleVehiclePress} />
+        <VehiclesList onVehiclePress={handleVehiclePress} onViewAllPress={handleViewAllVehicles} />
         <ViewMap />
       </ScrollView>
     </View>

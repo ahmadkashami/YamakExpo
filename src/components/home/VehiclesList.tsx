@@ -94,7 +94,7 @@ export function VehiclesList({
 /** Legacy `NearByVehiclePH`: one 150pt-tall block, container padding 8 and
  *  horizontal margin 20. solid `colors.border`, matching how the Services and
  *  Adds sections already recreate their legacy placeholders. */
-function VehiclesListSkeleton() {
+export function VehiclesListSkeleton() {
   return (
     <View style={styles.skeletonContainer}>
       <View style={styles.skeletonBlock} />

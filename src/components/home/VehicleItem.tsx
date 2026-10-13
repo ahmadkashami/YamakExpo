@@ -18,6 +18,12 @@ export type VehicleItemProps = {
   userCoords: GeoCoordinate | null;
   /** Callback for the card press. Legacy navigated to Vehicle Details, which does not exist yet. */
   onPress?: (vehicle: Vehicle) => void;
+  /**
+   * Legacy `VehicleItem` had an `isVertical` switch: Home's carousel renders the
+   * fixed 350×120 card (`'horizontal'`, the default, byte-identical to before),
+   * while the All-Vehicles list stacks full-width cards (`'vertical'`).
+   */
+  orientation?: 'horizontal' | 'vertical';
 };
 
 /**
@@ -30,16 +36,26 @@ export type VehicleItemProps = {
  * `geoLocation`, the client computes a REAL distance (Haversine, km). In every
  * other case the distance area is simply left blank: no fake "0.0 KM".
  */
-export function VehicleItem({ vehicle, userCoords, onPress }: VehicleItemProps) {
+export function VehicleItem({
+  vehicle,
+  userCoords,
+  onPress,
+  orientation = 'horizontal',
+}: VehicleItemProps) {
   const usableGeo = isUsableVehicleGeo(vehicle.geoLocation);
   const distanceKm =
     userCoords !== null && usableGeo ? haversineDistanceKm(userCoords, vehicle.geoLocation) : null;
+  const isVertical = orientation === 'vertical';
 
   return (
     <Pressable
       accessibilityRole="button"
       onPress={() => onPress?.(vehicle)}
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.container,
+        isVertical && styles.containerVertical,
+        pressed && styles.pressed,
+      ]}
     >
       <View style={styles.innerContainer}>
         <View style={styles.imageArea}>
@@ -88,6 +104,11 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     marginRight: spacing.xl,
     backgroundColor: colors.surface,
+  },
+  // All-Vehicles list: full-width stacked card (no carousel gap on the right).
+  containerVertical: {
+    width: '100%',
+    marginRight: 0,
   },
   pressed: {
     opacity: interactionOpacity.pressed,

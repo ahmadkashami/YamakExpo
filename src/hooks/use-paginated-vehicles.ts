@@ -68,6 +68,12 @@ export type UsePaginatedVehiclesResult = {
   isEmpty: boolean;
   /** True while another page exists (`currentPage < lastPage`). */
   hasMore: boolean;
+  /**
+   * The exact coordinates this cycle was fetched with, or `null` for a
+   * coordinate-less cycle. Frozen per cycle so a late location change can never
+   * make distances appear on (or shift under) an already-rendered page.
+   */
+  coordsUsed: UserCoords | null;
   /** Current sort direction. */
   sort: VehicleSort;
   /** Resets to page 1, replaces the list and refreshes the location decision. */
@@ -137,6 +143,7 @@ export function usePaginatedVehicles(
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [loadMoreError, setLoadMoreError] = useState<ApiError | null>(null);
+  const [coordsUsed, setCoordsUsed] = useState<UserCoords | null>(null);
 
   // Guards against a stale cycle (or an old page) resolving after a newer one.
   const cycleIdRef = useRef(0);
@@ -204,6 +211,7 @@ export function usePaginatedVehicles(
         const meta = response.data?.metaData ?? null;
         setVehicles(list);
         setMetaData(meta);
+        setCoordsUsed(decision.withCoords ? decision.coords : null);
         pageRef.current = 1;
         lastPageRef.current = meta?.lastPage ?? 1;
       } catch (cause) {
@@ -212,6 +220,7 @@ export function usePaginatedVehicles(
         }
         setVehicles([]);
         setMetaData(null);
+        setCoordsUsed(null);
         pageRef.current = 0;
         lastPageRef.current = 1;
         setError(cause instanceof ApiError ? cause : ApiError.network(cause));
@@ -329,6 +338,7 @@ export function usePaginatedVehicles(
     loadMoreError,
     isEmpty,
     hasMore,
+    coordsUsed,
     sort,
     refresh,
     loadMore,
