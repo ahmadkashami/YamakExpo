@@ -12,15 +12,20 @@ import { usePaginatedVehicles } from '@/hooks/use-paginated-vehicles';
 import { useUserLocation } from '@/location';
 import { colors, spacing, typography } from '@/theme';
 
+/** Enough skeleton cards to cover the first viewport (spec §15: 4–6). */
+const SKELETON_COUNT = 5;
+
 /**
- * ALL VEHICLES — Phase B / Step B1.3 (functional implementation).
+ * ALL VEHICLES — Phase B / Step B1.3 (functional) + B1.7 (approved UI).
  *
  * A pushed authenticated route (`/vehicles`), deliberately OUTSIDE the
  * `(drawer)`/`(tabs)` groups like `/vehicle/[id]`: it has its own app bar and
  * therefore no bottom tabs and no drawer. Entered from Home's "View All".
  *
- * Functional only — NOT the approved design. The visual pass is B1.6
- * (`docs/rebuild/new-ui/main/all-vehicles/index.html` is only PROPOSED).
+ * Visual authority: `docs/rebuild/approve-ui/all-vehicles/APPROVED-ALL-VEHICLES-SPEC.md`
+ * ("Home list, expanded"): light `phonePrefix` page, white app bar with a muted
+ * count subtitle, full-width bordered cards. B1.7 is presentation only — the
+ * B1.3/B1.4 functionality is unchanged.
  *
  * Data comes entirely from `usePaginatedVehicles` (pagination, refresh, load
  * more, dedupe, stale-request safety): this screen owns NO pagination state.
@@ -113,9 +118,9 @@ export default function AllVehiclesScreen() {
     if (isLoading && vehicles.length === 0) {
       return (
         <View style={styles.skeletonStack}>
-          <VehiclesListSkeleton />
-          <VehiclesListSkeleton />
-          <VehiclesListSkeleton />
+          {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+            <VehiclesListSkeleton key={index} variant="card" />
+          ))}
         </View>
       );
     }
@@ -169,14 +174,19 @@ export default function AllVehiclesScreen() {
         >
           <BackIcon color={colors.subtitle} size={22} />
         </Pressable>
-        <Text style={styles.appBarTitle}>All Vehicles</Text>
-        <View style={styles.appBarRight}>
+        <View style={styles.barCenter}>
+          <Text numberOfLines={1} style={styles.appBarTitle}>
+            All Vehicles
+          </Text>
           {totalCount === undefined ? null : (
             <Text numberOfLines={1} style={styles.appBarCount}>
               {`${totalCount} ${totalCount === 1 ? 'vehicle' : 'vehicles'}`}
             </Text>
           )}
         </View>
+        {/* Symmetric empty trailing slot keeps the centered title optically
+            centered regardless of the count width. */}
+        <View style={styles.iconButton} />
       </View>
 
       <FlatList
@@ -224,17 +234,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  appBarTitle: {
+  barCenter: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appBarTitle: {
     textAlign: 'center',
     fontSize: 16,
     lineHeight: 22,
     fontWeight: '700',
     color: colors.title,
-  },
-  appBarRight: {
-    minWidth: 40,
-    alignItems: 'flex-end',
   },
   appBarCount: {
     ...typography.caption,

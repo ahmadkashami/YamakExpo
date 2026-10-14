@@ -46,10 +46,23 @@ export function VehicleItem({
   const distanceKm =
     userCoords !== null && usableGeo ? haversineDistanceKm(userCoords, vehicle.geoLocation) : null;
   const isVertical = orientation === 'vertical';
+  const hasImage = vehicle.iconMap !== null;
+  const serviceCount = vehicle.services?.length ?? 0;
+
+  // The whole card is ONE button, so it exposes a single composed label instead
+  // of letting the screen reader walk the plate / divider / "View" visual.
+  const accessibilityLabel = [
+    vehicle.branch?.name == null ? null : `Name: ${vehicle.branch.name}`,
+    `Services: ${serviceCount}`,
+    distanceKm === null ? null : `${distanceKm.toFixed(1)} kilometers`,
+  ]
+    .filter((part): part is string => part !== null)
+    .join(', ');
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       onPress={() => onPress?.(vehicle)}
       style={({ pressed }) => [
         styles.container,
@@ -58,9 +71,13 @@ export function VehicleItem({
       ]}
     >
       <View style={styles.innerContainer}>
-        <View style={styles.imageArea}>
+        {/* Vertical cards only: a neutral plate when there is no image, so the
+            left column reads as an intentional frame rather than a broken card.
+            Home (horizontal) keeps the shipped blank plate. */}
+        <View style={[styles.imageArea, isVertical && !hasImage && styles.imageAreaPlate]}>
           {vehicle.iconMap === null ? null : (
             <Image
+              accessible={false}
               source={{ uri: vehicle.iconMap }}
               resizeMode="contain"
               style={styles.image}
@@ -77,7 +94,7 @@ export function VehicleItem({
                 {`Name : ${vehicle.branch.name}`}
               </Text>
             )}
-            <Text style={styles.services}>{`Services : ${vehicle.services?.length ?? 0}`}</Text>
+            <Text style={styles.services}>{`Services : ${serviceCount}`}</Text>
           </View>
           <View style={styles.footer}>
             <View style={styles.footerDivider} />
@@ -88,7 +105,10 @@ export function VehicleItem({
               {/* Legacy `FillledButton`, gold with white label. The whole card
                   handles the press, so this is a static visual, not a second
                   nested press target. */}
-              <View style={styles.viewButton}>
+              {/* Logical trailing pin: `marginStart` keeps "View" on the
+                  trailing edge under both LTR and RTL, even when there is no
+                  distance line to push it there via space-between. */}
+              <View style={[styles.viewButton, isVertical && styles.viewButtonTrailing]}>
                 <Text style={styles.viewButtonLabel}>View</Text>
               </View>
             </View>
@@ -105,10 +125,21 @@ const styles = StyleSheet.create({
     marginRight: spacing.xl,
     backgroundColor: colors.surface,
   },
-  // All-Vehicles list: full-width stacked card (no carousel gap on the right).
+  // All-Vehicles list: full-width stacked card. The shell (radius + hairline +
+  // subtle shadow + clipped overflow) matches the shipped Vehicle Details
+  // surfaces; the horizontal Home card keeps its original square shell.
   containerVertical: {
     width: '100%',
     marginRight: 0,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    shadowColor: '#0C1E34',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   pressed: {
     opacity: interactionOpacity.pressed,
@@ -122,6 +153,10 @@ const styles = StyleSheet.create({
     flex: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Vertical-only neutral plate behind a missing image (no asset/emoji/label).
+  imageAreaPlate: {
+    backgroundColor: colors.phonePrefix,
   },
   image: {
     width: '100%',
@@ -181,6 +216,10 @@ const styles = StyleSheet.create({
     margin: spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Vertical-only: keep the affordance on the trailing edge with no distance.
+  viewButtonTrailing: {
+    marginStart: 'auto',
   },
   viewButtonLabel: {
     ...typography.caption,

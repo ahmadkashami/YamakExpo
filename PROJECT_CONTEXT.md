@@ -2211,3 +2211,66 @@ A7 (Drawer) is functionally and visually complete and verified: A7.1 architectur
 ### Hygiene
 - Files changed by B1.6: NEW `docs/rebuild/approve-ui/all-vehicles/APPROVED-ALL-VEHICLES-SPEC.md`, NEW `docs/rebuild/approve-ui/all-vehicles/code.html`, and this `PROJECT_CONTEXT.md` append. **No `src/` change**; no tracked config churn; no `.env` touch.
 - Commit = **NOT YET**. Next = **B1.7** only after explicit approval; no functional decision above is changed by this design pass.
+
+## PHASE B - B1.7 ALL VEHICLES UI IMPLEMENTATION (2026-10-13)
+
+**Verdict: B1.7 ALL VEHICLES UI PASS (implementation + runtime visual verification).** UI-only: no pagination/data-architecture change, no new feature, no package, no migration, no Backend/Dashboard/Legacy change, no native build. Precheck: HEAD `feece55 docs(vehicles): approve all vehicles design`; `git status --short` empty (tree CLEAN). **NOT committed** (per instruction).
+
+### Files changed (4, uncommitted)
+- `src/app/(app)/vehicles.tsx` — white single-surface app bar: centered `barCenter` (leading 40dp back slot + symmetric 40dp empty trailing slot), title with muted count subtitle directly under it; first-load skeleton uses `variant="card"` × `SKELETON_COUNT = 5`; doc comment refreshed.
+- `src/components/home/VehicleItem.tsx` — vertical-only shell (`radius.md`, 1px `colors.border`, `colors.surface`, shadow `#0C1E34`/0.06/3/elev 1, `overflow:'hidden'`), neutral `imageAreaPlate` (`phonePrefix`) when there is no image, `viewButtonTrailing` (`marginStart:'auto'`), composed `accessibilityLabel` (`Name: X, Services: N`), image `accessible={false}`. Home `horizontal` stays byte-identical.
+- `src/components/home/VehiclesList.tsx` — `VehiclesListSkeleton` gains `variant?: 'section' | 'card'` (default `'section'` = Home unchanged); `'card'` = 120pt full-width `colors.border` block, `radius.md`.
+- `src/components/vehicle-details/icons.tsx` — `BackIcon` made RTL direction-aware (`I18nManager.isRTL` path swap).
+
+### Runtime verification (Expo Go 57.0.9, emulator-5554 1080×2400/420, Metro local, isolated stub port 8099 OUTSIDE the repo)
+Method: `uiautomator` accessibility tree + raw-framebuffer pixel sampling (this agent cannot view images).
+- App bar: title centered at x=540; count `23 vehicles` centered directly under it (`typography.caption`/`colors.subtitle`); hidden until `metaData` (on initial error the title re-centers and no count shows). White bar `#ffffff` + `#e2e8f0` hairline.
+- Cards: one clickable node each with the composed label `Name: Wench, Services: 3`; full width `[42..1038]` (screen − 2×16dp); height ~120dp; 1px `#e2e8f0` border; white surface; gold `View` `#fbbf24` (`colors.gold`) pinned trailing (x≈885–999) with NO distance line.
+- Image present → renders (48×48 magenta test PNG, ~99k px); image absent → neutral `#f8fafc` (`phonePrefix`) plate (~126k px).
+- Long name (`Al-Sayer Motor Recovery & Flatbed Services`) → one line, card height unchanged (ellipsis). Services 0 (`Flat Tires`) renders `Services : 0`.
+- First-load skeleton: app bar without count + solid `#e2e8f0` 120pt cards on `#f8fafc` page (no text).
+- Empty: count `0 vehicles` + `No vehicles available right now.` Initial error: message + `Retry`; Retry reloads.
+- Load-more: pages 2 and 3 fetched on scroll; 23 unique items, order preserved (dedupe). Load-more error: footer error + trailing `Retry`; Retry appends page 2 with no duplicate. Load-more spinner: `android.widget.ProgressBar` centered at x=540, `colors.primary` `#15406f`.
+- Refresh: pull-to-refresh refetches (used to drive the empty/fail states). Tap card → `/vehicle/{id}` (stub `GET /vehicles/23`); the real Vehicle Details screen renders (incl. a horizontal "Other Vehicles" card, i.e. Home `horizontal` unchanged); back → `/vehicles` restored.
+- No tabs/drawer on `/vehicles` (route outside `(drawer)`/`(tabs)`); no tab bar in the tree.
+- Small screen (`wm size 720x1280`, density 320 = 360dp): title/count centered at 360, cards `[32..688]`, long name ellipsized, `View` trailing — no clipping.
+- RTL: `cmd locale set-app-locales host.exp.exponent --locales ar-SA` flipped only Expo Go's native dev FAB; RN `I18nManager.isRTL` stayed false, so the app's own RTL mirroring is **CODE-VERIFIED ONLY** (not runtime-observable in Expo Go here). Distance-present is likewise **CODE-VERIFIED ONLY** (the emulator yields no location fix).
+
+### Environment notes (diagnosed — not product issues)
+- `adb reverse` was stale (carried over from a previous adb server); the emulator reaches the host reliably via `10.0.2.2`. After the host adb server was restarted the emulator was wedged (`uiautomator`/`dumpsys`/`am start` hung and Expo Go would not load); one emulator REBOOT cleared it and Expo Go then bundled and ran normally.
+- `.env` temporarily pointed at the stub, then restored **byte-identical** (SHA256 `226F50A6…A45D85`). Metro + stub stopped; `adb reverse --remove-all`; app locale cleared; `wm size/density reset`.
+
+### Hygiene
+- Files changed by B1.7: the 4 `src/` files above. No Backend/Dashboard/Legacy, no package, no migration; the only doc change is this append. `npx tsc --noEmit` → only the allowed pre-existing baseline error `src/components/app-tabs.web.tsx(27,38)`. `git diff --check` clean (LF/CRLF advisories only).
+- Commit = **NOT YET** (per instruction). Next = **B1.8** only after explicit approval.
+
+## PHASE B - B1.8 B1 FINAL VERIFICATION + CLOSURE (2026-10-13)
+
+**Verdict: B1 FINAL VERIFICATION PASS.** Verification + closure only: NO code redesign, NO feature, NO pagination-architecture change, NO package, NO migration, NO Backend/Dashboard/Legacy change, no native build, **nothing committed**. Precheck: HEAD `feece55`; `git status --short` = the 5 expected files (`PROJECT_CONTEXT.md`, `src/app/(app)/vehicles.tsx`, `src/components/home/VehicleItem.tsx`, `src/components/home/VehiclesList.tsx`, `src/components/vehicle-details/icons.tsx`); `git diff --check` clean (LF/CRLF advisories only).
+
+### Code verification (spec + source)
+- **Route:** `/vehicles` lives at `src/app/(app)/vehicles.tsx` inside the `(app)` auth+onboarding gate (`(app)/_layout.tsx` gates auth then onboarding), a sibling of `(drawer)` and OUTSIDE `(tabs)` -> no tab bar, no drawer. Back = `router.back()` with `/home` fallback (no custom BackHandler / no forced Home).
+- **Data layer untouched:** `usePaginatedVehicles` (committed) owns cycles, `cycleIdRef` stale guard, `mergeVehiclesById` dedupe, frozen `coordsUsed`, refresh/load-more. The screen owns NO pagination state. B1.7 diff of `vehicles.tsx` touches only `SKELETON_COUNT`, the app bar, the skeleton map, and styles - the momentum guard (`endReachedGuardRef`, `handleEndReached`, `handleScrollGestureBegin`, `onScrollBeginDrag`/`onMomentumScrollBegin`) is byte-identical to committed B1.4.
+- **Home regression is source-guaranteed:** `Home -> VehicleItem orientation` default `'horizontal'`; every B1.7 `VehicleItem` visual change is guarded (`containerVertical`, `imageAreaPlate` on `isVertical && !hasImage`, `viewButtonTrailing` on `isVertical`); base `container` (width 350, `surface`, no radius/border) UNCHANGED; only the composed `accessibilityLabel` + image `accessible={false}` apply to both orientations (a11y, non-visual). `VehiclesList` default `horizontal = true`; Home passes no prop. `Home -> View All -> router.push('/vehicles')`; vehicle tap -> `/vehicle/[id]`.
+- **Safety:** `haversineDistanceKm` guards non-finite and never yields `0`/`NaN`/`Infinity`; backend Euclidean `distance` is never displayed. `ApiErrorRow` = message + `Retry` (`accessibilityRole="button"`). No banned business term (`price|KWD|commission|rating|guarantee|book|payment|Yamak driver|fee`) in `src/components/home`.
+
+### Runtime verification (Expo Go 57.0.9, emulator-5554 1080x2400/420, Metro local, isolated stub port 8099 OUTSIDE the repo)
+Method: `uiautomator` tree + raw-framebuffer pixel sampling (this agent cannot view images).
+- **App bar / count:** title centered at x=540; count `23 vehicles` centered underneath; hidden until `metaData` (skeleton and initial-error show the title without a count). White `#ffffff` bar + `#e2e8f0` hairline (`colors.border`), page `#f8fafc` (`colors.phonePrefix`).
+- **Cards:** one clickable node each with composed label `Name: Wench, Services: 3`; full width `[42..1038]` (screen - 2x16dp); ~120dp tall; 1px `#e2e8f0` border; white surface; gold `View` `#fbc436`/`#fbbf24` trailing. **Pixel-verified**: valid image renders (`#c81e78`), missing image -> neutral `#f8fafc` plate; card height 320px (~122dp); 32px gaps; `View` gold.
+- **Skeleton:** 5 full-width `#e2e8f0` blocks at the exact x-margins/y-positions of real cards; count hidden; no text.
+- **Empty:** count `0 vehicles` + `No vehicles available right now.`, no error. **Initial error:** blocking message + `Retry` (no fake list); `Retry` -> page 1 loads (`23 vehicles` + rows).
+- **Load-more:** page 2 then page 3 fetched; ends at Branch 23 (23 unique, order preserved); 4 rapid flings -> only one `page=3` (end + guard). **Load-more error:** page-1 rows KEPT, compact footer error + `Retry` (no full-screen replace, no duplicate rows). **Load-more spinner:** `android.widget.ProgressBar` centered at x=540 in the footer; exactly one `page=2` request (concurrent dedupe). **Refresh:** rows stay visible during refresh, pull -> `page=1`, page 1 replaces on success.
+- **Momentum guard:** one 250ms fling -> exactly one `page=2` (success path). See caveat below for the failure path.
+- **Back flow:** card 1 -> `GET /vehicles/1` -> "Vehicle details" -> Back -> `/vehicles` (23 vehicles, list). **Home:** mounts and fetches (`services`/`adds`/`vehicles`); horizontal row runtime-confirmed (gold `View` at content START, card ~919px = 350dp = `CARD_WIDTH`, not the full-width/trailing vertical layout).
+- **Small screen** (`wm size 720x1280`, density 320 = 360dp): title/count centered at x=360; cards `[32..688]`; long name truncated; `View` trailing; no clipping. **No tabs/drawer** on `/vehicles`.
+- **RTL:** re-attempted (`cmd locale set-app-locales host.exp.exponent --locales ar-SA`) - only Expo Go's native FAB mirrored (x 76 vs 937); the RN app did NOT mirror (Back still left, `View` still right). Remains **CODE-VERIFIED ONLY** (`BackIcon` `I18nManager.isRTL` path swap; `viewButtonTrailing` logical `marginStart:'auto'`), with runtime evidence the LTR layout is stable. **Distance-present** remains **CODE-VERIFIED ONLY**: even with FINE/COARSE granted, location enabled, and repeated `adb emu geo fix`, the app never reaches `available` (cycle stays coordinate-less) -> no distance label, no `0 KM`/`NaN`/`Infinity`.
+- **Home tree not capturable at runtime (diagnosed, pre-existing, not B1):** Home never reaches uiautomator idle because `AddsCarousel` autoplays via `setInterval` and `ViewMap` runs an `Animated.loop` radar pulse; `kill -STOP` is denied (non-rooted Play image). Home is therefore **code-verified** (definitive regression check above) plus the partial runtime evidence above.
+
+### Caveat (documented, NON-BLOCKING, pre-existing)
+- On the **load-more FAILURE** path, a single fling can emit **two identical `page=2` requests**: the drag fires `onEndReached` (loadMore #1); the fling's `onMomentumScrollBegin` re-arms the guard; if the first request FAILS fast (300ms) it clears `loadingMoreRef`, so the momentum's `onEndReached` starts loadMore #2 for the SAME page. Reproduced cleanly (fresh `failpage2`, ONE 250ms swipe -> 2x `page=2`; a slow drag -> 0). Impact: idempotent GET only; NO duplicate rows (dedupe) and no user-visible effect. It is **unchanged B1.4 guard behavior** (the B1.7 diff does not touch the guard), so it is NOT a B1.7 regression; the brief freezes pagination architecture and forbids changing it, so it was knowingly left as-is for an optional follow-up. The success path (normal browsing) has exactly one load-more per gesture.
+
+### Hygiene
+- `npx tsc --noEmit`: ONLY the allowed pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error. `git diff --check` clean. Dirty tree = the 5 expected files; `git diff --stat` = `PROJECT_CONTEXT.md` +32, `vehicles.tsx` +36/-? , `VehicleItem.tsx`, `VehiclesList.tsx`, `icons.tsx` - no unrelated churn.
+- `.env` restored **byte-identical** (SHA256 `226F50A6BA29EF197BAD33C1CD951F0C7D1100E8EC799DA0403C03B7E3A45D85`); Metro + stub stopped; ports free; emulator test provider removed; locale/animation-scales/display reset. Backend/Dashboard/Legacy untouched; no package, no migration, no repo artifacts.
+- Commit = **NOT YET** (per instruction). B1 (B1.1-B1.8) is functionally complete and verified; the next feature (Vehicle Details polish / `POST /requests`) must NOT start until explicitly approved.

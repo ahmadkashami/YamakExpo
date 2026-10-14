@@ -91,10 +91,23 @@ export function VehiclesList({
   );
 }
 
+export type VehiclesListSkeletonProps = {
+  /**
+   * `'section'` (default) reproduces the Home placeholder exactly (legacy
+   * `NearByVehiclePH`: 150pt block, container padding 8, horizontal margin 20).
+   * `'card'` matches the full-width All-Vehicles card (120pt, `radius.md`) so
+   * the vertical list has no layout jump when the real rows arrive.
+   */
+  variant?: 'section' | 'card';
+};
+
 /** Legacy `NearByVehiclePH`: one 150pt-tall block, container padding 8 and
  *  horizontal margin 20. solid `colors.border`, matching how the Services and
  *  Adds sections already recreate their legacy placeholders. */
-export function VehiclesListSkeleton() {
+export function VehiclesListSkeleton({ variant = 'section' }: VehiclesListSkeletonProps = {}) {
+  if (variant === 'card') {
+    return <View style={styles.skeletonCard} />;
+  }
   return (
     <View style={styles.skeletonContainer}>
       <View style={styles.skeletonBlock} />
@@ -134,6 +147,13 @@ const styles = StyleSheet.create({
   },
   skeletonBlock: {
     height: 150,
+    backgroundColor: colors.border,
+  },
+  // All-Vehicles variant: full-width, card-height, card radius, no Home margins.
+  skeletonCard: {
+    width: '100%',
+    height: 120,
+    borderRadius: radius.md,
     backgroundColor: colors.border,
   },
 });

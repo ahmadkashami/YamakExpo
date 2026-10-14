@@ -1,3 +1,4 @@
+import { I18nManager } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 /**
@@ -11,12 +12,13 @@ export type VehicleDetailsIconProps = {
   size?: number;
 };
 
-/** Top-app-bar chevron. */
+/** Top-app-bar chevron. Mirrors under RTL so "back" always points leading-wise. */
 export function BackIcon({ color, size = 22 }: VehicleDetailsIconProps) {
+  const d = I18nManager.isRTL ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7';
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
-        d="M15 19l-7-7 7-7"
+        d={d}
         stroke={color}
         strokeWidth={2.2}
         strokeLinecap="round"
