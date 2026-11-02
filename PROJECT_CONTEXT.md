@@ -2274,3 +2274,948 @@ Method: `uiautomator` tree + raw-framebuffer pixel sampling (this agent cannot v
 - `npx tsc --noEmit`: ONLY the allowed pre-existing baseline `src/components/app-tabs.web.tsx(27,38)` `/explore` error. `git diff --check` clean. Dirty tree = the 5 expected files; `git diff --stat` = `PROJECT_CONTEXT.md` +32, `vehicles.tsx` +36/-? , `VehicleItem.tsx`, `VehiclesList.tsx`, `icons.tsx` - no unrelated churn.
 - `.env` restored **byte-identical** (SHA256 `226F50A6BA29EF197BAD33C1CD951F0C7D1100E8EC799DA0403C03B7E3A45D85`); Metro + stub stopped; ports free; emulator test provider removed; locale/animation-scales/display reset. Backend/Dashboard/Legacy untouched; no package, no migration, no repo artifacts.
 - Commit = **NOT YET** (per instruction). B1 (B1.1-B1.8) is functionally complete and verified; the next feature (Vehicle Details polish / `POST /requests`) must NOT start until explicitly approved.
+
+## PHASE B — B2.2B.1 AUTHENTICATION & AUTHORIZATION FOUNDATION (2026-10-14)
+
+**Verdict: B2.2B.1 AUTHORIZATION FOUNDATION PASS.** Controlled backend implementation, auth/authorization only. No migration, no DB access, no request write, no email, no package, no frontend product code, no Dashboard/Legacy change, **nothing committed**.
+
+### Precheck
+- Backend (`yamak-backend`): HEAD `6132c25` (clean tree). Mobile (`YamakExpoNew`): HEAD `50e9c67` (clean tree). Legacy/Dashboard untouched.
+- **Discrepancy (recorded, not corrected):** `PROJECT_CONTEXT.md` contains **no B2.1 / B2.2 / B2.2A sections** — the document ends at B1.8. The B2.1/B2.2/B2.2A analyses were not persisted here. The approved decisions below are taken from the B2.2B.1 brief (authoritative). No earlier entry was rewritten.
+
+### Approved decisions carried into this step
+- GATE D: every request-producing action requires ≥1 selected service; service selection is multi-select.
+- GATE F: backend auth/authz/eligibility/duplicate protection must be hardened before real `POST` activation.
+- GATE G: after a failure/uncertain POST, an explicitly-confirmed direct-contact option may be offered — never claim a request was created when unconfirmed.
+- REQUEST REUSE: one confirmed request is reused for Request/Call/WhatsApp within the same logical context.
+- API VERSIONING: a separately versioned secure endpoint.
+- LEGACY: plan safe migration/retirement of the unsafe public endpoint.
+- AUTHORIZATION: owner/admin based on actual project roles.
+- IDEMPOTENCY: UUID key required in the final secure contract, implemented later in B2.2B.3.
+
+### Actual v1 route map (before change)
+`routes/api.php` is loaded by `RouteServiceProvider` under `middleware('api')->prefix('api')`; it `require`s `routes/api_mobile.php`, so a `prefix('mobile/v1')` group resolves to `/api/mobile/v1/...`. Confirmed empirically: the live legacy client targets `https://yamak-kw.com/api/mobile/v1/` and calls e.g. `auth/login`.
+- `Route::apiResource('requests', App\Http\Controllers\Api\Mobile\RequestController::class)->except(['create','edit'])` was **public**: `GET/POST /api/mobile/v1/requests`, `GET/PUT/PATCH/DELETE /api/mobile/v1/requests/{id}`.
+
+### v2 route prefix
+New group `Route::prefix('mobile/v2')->name('api.mobile.v2.')` added in `routes/api_mobile.php` → resolves to `/api/mobile/v2/requests` (NOT `/api/mobile/v1/v2/...`). No `RouteServiceProvider`/bootstrap change; global v1 routing untouched.
+
+### Sanctum principal evidence
+- `AppUser extends Illuminate\Foundation\Auth\User` with `HasApiTokens`; mobile `AuthController` issues `createToken('mobile_token', ['mobile'])` (login / verify-email / signup paths).
+- `auth:sanctum` resolves the token's morph `tokenable`, i.e. the mobile token's principal is an `AppUser`. `EnsureApiArea` (`api.area:mobile`) requires `$user->tokenCan('mobile')`.
+- `App\Models\User` (dashboard principal, `HasRoles`/Spatie) issues `['dashboard']` tokens, gated by `api.area:dashboard`. Therefore mobile tokens and dashboard tokens are distinct principals with distinct abilities.
+
+### Existing roles / guards
+- Admin roles live on `App\Models\User` only (`TenantAccess::isSuperAdmin(?User)` reads `partner_id` + `role->name`). `AppUser` has no role/permissions. Mobile Sanctum tokens therefore **cannot** satisfy the existing Admin mechanism.
+- No `ServiceRequestPolicy` exists (policies present: `PartnerUserPolicy`, `PlacePolicy`, `TourPolicy`).
+
+### Owner / Admin authorization matrix (implemented)
+- `index`: owner-only (`where('app_user_id', authenticated AppUser id)`).
+- `show`: owner-only; foreign request → `abort(404)` (existence not leaked).
+- `store`: authenticated (fail-closed, see below).
+- `update` / `destroy`: **not registered** → 405 (dashboard Admin manages requests under its own `api.area:dashboard` guard; not exposed on mobile).
+- **Admin: NOT faked on mobile.** Separate-guard requirement recorded for later approval (would need a dashboard `User` token or an explicit mobile-admin mechanism).
+
+### Trusted user identity
+v2 identity is derived **only** from `$request->user()->id`; the v2 contract takes **no `userId`** and the fail-closed `store` reads no client identity. (Legacy v1 `store` still trusts client `userId` — unchanged creation logic in this step; residual risk recorded.)
+
+### Legacy compatibility audit
+- Legacy attaches `Authorization: Bearer <token>` on every request (`axios.config.ts` interceptors + `setAuthorizationHeader`).
+- The stored token is the mobile `accessToken` (`response.data.accessToken` from `auth/login`), i.e. an `AppUser` Sanctum token with ability `mobile` (`config/sanctum.php` `expiration => null` → tokens do not expire).
+- Legacy's only request call is `sendOrderRequests` → `POST /requests` (`VehiclesDetailsScreen` Call/WhatsApp handlers). Legacy never calls the read/update/delete methods; Dashboard uses its own `api.area:dashboard` `requests` resource.
+
+### v1 containment decision (OPTION B — compatible, fail-closed)
+- `POST /api/mobile/v1/requests` retained but moved under `['auth:sanctum','api.area:mobile']` → legacy authenticated clients continue to work; unauthenticated callers get 401 (previously allowed).
+- The unused public read/write methods (`index`/`show`/`update`/`destroy`) were **removed** (no client used them; they exposed cross-user reads/writes). Controller creation logic/persistence/email untouched.
+- Residual (recorded, deferred to B2.2B.2/B2.2B.3 + frontend migration): v1 `store` still trusts client `userId` and has no eligibility/idempotency; v1 is intended to be retired in favour of v2.
+
+### Implementation gates
+- A v2 placement: resolved (`/api/mobile/v2/...`, no bootstrap change).
+- B Sanctum principal → AppUser: proven (tokenable + `api.area:mobile`).
+- C owner authorization: implemented (owner-scoped `index`, 404-hiding `show`).
+- D Admin authorization: not available to mobile tokens → not faked; separate-guard requirement recorded; deny-by-default.
+- E v1 treatment: compatible (legacy sends bearable mobile token) → Option B applied.
+- F DB schema change: none required.
+All gates resolved without a DB/schema change.
+
+### Files changed (Backend)
+- `routes/api_mobile.php` (modified): v1 containment + new `mobile/v2` group.
+- `app/Http/Controllers/Api/Mobile/V2/RequestController.php` (new): owner-scoped `index`/`show`, fail-closed `store`. Reuses `Dashboard\RequestController::requestResource` (no controller duplication).
+
+### Middleware / write / response behavior
+- v2 (and v1 `requests`) middleware: `auth:sanctum`, `api.area:mobile`; v2 `requests/{serviceRequest}` uses implicit binding.
+- v2 `store`: **fail-closed** → `response()->error('request_creation_not_enabled', 503, null, 'NOT_ENABLED')`; no validation, no DB write, no fake success. Must not become operational before B2.2B.2 + B2.2B.3.
+- Codes via `app/Exceptions/Handler.php`: 401 `unauthenticated`, 403 `unauthorized_access` (`api.area` also emits `forbidden`/`FORBIDDEN`), 404 `resource_not_found`, 405 `an_error_occurred`. No exceptions/stack traces exposed on `api/*`.
+
+### Static verification
+- `php -l` clean on both changed files. `git diff --check` clean.
+- `git status --short`: `M routes/api_mobile.php`, `?? app/Http/Controllers/Api/Mobile/V2/`.
+- `php artisan route:list` **skipped** (bootstrap not provably DB-free; avoided any DB touch). v2 URL asserted from the proven prefix composition (same mechanism as the live v1 endpoints).
+
+### Confirmations
+- No migrations/seeders/schema operations. No DB connection/query (Production or otherwise). No `POST` executed. No email sent. No package installed. No Dashboard/Legacy/frontend product change. No commit.
+
+### Next
+- B2.2B.2 (eligibility + required non-empty `services`) may start **only after explicit approval**. B2.2B.3 (idempotency + transaction + afterCommit email) after that. Authorization test plan for B2.2C recorded separately (to run under `APP_ENV=testing`, `DB_CONNECTION=sqlite`, isolated temp SQLite, `MAIL_MAILER=array`).
+- Commit = **NOT YET** (per instruction).
+
+## PHASE B — B2.2B.1a LEGACY V1 OWNERSHIP SECURITY FIX (2026-10-14)
+
+**Verdict: B2.2B.1a V1 OWNERSHIP GUARD PASS.** Small security fix only. No migration, no DB access, no real POST, no email, no package, no frontend/Dashboard/Legacy change, no v2 activation, **nothing committed**.
+
+### Precheck
+- Backend HEAD `6132c25`; expected B2.2B.1 uncommitted changes **preserved** (`M routes/api_mobile.php`, `?? app/Http/Controllers/Api/Mobile/V2/`). No unexpected changes. `git diff --check` clean.
+
+### Confirmed vulnerability (pre-fix, code-only, no exploit run)
+- v1 `POST /api/mobile/v1/requests` required `auth:sanctum` (B2.2B.1) **but** `store` still trusted the client `userId` and persisted `'app_user_id' => $data['userId']`. Validation was only `['required','integer','exists:app_users,id']`. An authenticated AppUser could therefore attribute a request (and the driver email) to **any other existing AppUser**.
+
+### Exact ownership guard (applied)
+In `app\Http\Controllers\Api\Mobile\RequestController@store`, immediately after validation and before any driver lookup / persistence / email:
+```php
+if ((int) $data['userId'] !== (int) $request->user()->id) {
+    abort(403);
+}
+```
+and persistence now uses the authoritative principal: `'app_user_id' => $request->user()->id`. `abort(403)` → `app/Exceptions/Handler.php` maps `api/*` 403 → `unauthorized_access`.
+
+### Authenticated identity source
+`auth:sanctum` route middleware resolves the token's `tokenable` = `App\Models\AppUser` (mobile token ability `mobile`); `$request->user()` is that `AppUser`. Client-supplied identity is no longer authoritative.
+
+### Legacy compatibility
+- Payload shape unchanged: `driverId` required, `userId` required (integer, `exists:app_users,id`), `services` nullable, `platform` nullable, `status` nullable with default `active`.
+- Legacy always sends its **own** `userId`, so the guard passes and behavior is unchanged (driverId/userId/services/platform, persistence, pivot sync, driver email, success response all preserved).
+- No non-empty `services` rule added to v1 (reserved for the secured v2 contract / B2.2B.2).
+
+### Spoofed identity rejection
+Authenticated user + different `userId` → **403** (`unauthorized_access`) raised **before** `Driver::findOrFail`, before `ServiceRequest::create`, and before any `Mail::to(...)->send(...)`.
+
+### Unauthenticated behavior
+Rejected by `auth:sanctum` middleware with **401** (`unauthenticated`) before the controller runs.
+
+### V2 regression audit
+Unchanged from B2.2B.1: `GET /api/mobile/v2/requests` owner-scoped; `GET /api/mobile/v2/requests/{serviceRequest}` owner-only (foreign → 404); `POST` fail-closed `503 NOT_ENABLED`; `PUT/PATCH/DELETE` not registered (405). No v2 request creation.
+
+### Files changed (this step)
+- `app/Http/Controllers/Api/Mobile/RequestController.php` (modified: ownership guard + authoritative `app_user_id`). `routes/api_mobile.php` and the V2 controller retain their B2.2B.1 state.
+
+### Static verification
+- `php -l` clean on `Api/Mobile/RequestController.php`, `Api/Mobile/V2/RequestController.php`, `routes/api_mobile.php`. `git diff --check` clean.
+- Code-path inspection: matching `userId` passes and persists the authenticated id; mismatched `userId` rejected 403 pre-persistence/pre-email; unauthenticated rejected 401 by middleware. No DB-dependent test executed.
+
+### Documentation discrepancy (investigated — verified, nothing guessed)
+Conclusion: the **B2.1 / B2.2 / B2.2A sections were never saved** to any file and were **never committed elsewhere** (they most likely existed only in the prior chat/session context). Evidence:
+- `YamakExpoNew/PROJECT_CONTEXT.md` ended at B1.8 before this session; the only B2 text in it is the B2.2B.1 section and this one.
+- `git log --all -S "B2.2A"` / `-S "B2.2B.1"` → no commits; `git log --all --oneline` and `git reflog` show only the sequential project commits (HEAD `50e9c67`); single branch `master`; `git stash list` empty → no lost/overwritten commit.
+- Cross-repo `*.md` search across `YamakProject` found no B2.2A/B2.2B text except the new entries; `yamak-dashboard/PROJECT_CONTEXT.md` has none; legacy `docs/` tree has none.
+- Not overwritten and not committed elsewhere; missing history was **not** restored from guesses.
+
+### Safety confirmations
+No Production DB, no DB connection at all; no migrations/seeders/schema; no `POST` executed; no email; no new packages; no Dashboard change; no Legacy change; no v2 activation.
+
+### Next
+- B2.2B.2 (eligibility + required non-empty `services`) may start **only after explicit approval**. Commit = **NOT YET** (per instruction).
+
+## PHASE B — B2.2B.2 VEHICLE, DRIVER & SERVICE ELIGIBILITY (2026-10-14)
+
+**Verdict: B2.2B.2 ELIGIBILITY FOUNDATION PASS.** Small backend implementation, validation foundation only. No migration, no DB access, no POST, no email, no package, no frontend/Dashboard/Legacy change, no v1 change, **v2 POST still fail-closed**, **nothing committed**.
+
+### Precheck
+- Backend prerequisite **committed**: HEAD `ec53611 security(requests): protect mobile request routes and ownership` (contains `Api/Mobile/RequestController.php`, `Api/Mobile/V2/RequestController.php`, `routes/api_mobile.php`). Working tree **clean** at start. Mobile HEAD `50e9c67`; only `PROJECT_CONTEXT.md` modified (docs appends). Legacy/Dashboard untouched.
+
+### Actual relationship mappings (verified from models + migrations)
+- `vehicles`: `company_id`, `branch_id`, `current_driver_id` (FK→`drivers`, nullable), `status` (default `active`), `work_status` (default `offline`), soft deletes. `Vehicle::currentDriver()` = `belongsTo(Driver, 'current_driver_id')`; `Vehicle::services()` = `belongsToMany(Service, 'vehicle_service')`; `Vehicle::drivers()` = `belongsToMany(Driver)` (pivot `driver_vehicle`).
+- `drivers`: `company_id`, `branch_id`, `vehicle_id` (nullable), `status` (default `active`). `Driver::vehicle()` = `belongsTo(Vehicle)`; `Driver::company()`/`branch()`.
+- `services`: `name_en`, `name_ar`, `status` (default `active`), soft deletes. `Service::vehicles()` = `belongsToMany(Vehicle, 'vehicle_service')`; `Service::requests()` = `belongsToMany(ServiceRequest, 'request_service')`.
+- `service_requests`: `platform`, `app_user_id` (FK→`app_users`), `driver_id` (FK→`drivers`), `company_id`/`branch_id` (nullable), `status` (default `active`), soft deletes. `ServiceRequest::services()` = `belongsToMany(Service, 'request_service')`.
+- `vehicle.current_driver_id`, `vehicle.work_status`, `vehicle.services` therefore come from the `vehicles` table + `vehicle_service` pivot (proven above; no invented names).
+
+### Verified availability rule
+Mobile `GET /vehicles` and `GET /services/{service}/vehicles` both filter `where('work_status','online')->whereNotNull('current_driver_id')`. That is the authoritative "eligible for requests" rule; no new status values invented.
+
+### Proposed v2 input contract (DTO)
+`{ vehicleId: int (required), driverId: int (required), services: int[] (required, min 1, distinct) }` — **no `userId`, no `status`, no location, no legacy `payload`**. Persisted `app_user_id` (when activation lands) must come from the authenticated AppUser; `company_id`/`branch_id` derive from the resolved driver (matching v1).
+
+### Validation architecture (isolated, not wired)
+- New `app/Services/RequestEligibilityValidator.php` — side-effect-free (reads only), **not referenced by any controller or route**. `POST /api/mobile/v2/requests` was NOT modified.
+- Rules: `vehicleId`/`driverId` `required|integer`; `services` `required|array|min:1`; `services.*` `required|integer|distinct|exists:services,id`.
+- `vehicleId`/`driverId` resolved via Eloquent `find()` (respects SoftDeletes) rather than raw `exists`, avoiding soft-deleted rows.
+- Eligibility: vehicle `work_status === 'online'` AND `current_driver_id !== null`; `(int) vehicle.current_driver_id === (int) driverId` (authoritative link; rejects unrelated drivers); every selected service present in `vehicle->services()` (`vehicle_service` pivot) — no hardcoded list. Multi-select preserved; no single-service restriction.
+- Company/branch are derived from the resolved driver exactly as v1 does; an additional `company_id`/`branch_id` equality check was considered but **not** added (not a verified domain invariant; would risk fail-closed false rejects). Recorded as an optional future defensive check.
+
+### Error model (eligibility 422, distinct from NOT_ENABLED 503)
+Validation/eligibility failures throw `ValidationException` → `app/Exceptions/Handler.php` maps `api/*` to **422 `validation_failed` / `VALIDATION_ERROR`** with field details: missing/invalid `vehicleId`; unavailable vehicle; missing/invalid `driverId`; driver not assigned to vehicle; empty `services` (`min:1`); duplicate services (`distinct`); nonexistent service (`exists`); service not offered by vehicle. Missing authenticated user → **401 `unauthenticated`** (route middleware). The temporary disabled creation path stays **503 `NOT_ENABLED`** — kept clearly distinct from eligibility errors. No internal DB details exposed.
+
+### v1 regression boundary
+v1 `POST /api/mobile/v1/requests` untouched: Sanctum + `api.area:mobile`, matching-`userId` ownership guard, `services` may still be empty, existing persistence (driver company/branch, `app_user_id = $request->user()->id`) and driver email behavior preserved. v2 validation is not applied to v1.
+
+### Disabled v2 POST status
+`Api/Mobile/V2/RequestController@store` still returns `response()->error('request_creation_not_enabled', 503, null, 'NOT_ENABLED')`. `ServiceRequest::create()`, `services()->sync()`, and `Mail::*` are **not** called anywhere in v2. No request is persisted.
+
+### Static verification
+- `php -l` clean on the new validator and on `Api/Mobile/V2/RequestController.php`, `Api/Mobile/RequestController.php`, `routes/api_mobile.php`.
+- `git status --short`: `?? app/Services/RequestEligibilityValidator.php` only; `git diff --check` clean. No migrations/seeders; no schema change; validator performs reads only.
+
+### Next
+- B2.2B.3 (idempotency + transaction + afterCommit email) may start **only after explicit approval**, and v2 activation only after that. Future isolated tests (designed, NOT run): `APP_ENV=testing`, `DB_CONNECTION=sqlite`, temp SQLite outside repos, `MAIL_MAILER=array` — valid vehicle/driver/services; missing vehicle; unavailable vehicle; mismatched driver; empty services; duplicate ids; service not offered; unrelated AppUser; endpoint still disabled.
+- Commit = **NOT YET** (per instruction). No missing B2 history was fabricated.
+
+## PHASE B — B2.2B.3A IDEMPOTENCY / TRANSACTION / MAIL SAFETY DESIGN (2026-10-14)
+
+**Verdict: B2.2B.3A DESIGN PASS.** Design only. No backend code modified, no migration created/run, no DB connection, no POST, no email, no package, no v2 activation, nothing committed. Only this document changed.
+
+### Precheck
+- Backend HEAD `5b79980 feat(requests): add v2 request eligibility validator` (on top of `ec53611 security(requests): protect mobile request routes and ownership`); working tree **clean**. Mobile HEAD `50e9c67` (only `PROJECT_CONTEXT.md` modified). Legacy/Dashboard untouched.
+
+### Existing foundation (verified)
+- v2 routes `/api/mobile/v2/requests` use `auth:sanctum` + `api.area:mobile`; identity = authenticated `AppUser`. Reads owner-scoped; `store` returns `503 NOT_ENABLED`. `RequestEligibilityValidator` is dormant (referenced nowhere). v1 legacy route remains separate and unchanged.
+- Mail: `App\Mail\UserRequestOrderMail` (uses `Queueable, SerializesModels`, does **not** implement `ShouldQueue`). Sent synchronously via `Mail::to($driver->email)->send(...)` in v1 `store` and in `AuthController`.
+- Queue: `QUEUE_CONNECTION` default `sync`; **no `jobs` table migration** (only `failed_jobs`), **no `app/Jobs`**, **no scheduler tasks**. Production worker/queue is therefore unavailable without new infra + deployment approval.
+
+### Chosen persistence strategy — dedicated `request_idempotency_keys` table (Option A)
+Selected over "unique column on `service_requests`" (Option B). Rationale: Option A isolates replay/fingerprint/expiry/status concerns from the core domain table, supports mismatch detection and retention, and needs **no changes to any existing table**. Option B would require multiple new `service_requests` columns (key + fingerprint + expiry) and still not model processing/expiry cleanly. Uniqueness is scoped per owner (`app_user_id`, `key`) so a cross-user key collision can never replay another user's request.
+
+### Proposed schema (design only — no migration file created)
+`request_idempotency_keys`:
+- `id` bigint PK
+- `app_user_id` foreignId → `app_users`, constrained, cascadeOnDelete (owner scope)
+- `key` char(36) — client `Idempotency-Key` (UUID v4)
+- `request_fingerprint` char(64) — SHA-256 hex of the canonical payload
+- `service_request_id` foreignId nullable → `service_requests`, nullOnDelete
+- `status` string default `processing` (`processing|completed`; under the single-transaction design rows are only visible as `completed`, kept for future queued/outbox flows)
+- `expires_at` timestamp nullable (retention window, indexed)
+- `created_at`, `updated_at`
+- Unique: `unique(['app_user_id','key'])`; Index: `expires_at`; Index: `service_request_id`
+
+### Key contract
+`Idempotency-Key: <UUID v4>` header, **required** for v2 POST; no server-generated replacement for a missing key.
+- missing → **400** code `IDEMPOTENCY_KEY_REQUIRED`
+- malformed / non-v4 → **400** code `IDEMPOTENCY_KEY_INVALID` (validate with `uuid:4`)
+- first request → claim + create + complete
+- retry, identical key + identical fingerprint → **replay** stored request (no new row, no email)
+- same key, different payload → **409** `IDEMPOTENCY_KEY_REUSED`
+- expired key → treated as new; the stale row is removed/replaced inside the claim transaction
+- retry after app restart → the client persists/reuses the same key for the same logical request → replay
+
+### Canonical payload fingerprint
+`sha256(json_encode(['user'=>authUserId,'vehicle'=>vehicleId,'driver'=>driverId,'services'=>sortedUniqueIntServiceIds]))`. Service order and duplicates do not change identity. **`platform` is excluded** (presentation/transport attribute, server-controlled `mobile`, not logical identity). `userId`/`status` are never accepted on v2, so they cannot influence the fingerprint.
+
+### Atomic concurrency algorithm
+Single DB transaction per attempt, with a bounded retry loop around a DB-enforced unique constraint:
+1. Validate header format (400).
+2. `DB::transaction`:
+   a. `SELECT ... lockForUpdate()` the `(app_user_id,key)` row.
+      - exists, not expired, fingerprint equal → **replay** (return stored `service_request_id`); no insert, no mail; **eligibility is not re-checked on replay** (the request already exists).
+      - exists, not expired, fingerprint differs → **409** `IDEMPOTENCY_KEY_REUSED`.
+      - exists, not expired, still `processing` → **409** `IDEMPOTENCY_IN_PROGRESS` (defensive; rare under single-transaction).
+      - exists, expired → delete the stale row, continue.
+   b. `INSERT` the claim row (`app_user_id`,`key`,fingerprint,status=`processing`,expires_at). A concurrent winner makes this a unique-constraint violation.
+   c. Eligibility re-validation (fresh reads: vehicle availability + `current_driver_id` + offered services).
+   d. `ServiceRequest::create()` (from the authenticated AppUser + resolved driver) and `services()->sync()`.
+   e. Update the claim row → `status='completed'`, `service_request_id`.
+3. Commit. If step (b) raised a unique violation → the transaction rolls back and the loop retries; the retry now sees the winner's committed row → replay. Bounded retries (e.g. 3) then 409/500.
+- No `firstOrCreate`-only claim is used; safety rests on the DB unique constraint.
+- Crash mid-transaction → rollback → no claim row, no request → client retry with the same key succeeds.
+- Because claim + create live in one transaction, there is no externally visible `processing` state and no stuck claim needing a lease.
+
+### Request transaction boundary
+One atomic unit: `resolve idempotency → (if new) validate eligibility → create ServiceRequest → sync services → mark completed → commit`. Replay path performs no writes and no eligibility re-check. Driver `company_id`/`branch_id` derive from the resolved driver (as v1). Concurrent availability changes are handled by re-validating inside the transaction (fresh reads); an optional `lockForUpdate` on the vehicle row would close the last TOCTOU window but is **not** recommended by default (contention on popular vehicles) — residual window documented.
+
+### Email strategy — Option A (synchronous, post-commit, exception-isolated)
+Decide success by DB commit only. After the transaction returns a **freshly created** result, send `UserRequestOrderMail` **once**, outside the transaction, wrapped in `try/catch` that logs and swallows transport errors (request still returns success). Replay never sends email. Rationale: afterCommit alone does **not** make synchronous transport failures non-fatal, so exception isolation is required; there are no workers/`jobs` table, so Option B (queued job) and Option C (outbox) are deferred. Residual: a crash between commit and send loses the email (at-most-once) — acceptable now; outbox is the documented upgrade.
+
+### Response replay semantics
+Rebuild from the persisted `ServiceRequest` via the existing `Dashboard\RequestController::requestResource` (no stored snapshot; avoids schema drift/staleness). HTTP **200** for both create and replay (the project `response()->success` envelope is always HTTP 200 and is shared with v1), with `message` distinguishing `created` vs `replayed`, plus a response header `Idempotency-Replayed: true` on replay. The same logical request, and the same `id`, is returned.
+
+### v1 compatibility
+Unchanged: v1 authentication, matching-`userId` ownership guard, legacy payload shape, empty `services` still allowed. Non-empty service contract and `Idempotency-Key` apply to **v2 only**. v1 limitations recorded: trusts client `userId` for existence only, no eligibility/idempotency, synchronous mail; `index/show/update/destroy` removed. Retirement: migrate clients to v2, then disable v1 `POST`.
+
+### v2 activation gate (order of work for B2.2B.3B)
+1. migration `request_idempotency_keys` (needs explicit approval) → 2. `RequestIdempotencyKey` model + fingerprint helper → 3. `RequestCreationService` (dormant; **not** called by the controller) → 4. post-commit mail test path (`MAIL_MAILER=array`) → 5. isolated tests green → 6. **only then** flip `V2\RequestController@store` to use the service. Until step 6, `store` keeps returning `503 NOT_ENABLED`.
+
+### Outstanding approvals required before B2.2B.3B
+- **Migration approval** (create `request_idempotency_keys`) — none created/run here.
+- Retention window (recommend 24h) and whether to add a prune command/scheduler (no scheduler tasks exist today).
+- Confirm email strategy Option A is acceptable now, with B/C deferred (needs worker + `jobs` table + deployment approval).
+- Confirm HTTP semantics (200 create+replay + `Idempotency-Replayed`) vs `201 Created` for first create.
+
+### Next
+- B2.2B.3B implementation may start **only after explicit approval**, and must begin with the migration approval above. Commit = **NOT YET** (per instruction). No missing B2 history fabricated.
+
+## PHASE B — B2.2B.3A.1 FINAL SCHEMA, RETENTION & CONCURRENCY REVIEW (2026-10-14)
+
+**Verdict: B2.2B.3A.1 DESIGN REVIEW PASS.** Strict analysis only. No backend code modified, no migration created/run, no model/service/controller created, no DB connection, no POST, no email, no package, no test run, no commit. Only this document changed. This section **challenges** the B2.2B.3A proposals; items below are recommendations, not approved facts.
+
+### Precheck / environment facts
+- Backend HEAD `5b79980 feat(requests): add v2 request eligibility validator`; tree **clean**. `ec53611` contains B2.2B.1 + B2.2B.1a (3 files, **no test files**). `5b79980` contains B2.2B.2 validator. B2.2B.3A design recorded above.
+- `composer.lock`: `laravel/framework v12.61.1` (despite `composer.json` skeleton heritage). PHP `^8.2`, Sanctum `^4.0`, PHPUnit `^11`. `bootstrap/app.php` uses the **legacy skeleton** (binds `App\Http\Kernel`, `App\Console\Kernel`, `App\Exceptions\Handler`).
+- `config/database.php` default = `mysql` (`DB_CONNECTION`, default `mysql`); `sqlite` connection has `foreign_key_constraints` true. `config/queue.php` default `sync`; `database` connection needs a `jobs` table — **no `jobs` table migration exists** (only `failed_jobs`). `app/Console/Kernel.php` `schedule()` is empty. `config/mail.php` default `smtp`; `array`/`log` mailers exist.
+- `phpunit.xml` already sets testing env: `APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`, `MAIL_MAILER=array`, `QUEUE_CONNECTION=sync`. Test suites exist: Unit, Feature, Authorization, PartnerIsolation, Security, PublicApi.
+- All `/api` routes already run the `api` group → `ThrottleRequests:api` at `config('app.api_throttle_per_minute', 60)` per minute, keyed by authenticated user id else IP (`RouteServiceProvider`). `EnsureApiArea` returns 403 `FORBIDDEN` when the token lacks the area ability.
+- v2 POST confirmed **still `503 NOT_ENABLED`** (`V2\RequestController@store`); v2 `index` owner-scoped, `show` owner-only (404). `RequestEligibilityValidator` dormant.
+
+### Baseline hygiene finding (pre-existing, not caused by this step)
+- `tests/Feature/MobileParityTest.php::test_mobile_lookup_ads_settings_services_vehicles_requests_and_empty_pagination` (last touched `dd055a8`, 2026‑06‑08) posts to `POST /api/mobile/v1/requests` **without** acting as a mobile AppUser and then calls `GET /api/mobile/v1/requests/{id}`. After B2.2B.1 the POST requires `auth:sanctum`+`api.area:mobile` and v1 `index/show` were removed, so this test is **stale** (expects 401/404 paths as 200). It must be corrected as part of B2.2B.3B/B2.2C test maintenance; it must **not** be used to prove v1 behaviour in its current form. Not fixed here (analysis only; no test runs).
+
+### Chosen persistence strategy (unchallenged)
+- Dedicated **`request_idempotency_keys`** table (Option A) over a column on `service_requests` (Option B): no change to any existing table, isolates fingerprint/expiry/replay from the domain table, and scopes uniqueness per owner.
+
+### FINAL proposed schema (text only — NO migration file created)
+`request_idempotency_keys`:
+- `id` — bigint unsigned, PK, auto-increment.
+- `app_user_id` — bigint unsigned, NOT NULL, FK → `app_users.id`, `ON DELETE CASCADE` (mirrors `service_requests.app_user_id`).
+- `key` — `char(36)`, NOT NULL, client `Idempotency-Key` (UUID v4, stored lowercase).
+- `request_fingerprint` — `char(64)`, NOT NULL, lowercase hex SHA‑256.
+- `service_request_id` — bigint unsigned, NOT NULL, FK → `service_requests.id`, `ON DELETE CASCADE` (mirrors `request_service.service_request_id`). NOT NULL is valid only under the single-transaction design (the row is written with its request).
+- `expires_at` — `timestamp`, NOT NULL (cleanup hint; see expiry semantics).
+- `created_at`, `updated_at` — `timestamp` NULL.
+- **Unique**: `(app_user_id, key)`.
+- **Indexes**: `expires_at`; `service_request_id` (FK index).
+- **Removed column**: `status` — see “Processing status” below (no proven purpose).
+
+### Unique constraint — choose **A: `UNIQUE(app_user_id, key)`**
+- Cross-user isolation: a key is only meaningful inside one account, so user A can never replay/block user B; global `UNIQUE(key)` would let a colliding key divert or block another account (a security/denial issue) and would force cross-owner lookups.
+- Collision handling: UUID v4 collision across users is negligible, but scoping makes even a collision harmless (separate rows).
+- Query strategy: every lookup is `where('app_user_id', $authId)->where('key', ...)` — owner-scoped by construction.
+- Operational simplicity: mirrors how consumer APIs scope idempotency keys per account. UUID generation is client-side; the DB (not PHP) enforces uniqueness in both MySQL and SQLite.
+
+### Foreign keys — choose **CASCADE for both** (after auditing the real schema)
+- Existing precedent verified: `service_requests.app_user_id`→`cascadeOnDelete`, `driver_id`→`cascadeOnDelete`, `company/branch`→`nullOnDelete`; `request_service.service_request_id`→`cascadeOnDelete`. `AppUser` and `ServiceRequest` both use `SoftDeletes`, and `UserController@deleteAccount` calls `->delete()` (soft) → normal account deletion does **not** fire FK cascades.
+- `app_user_id` → CASCADE: consistent with `service_requests`; a hard-deleted user cleanly removes transient idempotency rows.
+- `service_request_id` → CASCADE (NOT SET NULL / RESTRICT): because requests soft-delete, the parent row persists so replay is preserved; a hard delete removes the key row too, which is acceptable (a hard-deleted request is not replayable). SET NULL would need nullable + “completed-with-null-target” handling for no benefit; RESTRICT would block legitimate hard deletes. Replay after a normal (soft) delete still works.
+
+### Request fingerprint
+- Canonical, deterministic, order-independent, versioned string (NOT raw JSON request order), e.g. `v1|u:{appUserId}|v:{vehicleId}|d:{driverId}|s:{sortedDedupedIntCsv}`, then `hash('sha256', $canonical)` → 64-char lowercase hex.
+- Includes: authenticated AppUser id, `vehicleId`, `driverId`, **sorted, de-duplicated integer** service ids.
+- Excludes: service order, duplicate service ids, `platform` (transport/presentation, server-controlled `mobile`), `userId`/`status` (not accepted on v2), and any other client metadata. The `v1` prefix versions the format so a future change cannot silently collide.
+
+### Key validation
+- Header `Idempotency-Key`, **required** for v2 POST; never server-generated when absent.
+- missing → **400** `IDEMPOTENCY_KEY_REQUIRED`; malformed/non‑v4 (`uuid:4`) → **400** `IDEMPOTENCY_KEY_INVALID`. `trim()` then validate; normalize case to lowercase (UUID hex is case-insensitive); reject multiple header values (400) rather than guess. Valid → proceed.
+
+### First-request algorithm (transaction boundaries explicit)
+1. Authenticate (route middleware) → AppUser id.
+2. Validate header (400 on failure).
+3. Validate body structure + canonicalize → fingerprint.
+4. `DB::transaction`:
+   a. owner-scoped lookup of `(app_user_id, key)` (+`lockForUpdate` best-effort);
+   b. exists & fingerprint equal → **replay** stored request (no writes, **no eligibility re-check**, no mail);
+   c. exists & fingerprint differs → **409 `IDEMPOTENCY_KEY_REUSED`**;
+   d. else INSERT claim, generate claim id;
+   e. eligibility validation (fresh reads);
+   f. create `ServiceRequest` (owner = authenticated user; driver/company/branch from resolved driver) + `services()->sync()`;
+   g. UPDATE claim row `service_request_id`.
+5. Commit (retry bounded on duplicate-key/deadlock).
+6. **After commit only**: send driver mail (fresh path only) in try/catch.
+7. Respond. No external side effect occurs inside the transaction.
+
+### Concurrent same-key requests (Request A & B)
+- `SELECT ... lockForUpdate` on a **non-existent** row is insufficient for mutual exclusion: on SQLite it is a no-op; on MySQL/InnoDB the behaviour depends on the predicate/gap locks and cannot be relied on as the guard. The real guardrail is the **DB UNIQUE index**.
+- A and B both find no row, both INSERT; one commits (winner), the other gets a duplicate-key `QueryException` → its transaction rolls back → bounded retry → now finds the committed row → replays the winner’s request. Deadlocks are caught and retried (bounded), or surfaced as 409/500. Deterministic, no PHP-only locking.
+
+### Different-key behaviour
+- Idempotency-Key prevents duplicate **delivery of one logical operation**; it does **not** dedupe two independent UUIDs. Same user/vehicle/services with two keys = two legitimate requests (the duplicate policy’s “intentional new requests must remain possible”).
+- **No** additional permanent uniqueness (user+driver+services) is added — it would block legitimate later incidents. Frontend session reuse supplies one key for Request/Call/WhatsApp of the same logical incident; a genuinely new incident uses a new key. Optional short-window soft heuristic is NOT enforced.
+
+### Processing status — choose **B (no `status` column)**
+- Under the single atomic transaction the claim row is visible only at commit, always with its `service_request_id`; an external reader can never observe “processing”. A `status` column therefore has no proven purpose now. Drop it; `service_request_id` NOT NULL encodes “completed”. (If a future two-phase claim/outbox/lease is adopted, `status` can be re-added by migration then.)
+
+### Crash recovery matrix
+- A. Crash before transaction → nothing durable; retry = fresh create. No duplicate.
+- B. Crash after claim INSERT but before request creation → transaction rolls back (claim not durable); retry = fresh create. No duplicate.
+- C. Crash after request creation but before commit → whole transaction rolls back; retry = fresh create. No duplicate.
+- D. Crash immediately after commit, before response → request durably created; client retries same key → **replay**, no new row. No duplicate.
+- E. Crash after commit before email → request durable; email not sent (lost). Retry → replay, email still not sent. At-most-once.
+- F. Crash during email transport → mail outcome unknown (0 or 1 delivery); request already committed; retry = replay, no second send from this path. Possible single duplicate only if the SMTP server accepted then the client aborted mid-retry at the transport layer — not from the request path.
+- Net: the single-transaction + unique-claim design makes **duplicate ServiceRequest** impossible via retries; email is best-effort.
+
+### Retention policy (recommendation — REQUIRES APPROVAL)
+- Evaluate: real retries happen within seconds→minutes; app restart within minutes→hours; offline recovery commonly < 1 day; legitimate later incidents use a NEW key (retention must not be relied on for those).
+- Compare: A) 24h — ample, tiny storage; B) 7 days — safer for long-offline devices, still cheap; C) longer — unbounded stale replays; D) lifecycle-based — more complex.
+- **Recommend 24h default, config-driven (e.g. `IDEMPOTENCY_RETENTION_HOURS=24`)**, marked **requiring business approval**; 7 days is the conservative fallback if long-offline retries matter. Storage per row ≈ tens of bytes; growth is bounded by request volume × retention.
+
+### Expiration semantics (CRITICAL — recommend “row-presence governs replay”)
+- Rule: **replay eligibility depends on the row existing (owner + fingerprint match), NOT on `expires_at`.** `expires_at` is a **cleanup hint only**.
+- So: expired-but-present → still **replay** the original (never create a duplicate of an already-created request). expired-and-pruned → treated as new (bounded residual, mitigated by retention ≥ realistic retry window and by clients generating a fresh key per new incident).
+- Reject the “expired ⇒ treat as new” shortcut: while the row exists it must not authorize duplication. A pure tombstone (retain forever) is rejected (unbounded growth). Clients generate a new UUID v4 for each genuinely new incident; the key is held for the lifetime of one logical operation only.
+
+### Cleanup strategy (future; NOT implemented)
+- No scheduler tasks exist (empty `schedule()`), so no cleanup runs today. Future: a scheduled console command (e.g. `idempotency:prune`) deleting `where('expires_at','<', now())`; must run only after retention to avoid deleting rows still needed for replay. Manual cleanup risk: deleting a live row → duplicate on retry. No cleanup job is invented/wired now.
+
+### Response replay — choose **A (reconstruct from the persisted ServiceRequest)**
+- Reuse `Dashboard\RequestController::requestResource`. **Not** a stored snapshot (avoids staleness/schema drift and extra columns). Consequence: replay is **not byte-identical** — it returns the current representation of the **same logical request** (same `id`); related driver/user fields may have changed since creation. With CASCADE + NOT NULL the key row always has a live request, so replay always resolves.
+- HTTP **200** for both create and replay (matches the shared `response()->success` envelope); `message` distinguishes created vs replayed; response header `Idempotency-Replayed: true` on replay. Failure cases: foreign/absent request cannot occur via replay (owner-scoped, key↔request coupled); hard-deleted request removes the key row → same key becomes a new create.
+
+### Mail delivery guarantees
+- Current `Mail::to()->send()` (sync, `UserRequestOrderMail` not `ShouldQueue`) = **at-most-once attempt**: exactly one attempt per fresh create; success/failure recorded only in logs. Crash-after-commit-before-send → 0; SMTP accepted-then-caller-timeout → possibly 1 while the app records nothing; replay never re-sends → **no duplicate email from the request path**. Exactly-once is impossible without an outbox + idempotent consumer.
+- Recommendation: best-effort at-most-once (post-commit, try/catch, log) is **sufficient for B2** (a driver notification; user can also call/WhatsApp). Outbox/queue is a separate infrastructure change requiring explicit approval (needs a worker + `jobs` table).
+
+### Eligibility under concurrency
+- Fresh reads inside the transaction are proportionate. MySQL default isolation (REPEATABLE READ) gives a consistent snapshot, **not** serializability: a driver unassigned / vehicle set offline in a transaction that commits after our snapshot will not be seen, so a request may still be created in a tiny window. Acceptable (request is a call-for-help; driver can ignore). Service removed mid-create can violate the `request_service` FK → transaction rolls back → error; client retries with a new key. Row locks (`lockForUpdate` on the vehicle) would close the window but add contention on popular vehicles — **not** recommended by default; document the residual. Do not claim full serializability.
+
+### SQLite vs MySQL test coverage
+- MySQL/InnoDB (production, default): real row locks / `SELECT … FOR UPDATE`, gap locks, unique-index enforcement, deadlock detection, REPEATABLE READ.
+- SQLite (existing test env, `:memory:`): database-level write serialization, `SELECT … FOR UPDATE` is a **no-op**, FKs enforced only if enabled (config true), no gap locks.
+- SQLite **can** verify: unique(app_user_id,key) enforcement, replay returns no new row, fingerprint mismatch → 409, missing/malformed key → 400, eligibility errors → 422, owner isolation, FK cascade, mail-faked no-duplicate-send.
+- SQLite **cannot** reliably verify: true concurrent same-key race, lock waits, deadlock retry, isolation behaviour. Those need an isolated **MySQL/InnoDB** environment **only after explicit approval**; never Production.
+
+### Security & abuse controls (distinguish the four)
+- Authentication (Sanctum) → 401; Authorization (`api.area:mobile` + owner scoping) → 403/404; Idempotency → dedupes one logical op, scoped per owner so no cross-user replay; Rate limiting → already present globally at 60/min per user/IP via the `api` group (no new control invented). Residual abuse: flooding distinct keys is bounded by that throttle; error bodies carry no cross-user data; keys are opaque and owner-scoped; replay returns only the owner’s request.
+
+### Proposed implementation slices (each STOPS independently)
+- **B2.2B.3B.1** migration `request_idempotency_keys` + `RequestIdempotencyKey` model (**needs migration approval**).
+- **B2.2B.3B.2** fingerprint helper + atomic creation service (dormant; controller untouched).
+- **B2.2B.3B.3** post-commit mail handling (try/catch; `MAIL_MAILER=array` for tests).
+- **B2.2B.3B.4** v2 `store` integration — **activation guarded**, flips `503 NOT_ENABLED` only after all prior checks.
+- **B2.2C** isolated tests (sqlite) + optional isolated MySQL concurrency test + security verification.
+
+### Approval matrix (summary; unresolved items are NOT approved)
+| Decision | Recommendation | Evidence | Trade-off | Approval? |
+|---|---|---|---|---|
+| Table | dedicated `request_idempotency_keys` | no core-table change; isolated concerns | new table | Yes |
+| Unique scope | `UNIQUE(app_user_id, key)` | owner isolation; mirrors account-scoped keys | none material | Yes |
+| FKs | CASCADE (both) | existing `service_requests`/`request_service` use cascade; soft deletes preserve replay | hard delete drops replay | Yes |
+| `status` column | **omit** | unreachable under single transaction | re-add by migration if outbox later | Yes |
+| Key expiry | cleanup hint only; replay = row presence | prevents duplicating an existing request | residual after prune | Yes |
+| Retention | 24h default, configurable | retry windows ≪ 24h | must be business-confirmed | Yes |
+| Replay rep. | reconstruct via `requestResource` | consistency, no drift | not byte-identical | Yes |
+| Mail model | post-commit best-effort at-most-once | current sync path; no workers | no delivery guarantee | Yes |
+| Txn/lock | one txn + unique claim + bounded retry; no row locks | DB-enforced; avoids contention | tiny TOCTOU window | Yes |
+| DB tests | sqlite for logic; MySQL only if approved | SQLite lock semantics differ | needs isolated env | Yes |
+
+### Unresolved approvals / next step
+- Outstanding: migration approval; retention duration; `status` omission; FK cascade confirm; HTTP 200-vs-201; mail best-effort acceptance; optional isolated MySQL test; the stale `MobileParityTest` fix.
+- B2.2B.3B remains **blocked until explicit user approval**. Commit = **NOT YET**. No missing B2 history fabricated.
+
+## PHASE B — B2.2B.3B.1 IDEMPOTENCY SCHEMA & MODEL (2026-10-14)
+
+**Verdict: B2.2B.3B.1 SCHEMA & MODEL PASS.** Controlled implementation. Explicit user approval covered **one migration file + one Eloquent model only**. No migration executed, no DB contacted, no controller/route/validator/config changed, no service/mail code, v2 POST untouched (`503 NOT_ENABLED`), nothing committed.
+
+### Explicit approval scope
+- Authorized: create `database/migrations/2026_10_14_000001_create_request_idempotency_keys_table.php` and `app/Models/RequestIdempotencyKey.php`.
+- Not authorized (and not done): executing migrations, `migrate:status`/`fresh`/`rollback`, schema inspection, DB connections, SQL, table creation, DB-dependent tests, POST /requests, emails, package installs, fingerprint logic, creation service, mail handling, v2 activation, Legacy/Dashboard changes, commits, B2.2B.3B.2.
+
+### Precheck
+- Backend HEAD `5b79980 feat(requests): add v2 request eligibility validator`; `git status --short` empty (**clean**). Mobile: only `M PROJECT_CONTEXT.md`. No reset/stash/clean/overwrite performed.
+
+### Authorized artifacts
+- **Migration**: `database/migrations/2026_10_14_000001_create_request_idempotency_keys_table.php` (anonymous `return new class extends Migration`, matching recent migrations; `Schema::create()` in `up()`, `Schema::dropIfExists()` in `down()`).
+- **Model**: `app/Models/RequestIdempotencyKey.php`.
+
+### Schema (`request_idempotency_keys`)
+- `id` — `$table->id()` (BIGINT UNSIGNED PK auto-increment).
+- `app_user_id` — `foreignId()->constrained('app_users')->cascadeOnDelete()`, NOT NULL.
+- `key` — `char(36)`, NOT NULL (client UUID v4, stored lowercased; reserved word, quoted by Laravel's grammar).
+- `request_fingerprint` — `char(64)`, NOT NULL (lowercase hex SHA-256).
+- `service_request_id` — `foreignId()->constrained('service_requests')->cascadeOnDelete()`, NOT NULL.
+- `expires_at` — `timestamp`, NOT NULL (cleanup hint; 24h default applied later by the creation service, not by schema).
+- `created_at`, `updated_at` — `$table->timestamps()`.
+
+### Constraints / indexes
+- `UNIQUE(app_user_id, key)` — the database enforces idempotency; also the leftmost-prefix index for the `app_user_id` FK.
+- `INDEX(expires_at)` — for a future prune command.
+- No explicit `service_request_id` index: MySQL/InnoDB indexes FK columns implicitly, so no redundant index is added.
+
+### Foreign key behavior
+- `app_user_id` → `ON DELETE CASCADE` (mirrors `service_requests.app_user_id`).
+- `service_request_id` → `ON DELETE CASCADE` (mirrors `request_service.service_request_id`). NOT NULL; no SET NULL, no RESTRICT.
+- Represents committed request records only; the request and its idempotency row are inserted atomically in a later stage.
+
+### No processing status
+- No `status`/`processing`/`completed`/`retry_count`/`attempt_count` columns. The non-null `service_request_id` plus a future atomic transaction is the approved design.
+
+### Model details
+- `use HasFactory;` (matches existing models; no `database/factories` dir exists and no test depends on factories).
+- `$fillable` = `app_user_id`, `key`, `request_fingerprint`, `service_request_id`, `expires_at`.
+- `$casts` = `expires_at => datetime` (matches `UserNotification`/`AppUser` datetime-cast convention).
+- Relations: `appUser()` → `belongsTo(AppUser::class, 'app_user_id')`; `serviceRequest()` → `belongsTo(ServiceRequest::class, 'service_request_id')` (FQN return types, matching sibling models). No business methods, no fingerprint algorithm, no orchestration, no global scopes/observers.
+- No mass assignment of identity is exposed to any controller; the creation service will supply the authenticated AppUser later.
+
+### Retention behavior
+- Initial retention **24 hours**; `expires_at` stores a timestamp only. No cleanup job, no scheduled task, no deletion, no DB-level 24h constraint. Expired-but-present rows must still replay; expiration is a cleanup hint, never permission to create another request.
+
+### MySQL/SQLite static compatibility
+- `foreignId()` → `UNSIGNED BIGINT`; matches the existing `unsignedBigInteger` PK/FK style (`$table->id()`), so no collation/charset mismatch for the FKs.
+- Composite `UNIQUE` and `CHAR` are supported by both engines. SQLite ignores `char` length (TEXT affinity) and has no unsigned distinction — tolerable; SQLite FKs enforced when `foreign_key_constraints` is on (config default true).
+- `timestamp` maps to `DATETIME`/`TIMESTAMP` on MySQL and TEXT/`datetime` on SQLite; Laravel serializes consistently.
+- No `SELECT … FOR UPDATE`/lock semantics are expressed here, so no engine-specific lock differences are introduced by this step.
+- No schema was executed on either engine (verify-only, static).
+
+### Static verification
+- `php -l` → **No syntax errors** in both new files.
+- `git status --short` → only `?? app/Models/RequestIdempotencyKey.php` and `?? database/migrations/2026_10_14_000001_create_request_idempotency_keys_table.php`.
+- `git diff --check` → clean; `git diff --stat` → empty (no tracked file modified). New files inspected explicitly (untracked files are excluded from `git diff`).
+
+### Scope audit (unchanged)
+- Confirmed untouched: `routes/api_mobile.php`, `Api/Mobile/V2/RequestController.php`, `Api/Mobile/RequestController.php`, `Services/RequestEligibilityValidator.php`, `Models/ServiceRequest.php`, `config/database.php`, `config/queue.php`, `config/mail.php`. No DB changes, no service creation, no mail modification.
+
+### No DB / no execution confirmation
+- Migration **NOT executed**; no `migrate`/`migrate:status`/`migrate:fresh`/`migrate:rollback`; no SQL; no MySQL/SQLite connection; no table created; no DB-dependent test run; no POST; no email; no commit.
+
+### Remaining risks / unresolved
+- Migration is unexecuted and must be applied (via the project's approved deployment path) before any replay logic can be tested against a real schema.
+- `MobileParityTest` remains stale from B2.2B.1 (predates auth/containment) — to be fixed in B2.2C.
+- `key` reserved-word behavior is relied on Laravel's identifier quoting; worth confirming during the isolated test stage.
+- REST-replay representation and the exact HTTP semantics remain as recorded in B2.2B.3A.1.
+
+### Next
+- **B2.2B.3B.2** (fingerprint helper + atomic creation service, dormant) awaits explicit approval. Commit = **NOT YET**. No missing B2 history fabricated.
+
+## PHASE B — B2.2B.3B.2 FINGERPRINT & ATOMIC REQUEST SERVICE (2026-10-14)
+
+**Verdict: B2.2B.3B.2 DORMANT SERVICE PASS.** Controlled implementation. Two new **dormant** backend files only; no controller/route/validator/config change, no migration executed, no DB contact, no POST, no email, no commit, v2 POST still `503 NOT_ENABLED`.
+
+### Precheck
+- Backend HEAD `3d00255 feat(requests): add idempotency schema and model` (contains the B2.2B.3B.1 migration + `RequestIdempotencyKey`); `git status --short` **clean**. Mobile: only `M PROJECT_CONTEXT.md`.
+
+### Files
+- `app/Support/Idempotency/RequestFingerprint.php` (new, dormant helper).
+- `app/Services/RequestCreationService.php` (new, dormant service).
+- No existing file modified; service referenced nowhere outside itself (verified by grep) → not wired into any route/controller.
+
+### Fingerprint behavior (`RequestFingerprint`)
+- `make(int $appUserId, int $vehicleId, int $driverId, array $serviceIds): string` → `hash('sha256', canonical(...))`, lowercase hex.
+- Canonical: `v1|u:{appUserId}|v:{vehicleId}|d:{driverId}|s:{sortedServiceIds}` (comma-joined). `VERSION = 'v1'` is a private const (bump on contract change).
+- `normalizeServiceIds(array): list<int>` (public) rejects — never silently fixes — empty input, non-integer ids, non-positive ids and duplicates; returns ascending sorted ints.
+- Excludes `platform`, `status`, `userId`; service order cannot change the fingerprint. Client `userId` is never trusted (authenticated AppUser id only).
+
+### Service method contract (`RequestCreationService`)
+- `create(AppUser $user, int $vehicleId, int $driverId, array $serviceIds, string $idempotencyKey): array{request: ServiceRequest, wasCreated: bool, wasReplayed: bool}`.
+- Only authenticated AppUser + validated vehicleId/driverId/serviceIds/UUIDv4 key are accepted; no arbitrary `userId`/`status`/`platform` from the caller.
+- `public static normalizeKey(string): string` — trim + lowercase + strict UUIDv4 regex, throws `InvalidArgumentException` (a future controller may pre-validate).
+- `RETENTION_HOURS = 24` const (cleanup hint only); `MAX_ATTEMPTS = 3`.
+- Result is structured data only; no HTTP response object, no email dispatch. Failure signalling uses SPL/DB exceptions: `InvalidArgumentException` (bad key/ids), `DomainException` (same key, different payload), `RuntimeException` (inconsistent record / retries exhausted), `ValidationException` (from the validator).
+
+### Transaction algorithm
+- Per attempt: `DB::transaction(attempt, MAX_ATTEMPTS)`.
+- `attempt()`: owner-scoped `(app_user_id, key)` lookup → if found `replay()`; else `RequestEligibilityValidator::validate()` (fresh reads, **new creation only**) → `ServiceRequest::create([platform:'mobile', app_user_id:authUser, driver_id:driver, company_id:driver, branch_id:driver, status:'active'])` → `services()->sync()` → `RequestIdempotencyKey::create([... service_request_id = created id, expires_at = now()+24h])`.
+- The idempotency row is written **last with a concrete `service_request_id`** (NOT NULL) — no incomplete/processing row, no status column. The `(app_user_id, key)` unique index is the final concurrency guard. `lockForUpdate` intentionally omitted (unreliable for a non-existent row); the DB unique constraint + bounded retry is the mechanism.
+
+### Unique-conflict handling
+- `DB::transaction($cb, N)` auto-retries genuine deadlock/lock-wait/serialization errors (Laravel `causedByConcurrencyError`); a unique violation is **not** a concurrency error and propagates as `Illuminate\Database\UniqueConstraintViolationException`.
+- The service catches **only** `UniqueConstraintViolationException`, and retries **only** when a committed `(app_user_id, key)` row now exists (`claimExists()`); otherwise it rethrows. Unrelated integrity errors are never swallowed, and no `QueryException` catch-all is used. Bounded at `MAX_ATTEMPTS`; exhaustion throws `RuntimeException`. No automatic new key is ever issued.
+- Note: `DeadlockException extends PDOException` (not `QueryException`) in this Laravel 12; no `LockWaitTimeoutException` class exists.
+
+### Replay semantics
+- Existing owner+key row → `replay()`: `hash_equals` fingerprint check first (mismatch → `DomainException`), then return the linked request via `serviceRequest()` (SoftDeletes-aware). No new request, no service sync, no eligibility re-check, no email. Expired-but-present rows still replay (expiration is ignored for lookup). Missing/soft-deleted/hard-deleted linked request → `RuntimeException` (safe explicit failure; never a silent duplicate).
+
+### Eligibility integration
+- Uses the already-approved `RequestEligibilityValidator` (constructor-injected, unmodified) for **new creation only**; no validation rules duplicated. Online + `current_driver_id` match + ≥1 service + all services offered are the validator's responsibility; duplicate/invalid service ids are additionally rejected earlier by `RequestFingerprint::normalizeServiceIds`.
+
+### ServiceRequest field mapping
+`platform='mobile'` (server-controlled), `app_user_id = $user->id`, `driver_id = resolved current driver`, `company_id`/`branch_id` derived from the resolved driver (matching v1), `status='active'` (existing default). Services synced through the existing `request_service` pivot. No untrusted status copied.
+
+### Static verification
+- `php -l` → **No syntax errors** in both new files.
+- `git status --short` → only `?? app/Services/RequestCreationService.php` and `?? app/Support/Idempotency/`; no tracked file modified. `git diff --check` clean; `git diff --stat` empty (untracked files don’t appear in `git diff`; inspected explicitly).
+- v2 `store` still returns `503 NOT_ENABLED`; no controller/route changed; no migration executed; no DB connection; no request created; no mail sent.
+
+### Design test cases (planned, NOT run)
+Stable fingerprint · service order independence · duplicate services rejected · first creation · replay same key · mismatch same key → DomainException · expired-but-present replay · separate key creates a new request · concurrent duplicate same key → one row + replay · unrelated DB exception propagates · soft-deleted linked request → RuntimeException · failed transaction rollback (no partial rows). Isolated env only (`APP_ENV=testing`, `DB_CONNECTION=sqlite`, `:memory:`, `MAIL_MAILER=array`); SQLite cannot prove true MySQL concurrency.
+
+### Remaining risks
+- SQLite cannot prove the real same-key race/lock-wait behaviour; isolated MySQL/InnoDB verification still pending approval (B2.2C).
+- `key` reserved-word quoting and the SQLite `database is locked` path are only statically reasoned so far.
+- Replay returns the linked `ServiceRequest` without eager-loaded relations; the future controller must load the resource relations.
+- `MobileParityTest` remains stale from B2.2B.1 (fix in B2.2C).
+- Migration `2026_10_14_000001_create_request_idempotency_keys_table.php` is committed but **not executed** against any database.
+
+### Next
+- **B2.2B.3B.3** (post-commit mail handling) awaits explicit approval. Commit = **NOT YET**. No missing B2 history fabricated.
+
+## PHASE B — B2.2B.3B.3 POST-COMMIT MAIL SAFETY (2026-10-14)
+
+**Verdict: B2.2B.3B.3 MAIL SAFETY FOUNDATION PASS.** Controlled implementation. One new **dormant** backend file only; no controller/route/mail-class/config change, no migration executed, no DB contact, no email sent, no POST, no commit, v2 POST still `503 NOT_ENABLED`.
+
+### Precheck
+- Backend HEAD `3f07721 feat(requests): add atomic idempotent request creation service` (B2.2B.3B.2 committed); `git status --short` **clean**; `git diff --check` clean. Mobile: only `M PROJECT_CONTEXT.md`.
+
+### Existing mail flow (verified, unchanged)
+- v1 `Api/Mobile/RequestController@store` sends synchronously: `Mail::to($driver->email)->send(new UserRequestOrderMail(now()))` guarded by `if ($driver->email)`.
+- `App\Mail\UserRequestOrderMail` uses `Queueable, SerializesModels` but does **not** implement `ShouldQueue`; constructor takes `CarbonInterface $requestDate`; `build()` renders an inline HTML body. Synchronous send today.
+- Queue: default `sync`; no `jobs` table migration, no `app/Jobs`, no workers. Logging convention: `Log::warning('...', [context])` via `Illuminate\Support\Facades\Log` (precedent `WhatsAppService`).
+
+### New file
+- `app/Services/RequestNotificationService.php` (dormant; referenced nowhere outside itself — verified by grep).
+
+### Public method contract
+- `notifyDriverOfNewRequest(ServiceRequest $serviceRequest): string` → one of the outcome constants:
+  - `OUTCOME_SENT` — transport accepted the message without throwing.
+  - `OUTCOME_SKIPPED_NO_DRIVER` — no resolvable (non-trashed) driver.
+  - `OUTCOME_SKIPPED_INVALID_RECIPIENT` — driver has no usable/malformed email.
+  - `OUTCOME_FAILED` — synchronous send threw; logged and swallowed.
+- Reuses the existing `UserRequestOrderMail` (no new template); uses the request's `created_at` (falls back to `now()`). No persistence, no pivot writes, no new transport, no queue/outbox.
+
+### Recipient resolution
+- Driver resolved via the real `ServiceRequest::driver()` relation (`->first()`), so soft-deleted drivers resolve to null. Email trimmed and validated with `filter_var(..., FILTER_VALIDATE_EMAIL)`; empty/malformed addresses are skipped (not silent).
+
+### Exception handling & logging
+- The single send is wrapped in `try { … } catch (Throwable $exception)`; the failure is logged with `Log::error` (request id, driver id, exception class, message) and **never rethrown**, so a mail failure can never surface as an apparent request-creation failure.
+- Skips are logged with `Log::warning` (request id and/or driver id). No secrets, tokens, email addresses, or full request payloads are logged.
+
+### Post-commit calling contract (documented, not wired)
+- Call **only after** `RequestCreationService::create()` has returned a committed, newly created request (`wasCreated === true`), strictly **after** the creation transaction commits.
+- If `wasReplayed === true` → **skip** notification.
+- Never call while a creation transaction is open; this class opens no transaction and calls neither `DB::commit()` nor `DB::afterCommit()`.
+
+### Replay suppression / idempotency
+- Email is never sent during replay. The same successful request reused across Request/Call/WhatsApp must not generate another email. A failed mail attempt must not trigger request recreation. No automatic retry. `SMTP timeout` may leave delivery uncertain. Exactly-once delivery is **not** claimed.
+
+### Delivery limitations (documented)
+- A. Crash after DB commit but before mail → email may be lost.
+- B. SMTP accepts but the client sees a timeout → actual delivery unknown.
+- C. Replay after a timeout → no new request and no repeated email.
+- D. Missing/invalid driver email → request remains successfully created; notification fails safely and is logged.
+- Queue/outbox is explicitly out of scope and requires separate approval.
+
+### Static verification
+- `php -l` → **No syntax errors**.
+- `git status --short` → only `?? app/Services/RequestNotificationService.php`; `git diff --check` clean; `git diff --stat` empty (untracked file inspected explicitly). No controller/route/mail-class/config changed; no controller/route file modified.
+- v2 `store` still returns `503 NOT_ENABLED`; no migration executed; no DB connection; no email sent; no POST performed.
+
+### Design test plan (B2.2C, NOT run)
+Newly created request sends exactly once · replay sends zero times · missing driver address · transport throws → request preserved and logged · logging exposes no secrets · mail not sent before commit · contact actions reuse the successful request without duplicate notifications. Mail via `Mail::fake(); MAIL_MAILER=array; QUEUE_CONNECTION=sync`.
+
+### Next
+- **B2.2B.3B.4** (v2 store integration, activation guarded) awaits explicit approval. Commit = **NOT YET**. No missing B2 history fabricated.
+
+## PHASE B — B2.2B.3B.4 V2 REQUEST INTEGRATION PREPARATION (2026-10-14)
+
+**Verdict: B2.2B.3B.4 PREPARATION PASS.** Design/readiness step only. **No backend code changed**; `POST /api/mobile/v2/requests` still returns `503 NOT_ENABLED`. No migration, no DB contact, no email, no POST, no commit.
+
+### Precheck
+- Backend HEAD `988b2fc feat(requests): add safe post-commit driver notification` (B2.2B.3B.3 committed); `git status --short` clean; `git diff --check` clean.
+- All five components present: `RequestEligibilityValidator`, `RequestFingerprint`, `RequestIdempotencyKey`, `RequestCreationService`, `RequestNotificationService`.
+
+### Verified contracts (actual signatures)
+- Route: `POST /api/mobile/v2/requests` inside `Route::prefix('mobile/v2')->middleware(['auth:sanctum','api.area:mobile'])` → `Api\Mobile\V2\RequestController@store`.
+- `RequestEligibilityValidator::validate(array $input): array{vehicle,driver,services}`; requires `vehicleId` int, `driverId` int, `services` int[] min:1 distinct exists; enforces vehicle `work_status === 'online'` + `current_driver_id === driverId`; services subset of vehicle services; throws `ValidationException`.
+- `RequestFingerprint::make(int userId,int vehicleId,int driverId,array serviceIds): string` (SHA-256 hex); `normalizeServiceIds()` rejects empty/invalid.
+- `RequestCreationService::create(AppUser,int vehicleId,int driverId,array serviceIds,string idempotencyKey): array{request:ServiceRequest,wasCreated:bool,wasReplayed:bool}`; `normalizeKey()` (UUID v4, lowercase, trim); failures: `InvalidArgumentException` (bad key/ids), `DomainException` (key reused with different payload), `RuntimeException` (unresolved record/retries), `ValidationException` (eligibility).
+- `RequestNotificationService::notifyDriverOfNewRequest(ServiceRequest): string` → `OUTCOME_SENT|SKIPPED_NO_DRIVER|SKIPPED_INVALID_RECIPIENT|FAILED`.
+- `Dashboard\RequestController::requestResource(ServiceRequest): array` reads `services`, `appUser`, `driver`(+`branch`,`company`).
+
+### API contract gaps (to close at activation, NOT now)
+1. `store()` does not read/validate the `Idempotency-Key` header; needs a 400 `IDEMPOTENCY_KEY_REQUIRED` / `IDEMPOTENCY_KEY_INVALID` guard before `create()`.
+2. `DomainException` (409) and `InvalidArgumentException` (400) have **no** global mapping — the generic `Handler` would render them as `500 INTERNAL_ERROR`. The integration must translate them explicitly (no broad exception suppression).
+3. `requestResource` must be preceded by eager-loading `['appUser','driver.branch','driver.company','services']` (mirroring `index`/`show`); the model returned by `create()` does not carry those relations.
+4. A replay indicator (e.g. `Idempotency-Replayed` header / distinct success message) is not yet expressible; `response()->success($data,$message)` returns a plain `JsonResponse` that can take `->header(...)`.
+5. Notification outcomes are not surfaced/logged by any caller yet.
+
+### HTTP error mapping (designed, not wired)
+- missing `Idempotency-Key` → 400 `IDEMPOTENCY_KEY_REQUIRED`; malformed/non-v4 → 400 `IDEMPOTENCY_KEY_INVALID` (`normalizeKey` → `InvalidArgumentException`).
+- same key + different payload → 409 (catch `DomainException`).
+- eligibility/validation failure → 422 `VALIDATION_ERROR` (existing `Handler`).
+- unauthenticated → 401; non-mobile-area token → 403 `FORBIDDEN` (existing middleware/`Handler`).
+- unresolved record / retries exhausted (`RuntimeException`) and anything else → existing safe 500 `INTERNAL_ERROR`.
+
+### Response mapping (designed)
+- New: `response()->success($dashboardRequests->requestResource($request->fresh([...])), <created message>)`.
+- Replay: same `requestResource` shape + replay indicator; never a fake success; relations eager-loaded before serialization.
+
+### Notification ordering (designed, not wired)
+- `create()` returns only **after** the transaction commits.
+- `wasCreated === true` → call `notifyDriverOfNewRequest()` **once**, after commit.
+- `wasReplayed === true` → no call, no email.
+- creation failure/exception → no call. No mail is invoked in this step.
+
+### Security regression (static, verified unchanged)
+- v2 routes still `auth:sanctum` + `api.area:mobile` (`routes/api_mobile.php`).
+- owner-scoped `index`/`show` unchanged (owner filter; cross-owner → 404).
+- v1 ownership guard + v1 `POST /requests` (`auth:sanctum`,`api.area:mobile`) unchanged; removed v1 index/show/update/destroy remain removed.
+- no client-supplied `userId` persisted (identity from `$request->user()`).
+- v2 `store` still `503 NOT_ENABLED`; no reachable creation path.
+
+### Controller integration status
+- **Unchanged by choice.** The active `store()` was left untouched (brief preference: leave unchanged until isolated tests pass). Reachable wiring would activate POST (forbidden) and an uncalled helper would be dead code; both were avoided. No supporting code added — recorded as a decision the user may override.
+
+### Static verification
+- No files changed: `git status --short` clean; `git diff --check` clean; `git diff --stat` empty; no `php -l` target (nothing new). No DB/migrations/email/HTTP POST performed.
+
+### Isolated test plan (B2.2C, NOT run)
+valid new request (success + resource) · replay (same id, no second creation) · key mismatch → 409 · missing key → 400 · malformed key → 400 · missing services → 422 · wrong vehicle/driver → 422 · wrong service → 422 · owner isolation (cross-user → 404) · notification after commit (exactly once) · no mail on replay · mail failure does not change success · no partial writes (transaction) · v1 compatibility · update stale `MobileParityTest` (v1 POST now requires auth; removed v1 show). Env: `APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`, `MAIL_MAILER=array` / `Mail::fake()`, `QUEUE_CONNECTION=sync`.
+
+### Why POST remains disabled
+- Hardening is complete but **not yet proven by isolated tests**; activation is gated behind B2.2C. Until then `503 NOT_ENABLED` is the only honest response.
+
+### Next
+- **B2.2C** (isolated tests + security regression incl. `MobileParityTest` update) awaits explicit approval, then the guarded activation step. Commit = **NOT YET**. No missing B2 history fabricated.
+
+## PHASE B — B2.2C.1 ISOLATED SERVICE VERIFICATION (2026-10-14)
+
+**Verdict: B2.2C.1 ISOLATED SERVICE VERIFICATION PASS.** 58 tests / 131 assertions, all passing, against an isolated temporary SQLite database. No Production/Development/MySQL connection, no real email, no HTTP POST, no controller/route/service/config/migration change, no commit. v2 POST remains `503 NOT_ENABLED`.
+
+### Testing scope
+Isolated verification of the B2.2B.3 services only: `RequestFingerprint`, `RequestEligibilityValidator`, `RequestCreationService`, `RequestIdempotencyKey` uniqueness, `RequestNotificationService`. No HTTP-level tests, no full-suite run, controllers/routes untouched.
+
+### Environment isolation proof
+- Static audit: `phpunit.xml` sets `APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE`, `MAIL_MAILER=array`, `QUEUE_CONNECTION=sync`; no config cache (`bootstrap/cache/config.php` absent; `tests/bootstrap.php` unlinks it if present); `tests/TestCase` boots no DB; no provider queries the DB at boot (`AppServiceProvider` only calls `Schema::defaultStringLength`); no migration uses `DB::connection`/raw SQL.
+- The repository `.env` carries `DB_CONNECTION=mysql`, `DB_DATABASE=Yamakdb_prod_test` — **never used** by the run.
+- Defense-in-depth: the environment variables were also forced per process (`APP_ENV`, `DB_CONNECTION`, `DB_DATABASE`, `MAIL_MAILER`, `QUEUE_CONNECTION`); Laravel's immutable Dotenv cannot override externally-set variables.
+- `TestingEnvironmentGuardTest` proved the effective config (sqlite + a temp `.sqlite` path under `D:\OpenCodeTemp`, FKs enabled, mail `array`, queue `sync`, env `testing`) and was executed **first**, before any DB-backed test. Its connect-triggering assertion runs last.
+
+### Effective testing configuration
+`APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE=D:\OpenCodeTemp\opencode\yamak_b2_2c1.sqlite`, sqlite FKs enabled, `MAIL_MAILER=array`, `QUEUE_CONNECTION=sync`.
+
+### Temporary SQLite path
+`D:\OpenCodeTemp\opencode\yamak_b2_2c1.sqlite` (outside both repositories): created empty before the run, deleted afterwards (no `-wal`/`-shm`/`-journal` leftovers).
+
+### Migration execution evidence
+Migrations ran **only** on the isolated temp SQLite DB, through Laravel's `RefreshDatabase` mechanism — no `php artisan migrate` against any real connection. No seeder was used; every row was a synthetic fixture.
+
+### Test files (new, untracked)
+- `tests/Concerns/CreatesRequestFixtures.php` — synthetic fixture trait
+- `tests/Unit/TestingEnvironmentGuardTest.php` — 2 tests
+- `tests/Unit/RequestFingerprintTest.php` — 17 tests
+- `tests/Feature/RequestEligibilityValidatorTest.php` — 13 tests
+- `tests/Feature/RequestCreationServiceTest.php` — 15 tests
+- `tests/Feature/RequestIdempotencyConstraintTest.php` — 3 tests
+- `tests/Feature/RequestNotificationServiceTest.php` — 8 tests
+
+### Exact commands & results
+- Guard: `php vendor/bin/phpunit tests/Unit/TestingEnvironmentGuardTest.php --no-coverage` → OK (2 tests, 13 assertions).
+- Services: `php vendor/bin/phpunit tests/Unit/RequestFingerprintTest.php tests/Feature/RequestEligibilityValidatorTest.php tests/Feature/RequestCreationServiceTest.php tests/Feature/RequestIdempotencyConstraintTest.php tests/Feature/RequestNotificationServiceTest.php --no-coverage` → **OK (56 tests, 118 assertions)**; per file 17 / 13 / 15 / 3 / 8.
+- Totals: **58 passed, 0 failed, 0 skipped, 0 errors**; 131 assertions; ≈2.6s.
+
+### Results by area
+- **Fingerprint (DB-free):** deterministic lowercase SHA-256; canonical `v1|u:|v:|d:|s:` form; order-independent; distinct per user/vehicle/driver/services; empty/duplicate/non-integer/float/null/zero/negative id lists rejected; numeric-string ids normalized and sorted.
+- **Eligibility:** valid online vehicle + assigned driver + offered service passes; multi-service returns all; empty/duplicate/non-existent service lists rejected; driver mismatch rejected; offline vehicle / no-current-driver / missing / soft-deleted vehicle rejected; missing driver rejected; empty input rejected.
+- **Creation:** first request writes exactly one `service_requests` row (mobile/active; correct owner/driver/company/branch) + pivot rows + one idempotency key (lowercased key, correct fingerprint, ~24h expiry); replay returns the same id with no new rows and no re-sync; same key + different payload → `DomainException`; different key → new request; expired-but-present key replays; foreign user gets its own request (never another user's); soft-deleted linked request → `RuntimeException` (no silent duplicate); forced mid-transaction failure rolls back **all** rows; invalid key / empty services rejected before any write; ineligible creation writes nothing.
+- **Idempotency constraint:** DB-enforced `UNIQUE(app_user_id, key)` → `UniqueConstraintViolationException` on duplicate; same key across different owners allowed; post-commit replay served without writing.
+- **Notification:** created request → exactly one `UserRequestOrderMail` to the driver; missing driver → `SKIPPED_NO_DRIVER`; null/malformed email → `SKIPPED_INVALID_RECIPIENT`; transport exception → `FAILED`, swallowed (never propagated), request still persisted; `RequestCreationService::create()` alone sends nothing; simulated orchestration notifies exactly once for created and never for replay.
+
+### Defects discovered
+None in production code. No assertion was weakened to make a test pass.
+
+### SQLite concurrency limits (documented — NOT proven here)
+SQLite serializes writers and lacks InnoDB row/gap locking, so this step proves the DB-level unique guarantee and the replay path but **not** true concurrent create/replay races under MySQL/InnoDB. An isolated MySQL/InnoDB concurrency check remains a separate, explicitly approved activity.
+
+### Security regression (static)
+v1 `POST /requests` still behind `auth:sanctum`+`api.area:mobile` with the `abort(403)` ownership guard; v2 `index`/`show` owner-scoped (cross-owner → 404); v2 registers only GET index/show + POST store (no PUT/PATCH/DELETE); v2 `store` still `503 NOT_ENABLED`. Controllers, routes, services, models, configs and migrations are unchanged.
+
+### Remaining work / next step
+- HTTP-level authorization tests and end-to-end v2 `store` integration (with mail fakes) remain outstanding, as does updating the stale `MobileParityTest` (v1 POST now requires auth; removed v1 show).
+- **B2.2C.2** awaits explicit approval; the guarded v2 activation (B2.2B.3B.4) stays gated behind it. Commit = **NOT YET**. No prior history rewritten; no fabricated runtime tests.
+
+## PHASE B — B2.2C.2 HTTP AUTHORIZATION & LEGACY REGRESSION VERIFICATION (2026-10-14)
+
+**Verdict: B2.2C.2 IN-SCOPE SECURITY VERIFICATION PASS — STOP triggered by findings.** All 22 new HTTP authorization / ownership / fail-closed / legacy tests pass (86 assertions) against a **new** isolated temporary SQLite database. **No production code was changed** — no controller/route/service/model/config/migration edit, no real email/SMS/WhatsApp/FCM, no HTTP POST to a running server, no commit. v2 POST remains `503 NOT_ENABLED`. Two **pre-existing production behaviours** and **two pre-existing stale tests** were discovered; none was fixed (see STOP items). v2 activation remains blocked.
+
+### Scope
+HTTP-level verification only, through Laravel's in-process test client: (1) the v2 request surface requires authentication and a `mobile` token ability; (2) reads are owner-scoped; (3) writes are fail-closed; (4) the retained legacy v1 request path is authenticated + ownership-guarded and its removed read/write methods are unreachable. Plus the approved repair of the two B2.2B.1-invalidated `MobileParityTest` assertions. No full-suite run.
+
+### Environment isolation proof
+- Same static guarantees as B2.2C.1: `phpunit.xml` forces testing/sqlite/array/sync; no config cache (`tests/bootstrap.php` unlinks it); `AppServiceProvider` boot performs no DB query; the repository `.env` mysql / `Yamakdb_prod_test` is **never used**.
+- Environment variables were forced per process again (`APP_ENV`, `DB_CONNECTION`, `DB_DATABASE`, `MAIL_MAILER`, `QUEUE_CONNECTION`); Laravel's immutable Dotenv cannot override externally-set variables.
+- A **new** temp DB path was used (distinct from the B2.2C.1 path, not reused). `TestingEnvironmentGuardTest` was executed **first** for this step and passed: OK (2 tests, 13 assertions).
+
+### Effective testing configuration
+`APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE=D:\OpenCodeTemp\opencode\yamak_b2_2c2.sqlite`, `MAIL_MAILER=array`, `QUEUE_CONNECTION=sync`.
+
+### Temporary SQLite path
+`D:\OpenCodeTemp\opencode\yamak_b2_2c2.sqlite` (outside all repositories): created empty before the run, deleted afterwards (no `-wal`/`-shm`/`-journal` leftovers).
+
+### Migration / seeding evidence
+`RefreshDatabase` ran migrations only on the isolated temp SQLite file — no `php artisan migrate` against any real connection. `MobileParityTest` declares `protected bool $seed = true`, so when it is the class that first migrates, `DatabaseSeeder`→`BaseDataSeeder` seeds roles + `admin@example.com` + `app.user@example.com` (synthetic; the seeders contain no `Mail::`/`Http::`/WhatsApp calls). All other new tests use synthetic fixtures only (`CreatesRequestFixtures`).
+- Caveat recorded: `RefreshDatabase`'s static "already migrated" flag means a `$seed = true` class is **not** re-seeded if an earlier non-seeded class already migrated in the same process — so `MobileParityTest` must run in its own process.
+
+### Test files
+New (untracked):
+- `tests/Feature/MobileV2AuthorizationTest.php` — 8 tests
+- `tests/Feature/MobileV2OwnershipTest.php` — 5 tests
+- `tests/Feature/MobileV2WriteFailClosedTest.php` — 3 tests
+- `tests/Feature/MobileV1LegacySecurityTest.php` — 6 tests
+
+Modified:
+- `tests/Feature/MobileParityTest.php` — only the two B2.2B.1-invalidated assertions (added `Sanctum::actingAs($user, ['mobile'])` before the v1 POST; the removed v1 GET detail now asserts `assertNotFound()`). No other assertion changed.
+
+### Exact commands & results
+- Guard: `php vendor/bin/phpunit tests/Unit/TestingEnvironmentGuardTest.php --no-coverage` → OK (2 tests, 13 assertions).
+- New C.2 files (one process): `php vendor/bin/phpunit tests/Feature/MobileV2AuthorizationTest.php tests/Feature/MobileV2OwnershipTest.php tests/Feature/MobileV2WriteFailClosedTest.php tests/Feature/MobileV1LegacySecurityTest.php --no-coverage` → **OK (22 tests, 86 assertions)**.
+- `MobileParityTest` alone (separate process so `--seed` runs) → 3/4 pass; the repaired lookup method passes; the single remaining failure is pre-existing and unrelated (STOP item 3).
+- `ApiRouteRegistrationTest` alone → 3/4 pass; 1 pre-existing failure (STOP item 4).
+
+### Observed HTTP behaviour (recorded, not assumed)
+| Request | Observed |
+| --- | --- |
+| unauth `GET /api/mobile/v2/requests` | 401 `{success:false,message:"Unauthenticated",errors:null}` |
+| unauth `GET /api/mobile/v2/requests/{id}` · `POST /api/mobile/v2/requests` | 401 |
+| dashboard-only token → v2 GET/POST | 403 `{success:false,message:"forbidden",errors:null}` |
+| mobile token without `mobile` ability → v2 GET/POST | 403 |
+| mobile token `GET /api/mobile/v2/requests` | 200, own rows only |
+| mobile token `GET .../requests/{own}` | 200 |
+| mobile token `GET .../requests/{other-user}` | 404 |
+| mobile token, soft-deleted / missing `{id}` | **500** (STOP item 2) |
+| mobile token `POST /api/mobile/v2/requests` (eligible) | 503 `{success:false,message:"request_creation_not_enabled",errors:null}` — **0 rows, 0 pivots, 0 idempotency keys, 0 mail** |
+| `PUT/PATCH/DELETE /api/mobile/v2/requests/{id}` and `PUT /api/mobile/v2/requests` | 405 |
+| unauth `POST /api/mobile/v1/requests` | 401; 0 rows |
+| mobile token v1 POST with matching `userId` | 200; exactly 1 row owned by the caller; exactly 1 `UserRequestOrderMail` to the driver |
+| mobile token v1 POST with a foreign `userId` | 403; 0 rows; 0 mail |
+| `GET /api/mobile/v1/requests` | 405 (URI matches the retained POST) |
+| `GET /api/mobile/v1/requests/{id}` | 404 |
+| `PUT/PATCH/DELETE /api/mobile/v1/requests/{id}` | 404 |
+
+### STOP items (discovered; NOT fixed)
+1. **`response()->error()` silently drops `$code` when `$errors` is null** (`AppServiceProvider::boot`). `response()->error($msg, 503, null, 'NOT_ENABLED')` yields `errors:null`, so the designed `errors.code` (`NOT_ENABLED`, `FORBIDDEN`) is never emitted. The tests assert the observed `errors:null` with an explanatory comment. Minimum correction (needs separate approval): emit `errors.code` whenever `$code` is non-null, or pass a non-null `$errors` array.
+2. **Missing / soft-deleted resource → 500, not 404** (`App\Exceptions\Handler`). A route-model-binding `ModelNotFoundException` is not mapped to `NotFoundHttpException`, so `GET /api/mobile/v2/requests/{missing-or-soft-deleted}` returns 500 `"No query results for model [App\Models\ServiceRequest] N"`. The tests assert the security property (not readable / not listed) and record the observed 500 in a dedicated test. Minimum correction (needs separate approval): map `ModelNotFoundException` → 404 in the Handler.
+3. **Pre-existing stale test, unrelated to B2.2B.1:** `MobileParityTest::test_mobile_auth_otp_signup_login_legacy_register_and_reset_flows` posts to `/api/mobile/client/v1/register`, which commit `3bf69f3` (2026-09-30, "update api") renamed to `/api/mobile/v1/auth/register` → 404. `MobileParityTest` was last modified 2026-06-08, before the rename. Out of this step's approved scope (B2.2B.1 did not move that route), so not changed.
+4. **Pre-existing stale test, same root cause:** `ApiRouteRegistrationTest::test_mobile_compatibility_routes_are_registered` asserts `api/mobile/client/v1/register` POST is registered → fails on HEAD `57bf936`. Minimum correction (needs separate approval): change the URI to `api/mobile/v1/auth/register`. Both stale tests sit in the default `Feature` suite, so the baseline was already red before this step.
+
+### MobileParityTest repair (in-scope) — done
+Only the two B2.2B.1-invalidated assertions were updated (v1 POST now requires `Sanctum::actingAs($user, ['mobile'])`; the removed v1 GET detail now `assertNotFound()`). Verified in an isolated process: the repaired method passes. The remaining `MobileParityTest` failure is STOP item 3 — explicitly **not** an assertion invalidated by the approved B2.2B.1 security changes.
+
+### Security regression (verified at HTTP level)
+- v2 index/show require `auth:sanctum` (401 unauth) + `api.area:mobile` (403 for a dashboard-only or ability-less token); identity is always the authenticated `AppUser`; a cross-owner read is 404; soft-deleted rows are not listed.
+- v2 registers only GET index/show + POST store; POST is fail-closed `503 NOT_ENABLED` and writes nothing (0 `service_requests`, 0 `request_service`, 0 `request_idempotency_keys`, 0 mail); update/delete verbs are 405.
+- v1 POST requires auth (401 unauth) and enforces `userId === authenticated user` (403 on spoof); v1 index/show/update/destroy are unreachable (405/404). Controllers, routes, services, models, configs and migrations are unchanged.
+
+### Remaining work / next step
+- Approval needed on the two STOP production fixes (items 1–2) and the two pre-existing stale tests (items 3–4).
+- Still outstanding: isolated MySQL/InnoDB concurrency proof; the guarded end-to-end v2 `store` activation (B2.2B.3B.4) — now also dependent on the `errors.code` contract gap (STOP item 1).
+- Verdict: **B2.2C.2 in-scope verification PASS; v2 activation remains BLOCKED.** Commit = **NOT YET**. No prior history rewritten; no fabricated runtime tests.
+
+## PHASE B — B2.2C.2a API ERROR CONTRACT AUDIT (2026-10-14)
+
+**Verdict: B2.2C.2a ERROR CONTRACT AUDIT PASS.** Analysis only — **no code, test, route, migration, DB, or HTTP change**; only `PROJECT_CONTEXT.md` updated. Root causes of the two B2.2C.2 STOP items are identified and a three-step repair micro-plan is proposed (not implemented).
+
+### Git state (precheck)
+- Backend HEAD `57bf936`; uncommitted: `M tests/Feature/MobileParityTest.php` + 4 untracked C.2 test files. No unexpected changes. Mobile HEAD `50e9c67`; only `M PROJECT_CONTEXT.md`.
+
+### Response macros (`app/Providers/AppServiceProvider.php::boot`)
+- `response()->success($data = null, $message = null)` → HTTP 200, `{success:true, message, data:<normalized>, errors:null}`. `errors` is **always** `null`.
+- `response()->error($message, $statusCode = 400, $errors = null, $code = null)` → HTTP `$statusCode`, `{success:false, message, data:null, errors:<null|{code?,details}>}`.
+- `$errors` handling: MessageBag → per-field localized map → `details` = `[{field,message}]`; array → `details` = those pairs; string/other non-null → `details` = the value; **null → ignored**.
+- `$code` handling: assigned **only inside `if ($localizedErrors !== null)`**, i.e. only when `$errors` is non-null.
+- **Why `NOT_ENABLED` is not exposed:** `response()->error('request_creation_not_enabled', 503, null, 'NOT_ENABLED')` passes `$errors = null` ⇒ `$localizedErrors` stays null ⇒ the whole `errors` block is skipped ⇒ `errors` remains `null` ⇒ `$code` is dropped. Observed body: `{success:false, message:"request_creation_not_enabled", data:null, errors:null}`.
+
+### Caller census (57 `response()->error()` call sites, 147 `response()->success()` successes)
+- **Mobile v1 — 18**: `Mobile\AuthController` (14), `Mobile\UserController` (3), `Mobile\AppSettingController` (1). None pass a code.
+- **Mobile v2 — 1**: `V2\RequestController:68` (code `NOT_ENABLED`, null errors ⇒ dropped).
+- **Dashboard — 17**: `AuthController:39` (code `UNAUTHORIZED`, null errors ⇒ dropped) + `CsvImportController`, `RoleController`, `SliderController`, `UserController`, `VariableController` (validation codes, non-null errors ⇒ work) + `FilesUploadController`, `NotificationController`, `ServiceController`.
+- **Driver area — 10**: `Driver\AuthController` (2), `Driver\VehicleController` (8). None pass a code.
+- **Shared/other — 11**: `Handler` (9) + `EnsureApiArea:16` (code `FORBIDDEN`, null errors ⇒ dropped) + `EnsureSuperAdmin:15` (code `FORBIDDEN`, null errors ⇒ dropped).
+
+**15 code-bearing call sites; 10 pass non-null `$errors` (validation) and work; exactly 5 silently drop the code:** `Handler:112` (`INTERNAL_ERROR`), `EnsureApiArea:16` (`FORBIDDEN`), `EnsureSuperAdmin:15` (`FORBIDDEN`), `Dashboard\AuthController:39` (`UNAUTHORIZED`), `V2\RequestController:68` (`NOT_ENABLED`).
+
+### ModelNotFound root cause (`app/Exceptions/Handler.php`)
+- `GET /api/mobile/v2/requests/{id}` → `SubstituteBindings` implicit binding on `ServiceRequest` → `ModelNotFoundException`. `ServiceRequest` uses `SoftDeletes` and default route key ⇒ a soft-deleted row is treated as missing ⇒ same exception.
+- The custom `render()` handles `AuthenticationException`, `AuthorizationException`, `ValidationException`, then `HttpException`. `ModelNotFoundException` extends `RuntimeException` (not `HttpException`), so it falls through to the generic api/* branch → `response()->error($message, 500, null, 'INTERNAL_ERROR')` ⇒ **HTTP 500**.
+- `parent::render()` is never reached for api/* exceptions, so Laravel's `prepareException()` (which converts `ModelNotFoundException` → `NotFoundHttpException`) and the registered `renderable(...)` callbacks are bypassed. (The existing `renderable(NotFoundHttpException)` is likewise shadowed by the `HttpException` branch — which is why a normal 404 already yields `resource_not_found`.)
+- Cross-user access in `V2\RequestController::show()` uses an explicit `abort(404)` → `NotFoundHttpException` → 404, so it is unaffected.
+
+### Security implications
+- **Existence/ownership oracle (current):** an authenticated user gets **404** for another user's existing request but **500** for a non-existent/soft-deleted id ⇒ request existence/ownership is distinguishable. Mapping `ModelNotFoundException` → 404 makes "not mine" and "does not exist" indistinguishable.
+- **Debug info leak:** the 500 branch returns `$e->getMessage()` when `APP_DEBUG=true` (includes the model class + id). The mobile client already filters `No query results for model` out of user-visible messages (`src/api/api-error.ts`), confirming the leak was known.
+- Desired vs current: unauth → 401 ✓; wrong ability → 403 ✓; foreign existing → 404 ✓; missing → **currently 500** (want 404); soft-deleted → **currently 500** (want 404); v2 POST → 503 ✓.
+
+### Client/envelope compatibility
+- The mobile app never reads `errors.code`. `extractBackendMessage` reads only `body.message`; `email-otp.tsx::getValidationMessage` reads `errors.details` and safely returns null when `errors` is null or lacks an array `details`. Adding `errors.code` therefore has **no mobile impact**.
+- No pre-existing backend test asserts `errors.code`; only the new C.2 tests assert `errors === null` (for 403/503) and the recorded 500. Those assertions lock the current buggy behaviour and must be updated by the fix steps.
+- Dashboard (`yamak-dashboard`) is out of the given scope; a shared-macro change would also alter its envelopes (not audited here).
+
+### Stale tests (pre-existing; unrelated to B2.2B.1)
+- Commit `3bf69f3` ("update api", 2026-09-30) renamed `POST /api/mobile/client/v1/register` → `POST /api/mobile/v1/auth/register`.
+- `tests/Feature/MobileParityTest.php:80` posts to the old URL then asserts `assertOk()` + `assertJsonStructure(['data','access_token'])`. `legacyRegister` still returns `{data, access_token}` ⇒ **only the URL needs updating**.
+- `tests/Feature/ApiRouteRegistrationTest.php:72` lists `['api/mobile/client/v1/register','POST']` ⇒ URI must become `['api/mobile/v1/auth/register','POST']`.
+- No other stale references exist.
+
+### Repair micro-plan (proposed; NOT implemented)
+- **B2.2C.2b — error-code contract.** Scope: `V2\RequestController:68` only (lowest risk; make `$errors` non-null so the code emits) **or** `AppServiceProvider::boot` macro (fixes all 5 code-dropping callers but changes 4 live endpoints' envelopes) **or** a new additive helper macro. Recommend the v2-scoped option (or an additive helper) since v2 is unactivated. Must update `MobileV2AuthorizationTest` (403) and `MobileV2WriteFailClosedTest` (503) to expect `errors.code`. Isolated temp SQLite; STOP gate.
+- **B2.2C.2c — 404 contract.** Scope: `app/Exceptions/Handler.php` only — add, inside `render()` before the generic 500 branch, `if ($e instanceof ModelNotFoundException && $request->is('api/*')) return response()->error('resource_not_found', 404);` (+ import). A `renderable()` callback will **not** work because the override bypasses `parent::render()`. Must update the two `MobileV2OwnershipTest` missing/soft-deleted assertions (500 → 404). Isolated temp SQLite; STOP gate.
+- **B2.2C.2d — stale route tests.** Scope: `MobileParityTest.php:80` (URL) and `ApiRouteRegistrationTest.php:72` (URI). Test-only. Run both in isolation (`MobileParityTest` in its own process for `--seed`); STOP gate.
+
+### No DB / production change
+No database connection, migration, seeder, HTTP request, email, or production-code/test edit was made in this step; only `PROJECT_CONTEXT.md` was updated.
+
+- **Next:** await approval for B2.2C.2b/c/d. v2 activation stays gated. Commit = **NOT YET**.
+
+## PHASE B — B2.2C.2d — STALE REGISTRATION TEST REPAIR (2026-10-14)
+
+**Verdict: B2.2C.2d STALE ROUTE TEST REPAIR PASS.** Test-only changes. No production code/routes/controllers/Handler/AppServiceProvider changed. Isolated verification OK, temp SQLite cleaned.
+
+### Root cause
+Commit `3bf69f3` (2026-09-30, "update api") renamed `POST /api/mobile/client/v1/register` → `POST /api/mobile/v1/auth/register`. Two tests still referenced the old path.
+
+### Changes
+- `tests/Feature/MobileParityTest.php:80`: URL changed to `/api/mobile/v1/auth/register`.
+- `tests/Feature/ApiRouteRegistrationTest.php:72`: URI changed to `api/mobile/v1/auth/register`.
+
+### Verification
+- Guard → OK (2/13).
+- `ApiRouteRegistrationTest` → OK (4 tests, 93 assertions) — previously failed on the stale path.
+- `MobileParityTest` → OK (4 tests, 97 assertions) — ran in a separate process to avoid RefreshDatabase seeding issue.
+
+### Isolation
+Temp DBs created (`yamak_b2_2c2d.sqlite`, `yamak_b2_2c2d2.sqlite`) with env forced (`APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE=<temp>`, `MAIL_MAILER=array`, `QUEUE_CONNECTION=sync`), verified via guard, then removed (no sidecars).
+
+### Impact
+v2 POST remains `503 NOT_ENABLED` with `errors.code=NOT_ENABLED`; v1 unchanged; no routes/controllers modified.
+
+**Next:** B2.2C.2 substeps complete (2a/2b/2c/2d). v2 activation remains gated. Commit = **NOT YET**.
+
+## PHASE B — B2.2C.2c — MODEL NOT FOUND 404 FIX (2026-10-14)
+
+**Verdict: B2.2C.2c MODEL NOT FOUND FIX PASS.** Minimal Handler change; tests updated to match correct behavior. No macro/routes/creation/mail changes. Temp SQLite isolated, verified, removed.
+
+### Root cause
+Implicit binding of `ServiceRequest` (with `SoftDeletes`) raises `ModelNotFoundException` → custom Handler fell to generic 500 branch (didn't call `parent::render`, `NotFoundHttpException`/renderable bypassed).
+
+### Changes
+- `app/Exceptions/Handler.php`: add `use Illuminate\Database\Eloquent\ModelNotFoundException;`; in `render()`, map `ModelNotFoundException` → `response()->error('resource_not_found', 404)` for API requests before the generic 500.
+- `tests/Feature/MobileV2OwnershipTest.php`: soft-deleted and missing cases now expect 404 (and security property assertions tightened).
+
+### Verification
+Guard → OK (2/13); `MobileV2OwnershipTest` → OK (5/23). Temp DB `yamak_b2_2c2c.sqlite` created, proven isolated (env forced), removed.
+
+### Security
+Cross-owner → 404; missing → 404; soft-deleted → 404; own → 200; index owner-scoped. v2 POST still `503 NOT_ENABLED` with `errors.code=NOT_ENABLED`. No info leak.
+
+**Next:** await approval for B2.2C.2d. v2 activation gated. Commit = **NOT YET**.
+
+## PHASE B — B2.2C.2b — V2 ERROR CODE CONTRACT FIX (2026-10-14)
+
+**Verdict: B2.2C.2b ERROR CODE FIX PASS.** Minimal, targeted change only. No macro, Exception Handler, v1, dashboard, legacy, creation/mail services, migrations, MySQL, or app activation modified. Temp SQLite created, guard passed, focused test passed, temp DB removed.
+
+### Root cause confirmation
+`response()->error($msg, 503, null, 'NOT_ENABLED')` drops `$code` because `$errors === null` ⇒ `$localizedErrors` remains `null`, so the `errors` block is never written. Empty array `[]` makes `$localizedErrors = []` (non-null), so `errors.code = 'NOT_ENABLED'` and `errors.details = []` are emitted.
+
+### Exact change (source)
+- `app/Http/Controllers/Api/Mobile/V2/RequestController.php:68`: `null` → `[]` for the `$errors` argument.
+- `tests/Feature/MobileV2WriteFailClosedTest.php:53`: replaced `errors:null` assertion with `errors.code = 'NOT_ENABLED'` and `errors.details = []`.
+
+Diff summary:
+```diff
+--- a/app/Http/Controllers/Api/Mobile/V2/RequestController.php
++++ b/app/Http/Controllers/Api/Mobile/V2/RequestController.php
+-        return response()->error('request_creation_not_enabled', 503, null, 'NOT_ENABLED');
++        return response()->error('request_creation_not_enabled', 503, [], 'NOT_ENABLED');
+```
+```diff
+--- a/tests/Feature/MobileV2WriteFailClosedTest.php
++++ b/tests/Feature/MobileV2WriteFailClosedTest.php
+-            ->assertJsonPath('errors', null);
++            ->assertJsonPath('errors.code', 'NOT_ENABLED')
++            ->assertJsonPath('errors.details', []);
+```
+
+### Response JSON (observed by test)
+`{"success":false,"message":"request_creation_not_enabled","data":null,"errors":{"code":"NOT_ENABLED","details":[]}}`
+
+### Test results (isolated)
+- Guard (`TestingEnvironmentGuardTest`): **OK** (2 tests, 13 assertions).
+- Focused (`MobileV2WriteFailClosedTest`): **OK** (3 tests, 15 assertions).
+New temp DB: `D:\OpenCodeTemp\opencode\yamak_b2_2c2b.sqlite` → removed (no `-wal`/`-shm`/`-journal`).
+Env: `APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE=<temp>`, `MAIL_MAILER=array`, `QUEUE_CONNECTION=sync`.
+
+### Fail-closed proof
+Still 503; `service_requests` count 0, `request_service` 0, `request_idempotency_keys` 0; no email sent; no activation of v2 creation.
+
+### Backward compatibility
+Only v2 store returns errors with code/details; 403/other code-dropping callers (shared macro) unchanged. Mobile client does not read `errors.code`. No pre-existing backend tests affected. Only the focused test updated as necessary.
+
+### Files changed
+- `app/Http/Controllers/Api/Mobile/V2/RequestController.php` (1 line)
+- `tests/Feature/MobileV2WriteFailClosedTest.php` (1 assertion block)
+
+Git: `57bf936` + 1 modified + 4 untracked C.2 test files (unchanged in this step except the focused test).
+
+**Next:** await approval for B2.2C.2c / B2.2C.2d. v2 POST remains `503 NOT_ENABLED`; v2 activation gated. Commit = **NOT YET**.
