@@ -544,6 +544,33 @@ route-param string→number coercion + NaN guard (parseVehicleId); external `Lin
 - Deferred: none outstanding from 3B/4B — the `ApiErrorRow` extraction (3B) and the `api-error.ts` sanitizer (4B) are both complete.
 - Baseline (unchanged, reported separately, deliberately not fixed): `src/components/app-tabs.web.tsx(27,38)` `Type '"/explore"'` TS2322 under `npx tsc --noEmit`. Git state at 6A review (2026-09-29): HEAD `f87aa1a feat(vehicle): implement vehicle details screen` — the user committed the 5C tree; `git status --short` CLEAN at pre-flight (the 5C modified/untracked list above is the historical 5C-delivery record). `src/app/index.tsx` remains byte-identical to the committed `/register` redirect. Commit status: 5C was committed as `f87aa1a`; STEP 6A is analysis-only and adds nothing. Learning review status: **COMPLETE**. `npx tsc --noEmit` = ONLY the baseline error; `git diff --check` clean; no dependency installed, no build, no commit (standing rule). NOTE: the live no-auth `POST /requests` probe (STEP 5A) created dev row `requests id=8` on the backend — STILL PRESENT, untouched by 5C (contact-only design created no request rows; count still 8), flagged for the user to purge.
 
+## PHASE B — B2.2C.4 — REQUEST CONTRACT CONSOLIDATION IMPLEMENTATION + VERIFICATION (2026-10-14)
+
+**Verdict: B2.2C.4 REQUEST CONTRACT CONSOLIDATION PASS.** Consolidated to single canonical contract. No DB migrations. No Mobile integration (B2.3 next). No commits.
+
+### Canonical contract
+- **Route:** `POST /api/mobile/v1/requests` (middleware `auth:sanctum`, `api.area:mobile`) — **only** create route.
+- **Identity:** derived from authenticated AppUser only; client-supplied `userId` removed from requirement (rejected if mismatched in old path; now not accepted).
+- **Payload (hardened):** `vehicleId` (int, required), `driverId` (int, required), `services` (array, min:1), `services.*` integers. **Header required:** `Idempotency-Key` (UUID v4).
+- **Eligibility:** `RequestEligibilityValidator` enforces vehicle exists + `work_status='online'` + `current_driver_id` set + driver matches vehicle's current driver + all services offered by vehicle via pivot.
+- **Creation:** `RequestCreationService` atomic create/replay with fingerprint `v1|u:{userId}|v:{vehicleId}|d:{driverId}|s:{sortedUniqueIntServiceIds}`, UUIDv4 key validation, same-key/same-payload replay, same-key/different-payload conflict (DomainException), 24h retention hint. Services cardinality = **multiple allowed** (array, min 1). Initial status = **server-controlled** `active`. Platform not accepted from client. Location not required by hardened contract. Notifications: **none** (mail removed in consolidated path; uses `MAIL_MAILER=array` in tests).
+
+### Implementation
+- `app/Http/Controllers/Api/Mobile/RequestController@store` rewired to use `RequestCreationService`; thin controller, maps exceptions to validation errors.
+- `app/Http/Controllers/Api/Mobile/V2/RequestController@store` → `abort(404)`. v2 GET routes remain (index/show) unchanged.
+- `tests/Feature/ApiRouteRegistrationTest`: still expects v1 POST only.
+- `tests/Feature/MobileV2WriteFailClosedTest`: updated (v2 POST → 404).
+- `tests/Feature/MobileParityTest`: updated to hardened payload + Idempotency-Key; mail assertion removed.
+
+### Verification (isolated SQLite)
+- Guard → OK.
+- `ApiRouteRegistrationTest` → OK (4/4, 93 assertions).
+- `MobileV2WriteFailClosedTest` → OK (3/3, 11 assertions).
+- `MobileParityTest` → OK (4/4, 97 assertions).
+
+### Impact
+Legacy app would need to migrate to hardened contract (pre-release). Dashboard unaffected. No schema/migration changes. No Mobile app changes. **Next:** B2.3 Mobile Service Selection + POST /requests. **Commit:** NOT YET.
+
 ## PHASE B — B2.2C.3 — REQUEST CONTRACT CONSOLIDATION ANALYSIS (2026-10-14)
 
 **Verdict: B2.2C.3 REQUEST CONTRACT CONSOLIDATION ANALYSIS PASS — RECOMMENDATION: CONSOLIDATE.** Analysis only; no implementation. Backend clean (HEAD d2a678c). Mobile clean (HEAD d6053f4, commit d6053f4 noted).
