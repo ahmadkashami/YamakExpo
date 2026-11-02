@@ -544,6 +544,57 @@ route-param string→number coercion + NaN guard (parseVehicleId); external `Lin
 - Deferred: none outstanding from 3B/4B — the `ApiErrorRow` extraction (3B) and the `api-error.ts` sanitizer (4B) are both complete.
 - Baseline (unchanged, reported separately, deliberately not fixed): `src/components/app-tabs.web.tsx(27,38)` `Type '"/explore"'` TS2322 under `npx tsc --noEmit`. Git state at 6A review (2026-09-29): HEAD `f87aa1a feat(vehicle): implement vehicle details screen` — the user committed the 5C tree; `git status --short` CLEAN at pre-flight (the 5C modified/untracked list above is the historical 5C-delivery record). `src/app/index.tsx` remains byte-identical to the committed `/register` redirect. Commit status: 5C was committed as `f87aa1a`; STEP 6A is analysis-only and adds nothing. Learning review status: **COMPLETE**. `npx tsc --noEmit` = ONLY the baseline error; `git diff --check` clean; no dependency installed, no build, no commit (standing rule). NOTE: the live no-auth `POST /requests` probe (STEP 5A) created dev row `requests id=8` on the backend — STILL PRESENT, untouched by 5C (contact-only design created no request rows; count still 8), flagged for the user to purge.
 
+## PHASE B — B2.2C.3 — REQUEST CONTRACT CONSOLIDATION ANALYSIS (2026-10-14)
+
+**Verdict: B2.2C.3 REQUEST CONTRACT CONSOLIDATION ANALYSIS PASS — RECOMMENDATION: CONSOLIDATE.** Analysis only; no implementation. Backend clean (HEAD d2a678c). Mobile clean (HEAD d6053f4, commit d6053f4 noted).
+
+### Route map (current)
+- `POST /api/mobile/v1/requests` — `App\Http\Controllers\Api\Mobile\RequestController@store`, middleware `['auth:sanctum','api.area:mobile']`. Also v1 has `index/show/update/destroy` on the same controller (some retained historically; index still registered in controller, routes show store only in the protected group as written).
+- `GET /api/mobile/v2/requests` / `GET /api/mobile/v2/requests/{serviceRequest}` — `App\Http\Controllers\Api\Mobile\V2\RequestController@index/show` (owner-scoped, 404 for cross-owner/missing/soft-deleted). `POST /api/mobile/v2/requests` — same controller `store()` returns `503 NOT_ENABLED` with `errors.code=NOT_ENABLED` (fail-closed, fixed in B2.2C.2b).
+
+### Controllers
+- **v1 `Api\Mobile\RequestController`**: validates `driverId,userId,services?,platform?,status?`; enforces ownership (`userId` must equal auth user → 403); loads `Driver` via `findOrFail`; creates `ServiceRequest` with `platform/status` defaults, sets `app_user_id` from auth, copies `company_id/branch_id` from driver; `services()->sync()` (nullable allowed); emails driver via `UserRequestOrderMail` if has email; returns `response()->success(dashboard resource)`. No eligibility checks (vehicle not validated, services not checked against vehicle), no location, no idempotency, no transactions shown.
+- **v2 `Api\Mobile\V2\RequestController`**: reads only; store fail-closed. Hardened services exist but not wired: `App\Services\RequestCreationService` (atomic create/replay, idempotency key UUIDv4, fingerprint `v1|u:{userId}|v:{vehicleId}|d:{driverId}|s:{sortedUniqueIntServiceIds}`, eligibility re-checked on create only, replay by key+owner+fingerprint, 24h retention hint), `App\Services\RequestEligibilityValidator` (vehicle exists+`work_status==='online'`+`current_driver_id` set; driver must match `vehicle.current_driver_id`; all services must be offered by vehicle via pivot), `App\Support\Idempotency\RequestFingerprint`, `App\Models\RequestIdempotencyKey`. `App\Exceptions\Handler` maps `ModelNotFoundException` to 404 for API (B2.2C.2c).
+
+### Why v2 was introduced
+Evidence from PROJECT_CONTEXT/routes/comments/tests: introduced as a **secure versioned mobile surface** (`routes/api_mobile.php:72-84`) for auth/ownership hardening and as a safe path while eligibility/idempotency hardening was built. Creation placed in B2.2B.1 scope as **fail-closed** until B2.2B.2/B2.2B.3 complete. No evidence v1 was published/broken in a way requiring a parallel live contract; appears to be a **safe development path (C)** rather than necessity for already-published clients.
+
+### Consumers
+- **New Expo app (`YamakExpoNew`)**: grep of src shows no `createRequest`, no POST to `/requests`, only incidental text. **B2.3 not started** per context. No create-call evidence.
+- **Legacy mobile (`yamak-mobile`)**: calls `POST /requests` via `AppApiPath.orderRequests = '/requests'` (relative to its base URL); targets v1 under `/api/mobile/v1/requests`. It is a **LEGACY FUNCTIONAL REFERENCE only** per PROJECT_CONTEXT (item 4) — functional/business truth, not source of truth for API contracts.
+- **Dashboard (`yamak-dashboard`)**: no references to mobile request-create endpoint found.
+- **Tests**: v1 route expected in `ApiRouteRegistrationTest` (fixed in B2.2C.2d). v2 auth/read tests exist; v2 store tested as fail-closed. Both v1 and v2 have contract/route tests.
+
+### Backward compatibility
+No repository evidence of a **published production client** requiring v2 or requiring the old v1 shape to remain frozen. App not yet published. Legacy is reference-only by project definition; technical breakage is possible if consolidated carelessly, but there is no evidence it is a "live supported production consumer" that mandates parallel contracts.
+
+### Versioning value
+**NO** real backward-compatibility problem demonstrated by evidence. The API-wide `/api/mobile/v1/` namespace is orthogonal to having separate **Request v1 vs Request v2 implementations**. v2 provides no operational create path now (fail-closed). The real need is **one hardened implementation**, not two request contracts.
+
+### Consolidation recommendation
+**CONSOLIDATE TO ONE REQUEST CONTRACT.**
+
+- **Canonical URI:** `POST /api/mobile/v1/requests` (matches API-wide v1 namespace and existing route conventions; `ApiRouteRegistrationTest` already expects it)
+- **Canonical implementation:** wire the hardened path (use `RequestCreationService` + `RequestEligibilityValidator`, fingerprint/idempotency per B2.2 contract) behind `Api\Mobile\RequestController@store` (or keep in V1 namespace), enforcing authenticated server identity only, eligibility (vehicle online + driver assigned + driver matches vehicle + services offered by vehicle), validation, consistent JSON errors, transactions, no arbitrary user impersonation.
+- **v2:** `POST /api/mobile/v2/requests` can be removed/deactivated once v1 uses hardened implementation. v2 reads (`GET /requests`, `GET /requests/{id}`) are owner-scoped and hardened; if not needed by any consumer, can be removed, otherwise keep only if justified by evidence. Current evidence shows no consumers of v2 reads either.
+
+### Security behaviors to preserve
+Auth via Sanctum + `api.area:mobile`; identity from authenticated user only; ownership checks; `ModelNotFoundException` → 404 for API (soft-deleted/missing/cross-owner indistinguishable); eligibility validation; idempotency with fingerprint; consistent envelope; no info leaks.
+
+### Gaps/mismatches to resolve on consolidation
+v1 currently lacks eligibility checks, location handling as per v2 contract, idempotency; it accepts `userId` from client but enforces ownership. Hardened contract (per B2.2) uses `vehicleId, driverId, services[]` with `Idempotency-Key` header (UUIDv4). Need to reconcile payload shape with what consumers expect (Legacy uses `driverId,userId,services,platform,status` per current v1; new app not integrated). Any payload change must be justified; if consolidating pre-release, prefer the hardened contract and update consumers/tests accordingly.
+
+### DB/migration impact
+None expected. Services/models/tables already exist (`request_idempotency_keys`, etc.). No schema changes needed.
+
+### Test impact (if consolidated)
+Keep meaningful behavioral tests; update route expectations if v2 removed; remove/rename version-specific duplicate tests that only test fail-closed v2 store; ensure parity tests still pass. `ApiRouteRegistrationTest` already expects v1 POST.
+
+### Suggested B2 sequence update
+If approved: B2.2C.3 (this analysis) → **B2.2C.4 Request Contract Consolidation Implementation + Verification** → B2.3 Mobile Service Selection + POST /requests → B2.4 Runtime Verification → B2.5 Code Review/Learning → B2.6 Design Review → B2.7 Approved UI → B2.8 Final Verification + Commit.
+
+**No implementation performed. Commit NOT YET.**
+
 ## Map — Approved UI Consistency Review (STEP 6A, read-only)
 
 **Verdict: MAP APPROVED UI CONSISTENCY REVIEW COMPLETE.** Implementation NOT STARTED. Only `PROJECT_CONTEXT.md` modified; no commit, no build, no dependency change.
