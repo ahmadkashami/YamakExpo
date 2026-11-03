@@ -16,9 +16,10 @@
 > `authenticate` / `signOut`), and **SecureStore** persistence (`src/auth/auth-storage.ts`, keys
 > `yamak_access_token` + `yamak_auth_user`).
 >
-> **Current status:** Register is **✅ DONE**; Email OTP is **🟡 PARTIAL**; Login, phone login,
-> forgot/reset password are **⏭ deferred to Phase F**; Google Sign-In / Firebase are
-> **⛔ PLANNED / NOT YET MIGRATED**.
+> **Current status (snapshot):** Register is **✅ DONE**; Email OTP is **🟡 PARTIAL** (resend +
+> countdown remain — its **successful transition into the authenticated shell is ✅ DONE in A2**);
+> Login, phone login, forgot/reset password are **⏭ deferred to B10 (Remaining Auth &
+> Integrations)**; Google Sign-In / Firebase are **⛔ PLANNED / NOT YET MIGRATED (B10)**.
 >
 > Reading rule: every *endpoint / payload / validation / error* entry is authoritative; every
 > *module path and state mechanism* is historical.
@@ -103,17 +104,18 @@ The legacy mechanism below is **history**. The rebuild's equivalent is:
 > ⛔ The legacy sequence below is **no longer valid**. Register and the session foundation are
 > already built, and the auth-adjacent screens are deferred until the app shell exists.
 
-**Current position:** Auth Context + SecureStore session (`EXPO-FOUND-006`), the auth-restore
-loading gate (`EXPO-FOUND-007`), and the **(app) session gate** (`YAMAK-SHELL-001`, Phase A) come
-first. Login and the rest of the auth set are **Phase F** — see `REBUILD-PLAN.md` §5/§6 and
-`13-SCREEN-BY-SCREEN-REBUILD-PLAN.md` §5. Social auth is **PLANNED / NOT YET MIGRATED**.
+**Current position:** The auth foundation is built — Auth Context + SecureStore session
+(`EXPO-FOUND-006`), the auth-restore loading gate (`EXPO-FOUND-007`), the **(app) session gate**
+(`YAMAK-SHELL-001`, Phase A1) and the **Email OTP → shell transition** (Phase A2). Login and the
+rest of the auth set are **B10** — see `REBUILD-PLAN.md` §5.2/§6. Social auth is
+**PLANNED / NOT YET MIGRATED (B10)**.
 
 <details>
 <summary>Historical CLI auth order (superseded — do not follow)</summary>
 
 1. `auth` Zustand store + AsyncStorage persist (Login step). → ✅ done as Context + SecureStore.
 2. `axios.config.ts` with base URL + bearer interceptor (first API step). → ✅ done as a `fetch` client.
-3. Login screen + `auth/login` (YAMAK-SCREEN-001). → ⏭ Phase F.
+3. Login screen + `auth/login` (YAMAK-SCREEN-001). → ⏭ B10.
 4. Register + OTP flow (subsequent screens). → ✅ Register done; Email OTP partial.
 5. Token gate `RootFun` (only after Login works). → ✅ done as `src/app/_layout.tsx` + `YAMAK-SHELL-001`.
 6. Social auth only when requested. → ⛔ PLANNED.

@@ -15,25 +15,42 @@
 
 **Conflict rule:** when documents conflict, **explicit user decisions plus current verified `PROJECT_CONTEXT.md` win.**
 
-**`docs/rebuild/12-rebuild-order.md` is NOT an execution authority.** Its own banner marks it
-**SUPERSEDED**, but its §2 still carries the old Phase A/B/C/D labels and an obsolete
-"⬅️ NEXT TASK = A1" marker. Read it as *history only*; never sequence work from it. Its stale
-internal labels are a known documentation-hygiene item — they do not change this plan, and this
-plan does not depend on that file.
+**`docs/rebuild/12-rebuild-order.md` is HISTORICAL / SUPERSEDED, not an execution authority.** It has
+now been cleaned: it carries a strong `HISTORICAL / SUPERSEDED EXECUTION ORDER — NON-CURRENT` banner,
+its old phase tables are relabeled as historical snapshots, and its stale `NEXT TASK` / `CURRENT
+NEXT PHASE` / `C2 blocked` markers have been corrected. Its `CURRENT ORDER` block and its §3/§4
+rules are also relabeled historical. **Read it as history only — never sequence work from it.** The
+current plan lives in this file (§5–§6) and in `PROJECT_CONTEXT.md`.
 
-### 0.1 Durable / remote plan copy
+### 0.2 Documentation role index (authority)
 
-The **latest pushed** `PROJECT_CONTEXT.md` + `docs/rebuild/REBUILD-PLAN.md` in
-`ahmadkashami/YamakExpo` are the **durable plan copy**. Before planning a new phase, re-read those
-two files from the remote — not from memory, not from a local scratch copy.
+> Every root file under `docs/rebuild/` plus `PROJECT_CONTEXT.md` has one role. When two files
+> disagree, the source-of-truth hierarchy in §0 wins.
 
-- No shadow plan files.
-- No alternative roadmap documents.
-- Local uncommitted edits are drafts until they are committed **and** pushed.
+| File | Role | Authority |
+|---|---|---|
+| `PROJECT_CONTEXT.md` (repo root) | Living record of verified implementation state + decisions | **Rank 1** — current state |
+| `REBUILD-PLAN.md` (this file) | Current execution strategy + roadmap + next step | **Rank 2** — plan |
+| `docs/rebuild/01-project-inventory.md` … `10-user-flows.md` | Legacy functional reference (endpoints, models, rules, flows) | Legacy reference only — never architecture |
+| `docs/rebuild/11-rebuild-backlog.md` | Supporting task ledger (status snapshot) | **Not** a sequencing authority |
+| `docs/rebuild/12-rebuild-order.md` | Historical execution order (A–G letters) | **Historical / superseded** — non-current |
+| `docs/rebuild/13-SCREEN-BY-SCREEN-REBUILD-PLAN.md` | Per-screen requirements + step detail | Screen requirements current; phase/status/order markers historical |
+| `docs/rebuild/14-REBUILD-READINESS-REPORT.md` | Point-in-time readiness snapshot (2026-10) | Historical snapshot — non-current |
+| `docs/rebuild/EXPO-MIGRATION.md` | One-time migration record (CLI → Expo) | Historical record — migration complete |
+| `docs/rebuild/PROJECT-STRUCTURE-LEARNING.md` | Educational folder-layout guide | Current structure reference |
+| `docs/rebuild/SECRETS-MIGRATION-CHECKLIST.md` | Secret/key location inventory | Operational — security rules binding |
+| `docs/rebuild/YAMAK-MOBILE-REBUILD-SPEC.md` | Product spec + feature list | Current product requirements |
+| `docs/rebuild/yamak-rebuild-notion-import.csv` | Notion import snapshot (format-sensitive) | Non-authoritative snapshot — do not rewrite |
+| `docs/rebuild/approve-ui/**`, `docs/rebuild/new-ui/**` | Design references / prototypes | Protected — do not modify |
 
----
+### 0.3 Current execution plan (single source of truth)
 
-## 1. Active project
+- **Current roadmap:** `REBUILD-PLAN.md` §5 (Phase B feature numbering B1…B11).
+- **Single next step:** `REBUILD-PLAN.md` §6 (**B2.5A — Request Lifecycle + Channel Analysis,
+  analysis only**).
+- **Verified state:** `PROJECT_CONTEXT.md` (CURRENT MASTER STATUS).
+- **Task ledger:** `11-rebuild-backlog.md` (supporting).
+- **Historical order:** `12-rebuild-order.md` (non-current).
 
 - **ACTIVE rebuild:** `D:\AALYASSIN\Projects\work\YamakProject\YamakExpoNew`
 - **SUPERSEDED rebuild:** `D:\AALYASSIN\Projects\work\YamakProject\YamakMobileNew`
@@ -127,7 +144,10 @@ Superseded decision**.
 ## 4. CURRENT IMPLEMENTATION STATUS — VERIFIED 2026-11-03
 
 > Only what is proven is recorded. Anything not listed here is NOT implemented.
-> Mobile baseline: branch `main`, HEAD **`253dc04`** (`feat(requests): add mobile service request workflow`).
+> Mobile baseline: branch `main`, HEAD **`91cf051`** (`docs: align Yamak roadmap with request tracking`).
+> (Previous recorded baseline `253dc04` — `feat(requests): add mobile service request workflow` — is
+> superseded by the roadmap-alignment commit; the feature commits `50e9c67` (B1) and `253dc04`
+> (B2.3) remain part of HEAD.)
 
 ### 4.1 FOUNDATION — DONE
 

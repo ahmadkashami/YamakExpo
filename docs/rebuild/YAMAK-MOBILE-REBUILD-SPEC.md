@@ -64,15 +64,17 @@ retain **"never pay anything in advance"**.
 
 ---
 
-## 3. Feature list (priority, current order)
+## 3. Feature list (status snapshot 2026-11-03 — sequencing lives in `REBUILD-PLAN.md` §5)
+
+> This table describes **what** exists and what remains. It is **not** the execution order.
 
 | Priority | Features |
 |---|---|
-| **P0 — current** | **Authenticated app shell** (session gate, Email OTP → shell, onboarding gate, layout, bottom tabs Home/Map/Profile, drawer if parity requires), **Profile Hub** |
-| **P0 — next** | Home screen assembly (services + adds + vehicles + ViewMap), All Vehicles, Vehicle Details request flow (`POST /requests`) |
-| **P1** | Edit Profile, My Cars, Favorites, Notifications |
-| **P2** | Privacy & policy, Contact Us, Join Us, No Network |
-| **P3 / deferred** | Login, phone auth, password reset, social auth, Freshchat, Sentry, alternate icons, deep links, About Yamak |
+| **DONE** | Authenticated app shell (session gate, Email OTP → shell, onboarding, layout, Home/Map/Profile tabs, drawer), Home assembly, **All Vehicles**, Vehicle Details, tracked **request flow** (`POST /api/mobile/v1/requests`), **Profile Hub + logout**, Register |
+| **IN PROGRESS** | **B2** tracked-request extension — B2.5A analysis (lifecycle + channel), then B2.5B–D coordinates/channel/status, B2.6–B2.8, then **B3 My Requests** |
+| **NEXT (P1)** | Edit Profile (B4), My Cars (B5), Favorites (B6), Notifications (B7) |
+| **P2** | Privacy & policy / Contact Us / Join Us (B8), No Network (B9) |
+| **P3 / deferred** | Login, phone auth, password reset, social auth, Freshchat, Sentry, alternate icons, deep links (B10) |
 | **P3 / optional stubs** | Search, Settings, Messages, Email validations (legacy stubs — decide later) |
 | **PLANNED ONLY** | About Yamak app (user directive: do not implement) |
 
@@ -138,14 +140,22 @@ These may appear only under headings marked **Historical / Legacy / Superseded**
 
 ## 7. Docs index
 
-**Current:** `PROJECT_CONTEXT.md` (verified state) · `REBUILD-PLAN.md` (execution strategy +
-source-of-truth hierarchy) · `12-rebuild-order.md` (current phases) ·
-`13-SCREEN-BY-SCREEN-REBUILD-PLAN.md` (per-screen steps) · `14-REBUILD-READINESS-REPORT.md` ·
-`EXPO-MIGRATION.md` · `PROJECT-STRUCTURE-LEARNING.md` · `SECRETS-MIGRATION-CHECKLIST.md` · this spec.
+**Current authority (in order):** explicit user decisions → `PROJECT_CONTEXT.md` (verified state) →
+`REBUILD-PLAN.md` (execution strategy, §5–§6 roadmap + next step, source-of-truth hierarchy) → this
+spec → supporting docs.
+
+**Current supporting docs:** `13-SCREEN-BY-SCREEN-REBUILD-PLAN.md` (screen requirements only — its
+phase/status/order markers are historical) · `11-rebuild-backlog.md` (task ledger, not a sequencing
+authority) · `EXPO-MIGRATION.md` (historical migration record) ·
+`PROJECT-STRUCTURE-LEARNING.md` · `SECRETS-MIGRATION-CHECKLIST.md` · this spec.
+
+**Historical / superseded:** `12-rebuild-order.md` (old A–G execution order) ·
+`14-REBUILD-READINESS-REPORT.md` (2026-10 point-in-time snapshot) ·
+`yamak-rebuild-notion-import.csv` (format-sensitive Notion import snapshot).
 
 **Legacy reference (behavior, not architecture):** `01` inventory · `02` screens · `03` navigation ·
 `04` APIs · `05` data models · `06` auth · `07` assets · `08` env/config · `09` business rules ·
-`10` user flows · `11` backlog.
+`10` user flows.
 
 **Design:** `new-ui/` (proposed) · `approve-ui/` (approved references).
 
@@ -154,8 +164,10 @@ source-of-truth hierarchy) · `12-rebuild-order.md` (current phases) ·
 ## 8. Explicit out-of-scope
 
 - Rebuilding or redesigning the backend.
-- Rewriting backend behavior (e.g. the public `POST /requests` endpoint and its silently-dropped
-  `payload`) — these are facts raised for the backend owner, not frontend changes.
+- Rewriting backend behavior. The **canonical** request contract is the authenticated
+  `POST /api/mobile/v1/requests` (shipped B2.3). The legacy public `POST /requests` and its
+  silently-dropped `payload` are historical facts raised for the backend owner, not frontend changes.
+  Any lifecycle/channel reconciliation is analysis only in **B2.5A**.
 - Porting legacy stubs (Form/FormAuth, custom-IP modal, duplicate store, old themes).
 - Reintroducing React Navigation / Zustand / Axios / `react-native-config` / bare-RN architecture.
 - Hand-editing generated `ios/` or `android/` directories.

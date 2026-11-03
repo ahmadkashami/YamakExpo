@@ -7,8 +7,12 @@
 > Every task maps to evidence in `02-screen-inventory.md`, `04-api-catalog.md`, `06-authentication.md`,
 > `09-business-rules.md`. Priorities: P0 (required, unlocks app), P1 (required), P2 (nice-to-have),
 > P3 (legacy/stub — decide later).
-> Current execution order: `REBUILD-PLAN.md` §5 / `12-rebuild-order.md` §2.
-> Historical task IDs are preserved so completed work is never erased.
+>
+> **Status refreshed 2026-11-03 — this file is a SUPPORTING task ledger, not the plan.**
+> Current execution order and the single next step live in `REBUILD-PLAN.md` §5–§6; verified state
+> lives in `PROJECT_CONTEXT.md`. `12-rebuild-order.md` is HISTORICAL / SUPERSEDED.
+> Historical task IDs are preserved so completed work is never erased. Where this file states a
+> status, that status is a snapshot of the evidence, not an instruction to sequence work from it.
 
 ---
 
@@ -62,26 +66,28 @@
 
 ---
 
-## 2. APP SHELL tasks — **CURRENT NEXT PHASE**
+## 2. APP SHELL tasks — ✅ PHASE A CLOSED (status refreshed 2026-11-03)
+
+> Phase A (A1–A7) is **CLOSED**. The rows below keep their historical IDs and now carry the closure
+> status. Do not re-open Phase A work.
 
 | ID | Phase | Task | Priority | Depends | Status |
 |---|---|---|---|---|---|
 | SHELL-001 | A1 | **Session gate for the `(app)` group** (`src/app/(app)/_layout.tsx`) | P0 | FOUND-007 | ✅ **DONE** — delivered & runtime-verified 2026-10-02 (also gated `index.tsx` + `register.tsx`) |
-| SHELL-002 | A2 | Natural **Email OTP → authenticated shell** transition | P0 | SHELL-001 | ⏳ **TODO — ⬅️ NEXT TASK** (UI exists; success is currently a dead end) |
-| SHELL-003 | — | Authenticated Expo Router layout (hosts shared providers) | P0 | SHELL-001 | 🟡 **PARTIAL** — `(app)/_layout.tsx` hosts `UserLocationProvider` + `Slot` and now carries the A1 gate; no tabs/drawer navigator yet |
-| SHELL-005 | A3 | **Home tab route** `(app)/(tabs)/index.tsx` — mount the four verified sections | P0 | SHELL-001 | ⏳ **TODO** (sections built; nothing mounts them) |
-| SHELL-007 | A4 | **Profile Hub tab** `(app)/(tabs)/profile.tsx` + **logout** | P0 | SHELL-001 | ⏳ **TODO — ⛔ GATES `017` / `018`** |
-| SHELL-009 | A5 | Bottom-tabs layout `(app)/(tabs)/_layout.tsx` | P0 | SHELL-005, SHELL-007 | ⏳ **TODO** |
-| SHELL-006 | A5 | Bottom tabs: **Map** (the screen is already in the tabs group at `(app)/(tabs)/map.tsx`; it becomes reachable once the tabs layout exists) | P0 | SHELL-009 | ⏳ **TODO** (screen ✅ done) |
-| SHELL-010 | B1 | Wire the Map app-bar ☰ Menu / 🔔 Notifications buttons (currently inert) | P2 | SHELL-009, YAMAK-SCREEN-015 | ⏳ **TODO** |
-| SHELL-004 | A6 | First-launch **Onboarding** gate (shows once, **inside** the authenticated area) | P0 | SHELL-009 | ⏳ **TODO** |
-| SHELL-008 | A7 | Drawer / side menu — **only if legacy parity requires** | P1 | SHELL-009 | ⏳ **TODO (conditional — do not build without an explicit decision)** |
+| SHELL-002 | A2 | Natural **Email OTP → authenticated shell** transition | P0 | SHELL-001 | ✅ **DONE** — delivered & runtime-verified 2026-10-02 (no dead end) |
+| SHELL-003 | — | Authenticated Expo Router layout (hosts shared providers) | P0 | SHELL-001 | ✅ **DONE** — `(app)/_layout.tsx` hosts `UserLocationProvider` + tabs + drawer |
+| SHELL-005 | A3 | **Home tab route** `(app)/(tabs)/home.tsx` — mounts the four verified sections | P0 | SHELL-001 | ✅ **DONE** |
+| SHELL-007 | A4 | **Profile Hub tab** + **logout** | P0 | SHELL-001 | ✅ **DONE** |
+| SHELL-009 | A5 | Bottom-tabs layout `(app)/(tabs)/_layout.tsx` | P0 | SHELL-005, SHELL-007 | ✅ **DONE** |
+| SHELL-006 | A5 | Bottom tabs: **Map** | P0 | SHELL-009 | ✅ **DONE** |
+| SHELL-010 | B1 (old) | Wire the Map app-bar ☰ Menu / 🔔 Notifications buttons | P2 | SHELL-009, YAMAK-SCREEN-015 | ☰ **DONE** via A7 drawer; 🔔 **moved to B7 Notifications** (still inert today) |
+| SHELL-004 | A6 | First-launch **Onboarding** gate (shows once, **inside** the authenticated area) | P0 | SHELL-009 | ✅ **DONE** — backend-managed, runtime-verified (A6.2–A6.5) |
+| SHELL-008 | A7 | Drawer / side menu | P1 | SHELL-009 | ✅ **DONE** — approved UI, runtime-verified (A7.2–A7.8) |
 
-> **Dependency rules (enforced):**
-> 1. No route under `(app)` is safe before SHELL-001.
-> 2. **`YAMAK-SCREEN-016` Profile Hub (SHELL-007) must be DONE before `017` Edit Profile and `018`
->    My Cars** — those screens are reached through the hub, and the hub is the only logout path.
-> 3. The tabs layout (SHELL-009) needs all three destinations to exist.
+> **Historical dependency rules — all satisfied by the Phase A closure.** They are kept because they
+> explain why the order was safe (no route under `(app)` before SHELL-001; Profile Hub before the
+> profile extensions; tabs only after all three destinations existed).
+> **Current dependency rules:** `REBUILD-PLAN.md` §5.7.
 
 ---
 
@@ -91,13 +97,13 @@
 |---|---|---|---|---|---|---|
 | YAMAK-SCREEN-002 | Register screen (name/email/phone/terms + signup) | P0 | FOUND-006 | `auth/signup` | register | ✅ **DONE** |
 | YAMAK-SCREEN-005 | Email OTP verification (after signup) | P0 | 002, SHELL-002 | `auth/verify-email` | email-otp | 🟡 **PARTIAL** — UI + verification done; **does not enter the authenticated shell** |
-| YAMAK-SCREEN-001 | Login screen (email+password, validation, submit, token persist) | P0 | SHELL-003 | `auth/login` | login | ⏳ **TODO — DEFERRED (Phase F)** |
-| YAMAK-SCREEN-003 | Phone login (number + country code) | P0 | SHELL-003 | `auth/sendCode` | auth (phone) | ⏳ **TODO — DEFERRED (Phase F)** |
-| YAMAK-SCREEN-004 | Phone OTP verification + resend | P0 | 003 | `auth/checkCode`, `app-users/profile` | otpVerification | ⏳ **TODO — DEFERRED (Phase F)** |
-| YAMAK-SCREEN-006 | Reset-password OTP | P0 | 008 | `auth/check-reset-password` | resetOtp | ⏳ **TODO — DEFERRED (Phase F)** |
-| YAMAK-SCREEN-007 | New password (confirm match) | P0 | 006 | `auth/reset-password` | newPassword | ⏳ **TODO — DEFERRED (Phase F)** |
-| YAMAK-SCREEN-008 | Forgot-password email form | P0 | 001 | `auth/send-reset-password` | forgotPassword | ⏳ **TODO — DEFERRED (Phase F)** |
-| — | Social login buttons (Google / Apple) | P1 | NATIVE-001/002 | `auth/login-social` | — | ⏳ **TODO — DEFERRED (Phase F)** |
+| YAMAK-SCREEN-001 | Login screen (email+password, validation, submit, token persist) | P0 | SHELL-003 | `auth/login` | login | ⏳ **TODO — DEFERRED (B10 Remaining Auth/Integrations)** |
+| YAMAK-SCREEN-003 | Phone login (number + country code) | P0 | SHELL-003 | `auth/sendCode` | auth (phone) | ⏳ **TODO — DEFERRED (B10)** |
+| YAMAK-SCREEN-004 | Phone OTP verification + resend | P0 | 003 | `auth/checkCode`, `app-users/profile` | otpVerification | ⏳ **TODO — DEFERRED (B10)** |
+| YAMAK-SCREEN-006 | Reset-password OTP | P0 | 008 | `auth/check-reset-password` | resetOtp | ⏳ **TODO — DEFERRED (B10)** |
+| YAMAK-SCREEN-007 | New password (confirm match) | P0 | 006 | `auth/reset-password` | newPassword | ⏳ **TODO — DEFERRED (B10)** |
+| YAMAK-SCREEN-008 | Forgot-password email form | P0 | 001 | `auth/send-reset-password` | forgotPassword | ⏳ **TODO — DEFERRED (B10)** |
+| — | Social login buttons (Google / Apple) | P1 | NATIVE-001/002 | `auth/login-social` | — | ⏳ **TODO — DEFERRED (B10)** |
 
 ---
 
@@ -109,17 +115,17 @@
 | YAMAK-SCREEN-010b | Adds carousel (`GET /adds`, external link open) | P0 | FOUND-005 | `adds` | — | ✅ **DONE** |
 | YAMAK-SCREEN-010c | Location-aware vehicles (`GET /vehicles`, Haversine km) | P0 | FOUND-011 (location) | `vehicles` | — | ✅ **DONE** |
 | YAMAK-SCREEN-010d | Approved Home radar card / ViewMap CTA → `/map` | P1 | MAP-001 | — | — | ✅ **DONE** |
-| YAMAK-SCREEN-010 | **Home screen assembly** (header + all four sections) | P0 | 010a/b/c/d, SHELL-005 | `services`,`adds`,`vehicles` | Home | ⏳ **TODO (Phase A3)** — 🛑 **there is no Home ROUTE today**; the four sections exist and are verified but nothing mounts them |
-| YAMAK-SCREEN-011 | All vehicles list (pagination, filters, search) | P1 | YAMAK-SCREEN-010 | `vehicles` | AllVehicles | ⏳ **TODO (Phase C1)** |
+| YAMAK-SCREEN-010 | **Home screen assembly** (header + all four sections) | P0 | 010a/b/c/d, SHELL-005 | `services`,`adds`,`vehicles` | Home | ✅ **DONE** — Phase A3 |
+| YAMAK-SCREEN-011 | All vehicles list (pagination, filters, search) | P1 | YAMAK-SCREEN-010 | `vehicles` | AllVehicles | ✅ **DONE** — **B1 CLOSED**, commit `50e9c67` |
 | YAMAK-SCREEN-012a | Vehicle Details screen (image, provider, services, safety, other vehicles, contact) | P0 | FOUND-005 | `vehicles/:id` | `/vehicle/[id]` | ✅ **DONE** |
-| YAMAK-SCREEN-012b | Vehicle Details **request flow** — services picker + **`POST /requests`** | P0 | 012a, SHELL-003 (auth decision) | `requests` | — | ⏳ **TODO (Phase C2)** — blocked on the backend/auth decision |
+| YAMAK-SCREEN-012b | Vehicle Details **request flow** — services picker + **`POST /api/mobile/v1/requests`** | P0 | 012a, SHELL-003 (auth decision) | `requests` | — | ✅ **DONE** — **B2.3**, commit `253dc04`; idempotency + 409 in B2.4C. **Coordinates/channel/lifecycle are now mandatory and NOT yet implemented → B2.5B–D** (see `REQ-DEC-001…012`) |
 | YAMAK-SCREEN-013 | Map screen (markers, service chips, distance, controls, marker → details) | P1 | FOUND-011 | `services/{id}/vehicles` | Map | ✅ **DONE** |
-| YAMAK-SCREEN-016 | **Profile hub** (user info + menu + logout) | P0 | SHELL-001, SHELL-007 | `app-users/profile` | Profile | ⏳ **TODO (Phase A4)** — ⛔ **must be DONE before `017` / `018`**; only logout path |
-| YAMAK-SCREEN-017 | Edit profile (form + map location + save) | P1 | ⛔ **YAMAK-SCREEN-016** | `app-users/profile` (PATCH) | EditProfile | ⏳ **TODO (Phase D1)** — ⛔ **NOT the next screen** |
-| YAMAK-SCREEN-018 | My cars (list/add/delete) | P1 | ⛔ **YAMAK-SCREEN-016** | `user-cars` | MyCar | ⏳ **TODO (Phase D2)** — ⛔ blocked |
-| YAMAK-SCREEN-014 | Favorites (local ids, cards, empty state) | P1 | YAMAK-SCREEN-016 | — (local) | Favorites | ⏳ **TODO (Phase B2)** — no backend favorites routes exist |
-| YAMAK-SCREEN-015 | Notifications (paginated list) | P1 | YAMAK-SCREEN-016 | `user-notifications/mine` | Notifications | ⏳ **TODO (Phase B3)** — read side only; push is Phase F |
-| YAMAK-SCREEN-009 | Onboarding (carousel, language picker, first-launch gate) | P0 | SHELL-009 | `app-setting` (opt) | Onboarding | ⏳ **TODO (Phase A6)** — post-auth, not pre-auth |
+| YAMAK-SCREEN-016 | **Profile hub** (user info + menu + logout) | P0 | SHELL-001, SHELL-007 | `app-users/profile` | Profile | ✅ **DONE** — Phase A4 |
+| YAMAK-SCREEN-017 | Edit profile (form + map location + save) | P1 | YAMAK-SCREEN-016 ✅ | `app-users/profile` (PATCH) | EditProfile | ⏳ **TODO (B4)** |
+| YAMAK-SCREEN-018 | My cars (list/add/delete) | P1 | YAMAK-SCREEN-016 ✅ | `user-cars` | MyCar | ⏳ **TODO (B5)** |
+| YAMAK-SCREEN-014 | Favorites (local ids, cards, empty state) | P1 | YAMAK-SCREEN-016 ✅ | — (local) | Favorites | ⏳ **TODO — B6** — no backend favorites routes exist |
+| YAMAK-SCREEN-015 | Notifications (paginated list) | P1 | YAMAK-SCREEN-016 ✅ | `user-notifications/mine` | Notifications | ⏳ **TODO — B7** — read side + FCM together |
+| YAMAK-SCREEN-009 | Onboarding (carousel, language picker, first-launch gate) | P0 | SHELL-009 | `app-setting` (opt) | Onboarding | ✅ **DONE** — Phase A6 (backend-managed, runtime-verified) |
 
 ---
 
@@ -127,18 +133,18 @@
 
 | ID | Task | Priority | Depends | Status |
 |---|---|---|---|---|
-| YAMAK-SCREEN-020 | Privacy & policy | P1 | YAMAK-SCREEN-016 | ⏳ **TODO (Phase E1)** |
-| YAMAK-SCREEN-019 | Contact us (phone/mail/WhatsApp) | P1 | YAMAK-SCREEN-016 | ⏳ **TODO (Phase E2)** |
-| YAMAK-SCREEN-021 | Join us | P2 | YAMAK-SCREEN-016 | ⏳ **TODO (Phase E3)** |
-| YAMAK-SCREEN-024 | No-network screen + retry | P1 | FOUND-005 | ⏳ **TODO (Phase E4)** |
-| YAMAK-SCREEN-023 | Freshchat support chat | P2 | NATIVE-006, YAMAK-SCREEN-016 | ⏳ **TODO (Phase E5)** — Freshchat **NOT YET MIGRATED** |
+| YAMAK-SCREEN-020 | Privacy & policy | P1 | YAMAK-SCREEN-016 ✅ | ⏳ **TODO (B8)** |
+| YAMAK-SCREEN-019 | Contact us (phone/mail/WhatsApp) | P1 | YAMAK-SCREEN-016 ✅ | ⏳ **TODO (B8)** |
+| YAMAK-SCREEN-021 | Join us | P2 | YAMAK-SCREEN-016 ✅ | ⏳ **TODO (B8)** |
+| YAMAK-SCREEN-024 | No-network screen + retry | P1 | FOUND-005 | ⏳ **TODO (B9)** |
+| YAMAK-SCREEN-023 | Freshchat support chat | P2 | NATIVE-006, YAMAK-SCREEN-016 ✅ | ⏳ **TODO (B10)** — Freshchat **NOT YET MIGRATED** |
 | YAMAK-SCREEN-022 | About Yamak app | P3 | YAMAK-SCREEN-016 | ⏭ **PLANNED ONLY** — user directive: do not implement |
 | YAMAK-SCREEN-025 | Settings (legacy stub) | P3 | YAMAK-SCREEN-016 | ⏳ optional |
 | YAMAK-SCREEN-026 | Messages (legacy stub) | P3 | YAMAK-SCREEN-016 | ⏳ optional |
 | YAMAK-SCREEN-027 | Search (legacy stub → full) | P3 | YAMAK-SCREEN-010 | ⏳ optional |
 | YAMAK-SCREEN-028 | Email validations (legacy stub) | P3 | YAMAK-SCREEN-002 | ⏳ optional |
 | YAMAK-SCREEN-029 | Form / FormAuth | P3 | — | ❌ **SKIP** — legacy duplicates |
-| YAMAK-SCREEN-030 | **Legacy parity audit** — compare every legacy screen/route/action/API/rule | P0 | all above | ⏳ **TODO (Phase G1)** |
+| YAMAK-SCREEN-030 | **Legacy parity audit** — compare every legacy screen/route/action/API/rule | P0 | all above | ⏳ **TODO (B11)** |
 
 ---
 
@@ -151,13 +157,13 @@
 | YAMAK-NATIVE-013 | Google basemap verified on a native **Development Build** | P0 | — | ✅ **DONE** | Android dev build verified |
 | YAMAK-NATIVE-014 | `expo-location` + location permissions | P0 | — | ✅ **DONE** | Single shared provider |
 | YAMAK-NATIVE-003 | Firebase config (`google-services.json` / `GoogleService-Info.plist`) | P0 | FOUND-003 | ⏳ **PLANNED / NOT YET MIGRATED** | Regenerate for `com.yamak.assist` |
-| YAMAK-NATIVE-004 | FCM push (foreground/background/quit + topic + token → profile) | P1 | NATIVE-003, SHELL-003 | ⏳ **PLANNED / NOT YET MIGRATED** | Confirm token field name with the backend |
-| YAMAK-NATIVE-001 | Google Sign-In | P1 | — | ⏳ **PLANNED / NOT YET MIGRATED** | Expo config mechanism |
-| YAMAK-NATIVE-002 | Apple Sign-In (iOS) | P1 | — | ⏳ **PLANNED / NOT YET MIGRATED** | Expo config mechanism |
-| YAMAK-NATIVE-006 | Freshchat SDK init | P2 | — | ⏳ **PLANNED / NOT YET MIGRATED** | |
-| YAMAK-NATIVE-007 | Sentry | P2 | — | ⏳ **PLANNED / NOT YET MIGRATED** | |
-| YAMAK-NATIVE-008 | Alternate app icons | P2 | — | ⏳ **TODO** | |
-| YAMAK-NATIVE-009 | Deep links (`yamak.page.link` share link + scheme) | P1 | SHELL-003 | ⏳ **TODO** | Vehicle Details share uses `yamak.page.link/app` |
+| YAMAK-NATIVE-004 | FCM push (foreground/background/quit + topic + token → profile) | P1 | NATIVE-003, SHELL-003 | ⏳ **PLANNED / NOT YET MIGRATED — B7** | Confirm token field name with the backend |
+| YAMAK-NATIVE-001 | Google Sign-In | P1 | — | ⏳ **PLANNED / NOT YET MIGRATED — B10** | Expo config mechanism |
+| YAMAK-NATIVE-002 | Apple Sign-In (iOS) | P1 | — | ⏳ **PLANNED / NOT YET MIGRATED — B10** | Expo config mechanism |
+| YAMAK-NATIVE-006 | Freshchat SDK init | P2 | — | ⏳ **PLANNED / NOT YET MIGRATED — B10** | |
+| YAMAK-NATIVE-007 | Sentry | P2 | — | ⏳ **PLANNED / NOT YET MIGRATED — B10** | |
+| YAMAK-NATIVE-008 | Alternate app icons | P2 | — | ⏳ **TODO — B10** | |
+| YAMAK-NATIVE-009 | Deep links (`yamak.page.link` share link + scheme) | P1 | SHELL-003 | ⏳ **TODO — B10** | Vehicle Details share uses `yamak.page.link/app` |
 | YAMAK-NATIVE-010 | Icon/font linking | P0 | — | ⏭ **SUPERSEDED** | Expo/vector-icons handles this |
 
 ---
@@ -188,7 +194,7 @@
 
 ---
 
-## 9. Totals (current)
+## 9. Totals (snapshot 2026-11-03)
 
 - Foundation tasks: 12
 - App shell tasks: 8
@@ -198,7 +204,12 @@
 - Native/integration tasks: 14
 - Cross-cutting UI tasks: 8
 - Housekeeping: 4
-- **Total: ~80 tracked tasks** — 14 done, 9 partial, the rest TODO
+- **Total: ~80 tracked tasks**
+
+> Status counts: Foundation 10 done / 2 partial; App shell 8 done / 1 partially superseded
+> (🔔 folded into B7); Data/screens: Home, All Vehicles, Vehicle Details, request flow, Map,
+> Profile Hub, Onboarding done — the B2 request-tracking extension and B3 My Requests remain open.
+> This ledger is **not** a progress authority; `PROJECT_CONTEXT.md` is.
 
 > Remaining P3 / SKIP items (Settings, Messages, Search, EmailValidations, Form/FormAuth, custom-IP
 > modal) require a user decision during the rebuild; default = optional or skip.

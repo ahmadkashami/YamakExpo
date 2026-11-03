@@ -44,15 +44,25 @@ Current tree:
 
 ```
 src/app/
-├─ _layout.tsx                 ← ROOT NAVIGATOR (Stack) + AuthProvider + splash gate
-├─ index.tsx                   ← "/" — A1 STARTUP GATE: loading → neutral surface; authenticated → /map; else → /register
-├─ register.tsx                ← "/register" (A1: redirects away when authenticated)
-├─ email-otp.tsx               ← "/email-otp" (unguarded on purpose — A2 owns its success transition)
-└─ (app)/                      ← route group: authenticated area (no "/(app)" in the URL)
-   ├─ _layout.tsx              ← A1 GATE + UserLocationProvider + <Slot /> (non-authenticated → /register)
-   ├─ (tabs)/map.tsx           ← "/map" — bottom-tab member (tabs group)
-   └─ vehicle/[id].tsx         ← "/vehicle/:id" — dynamic segment, above the tabs
+├─ _layout.tsx                    ← ROOT NAVIGATOR (Stack) + AuthProvider + splash gate
+├─ index.tsx                      ← "/" — startup gate: loading → neutral; authenticated → (app); else → /register
+├─ register.tsx                   ← "/register" (redirects away when authenticated)
+├─ email-otp.tsx                  ← "/email-otp" (ungated on purpose — A2 owns its success transition)
+└─ (app)/                         ← route group: authenticated area (no "/(app)" in the URL)
+   ├─ _layout.tsx                 ← A1 gate + UserLocationProvider + drawer
+   ├─ onboarding.tsx              ← "/onboarding" — first-launch gate (A6, backend-managed)
+   ├─ vehicles.tsx                ← "/vehicles" — All Vehicles list (B1)
+   ├─ (drawer)/_layout.tsx        ← drawer navigator (A7)
+   │  └─ (tabs)/_layout.tsx       ← bottom tabs (A5): Home · Map · Profile
+   │     ├─ home.tsx              ← "/home" — Home dashboard (A3)
+   │     ├─ map.tsx               ← "/map"
+   │     └─ profile.tsx           ← "/profile" — Profile Hub + logout (A4)
+   └─ vehicle/[id].tsx            ← "/vehicle/:id" — dynamic segment, above the tabs
 ```
+
+> Historical note: the tabs originally sat directly at `(app)/(tabs)/`; the drawer was added above
+> them in A7, so the current tree is `(app)/(drawer)/(tabs)/`. Both are route groups, so URLs are
+> unchanged.
 
 **Key Expo Router concepts:**
 
@@ -72,10 +82,11 @@ exists because its file exists; navigating to it means navigating to its URL.
 
 ### `src/components/` — REUSERABLE UI
 
-- `auth/` → auth-screen blocks (`AuthBrandHeader`, `CountrySelectorModal`)
+- `auth/` → auth-screen blocks (`AuthBrandHeader`, `AuthGateLoading`, `CountrySelectorModal`)
 - `home/` → `ServicesList`, `AddsCarousel`, `VehiclesList`, `ViewMap`, `ApiErrorRow`, …
 - `map/` → `MapMarkers`, `MapServiceChips`, `MapControls`, `MicroBanner`, `EnableLocationCard`
 - `vehicle-details/` → `ContactBar`, `DriverAvatar`, `SafetyCard`, `VehicleStatusPill`, `icons`
+- `navigation/` → `AppDrawerContent`, `TabIcons`
 
 **Learning point:** if a UI block is used twice, move it here. Purely presentational blocks with no
 route knowledge live here — never in `src/app/`.
@@ -86,7 +97,8 @@ route knowledge live here — never in `src/app/`.
   SecureStore directly via `getAccessToken()`.
 - `config.ts` → base URL from `EXPO_PUBLIC_API_URL`.
 - `api-error.ts` → typed `ApiError` + a message **sanitizer** (never leak raw backend/debug bodies).
-- `services.ts` · `adds.ts` · `vehicles.ts` · `auth.ts` → one module per resource.
+- `services.ts` · `adds.ts` · `vehicles.ts` · `auth.ts` · `onboarding.ts` · `requests.ts` → one
+  module per resource. `requests.ts` is the tracked-request module (`POST /api/mobile/v1/requests`).
 - `index.ts` → barrel re-export.
 
 **Learning point:** screens never call `fetch` directly; they call feature functions.
@@ -110,7 +122,8 @@ call `expo-location` directly.
 
 ### `src/hooks/` — REUSIBLE FEATURE LOGIC
 
-- `use-services.ts` · `use-adds.ts` · `use-vehicles.ts` · `use-map-vehicles.ts` · `use-vehicle-details.ts`
+- `use-services.ts` · `use-adds.ts` · `use-vehicles.ts` · `use-paginated-vehicles.ts` ·
+  `use-map-vehicles.ts` · `use-vehicle-details.ts` · `use-create-request.ts`
 
 **Learning point:** hooks bundle fetch + loading/error/refetch + stale-response guarding. Hook-local
 state is the default; do not introduce a global store unless a decision demands one.
@@ -193,6 +206,8 @@ Created by `npx expo prebuild` / `npx expo run:android` (Continuous Native Gener
 | `src/location/` + `src/utils/distance.ts` | Location-aware vehicles (already done) |
 | `src/components/map/` | Map slice (already done) |
 | `src/components/vehicle-details/` | Vehicle Details (already done) |
+| `src/components/navigation/` | Drawer + tab icons (A7, already done) |
+| `src/api/requests.ts` + `src/hooks/use-create-request.ts` | Tracked request flow (B2.3, already done) |
 | `src/data/` | Country list for Register (already done) |
 | i18n / language system | **not yet built** — required for EN/AR parity |
 | notifications / services folders | Native integrations, as dependencies require |

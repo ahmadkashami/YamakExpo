@@ -20,13 +20,29 @@
 > labelled `HISTORICAL CLI PLAN` / `Legacy implementation` / `Superseded decision`.
 >
 > **Source-of-truth hierarchy:** see `REBUILD-PLAN.md` §0. **Current execution order:**
-> `REBUILD-PLAN.md` §5 (phases A–G). **Verified current state:** `PROJECT_CONTEXT.md`.
+> `REBUILD-PLAN.md` §5. **The single next step:** `REBUILD-PLAN.md` §6. **Verified current state:**
+> `PROJECT_CONTEXT.md`.
 >
-> **Master rule for this plan: the goal is FUNCTIONAL PARITY with legacy Yamak — not identical
-> architecture.**
+> ## ⚠️ WHAT IS CURRENT IN THIS FILE, AND WHAT IS NOT
 >
-> THE MASTER REBUILD DOCUMENT.
+> - **CURRENT:** each screen's *requirements* — legacy evidence, target behavior, per-step
+>   implementation detail, dependencies, business rules, and design references. Those remain valid
+>   unless a later approved decision supersedes them (notably the B2 request-tracking decisions,
+>   `REQ-DEC-001…012`).
+> - **HISTORICAL / SUPERSEDED:** every phase letter (`Phase A/B/C/D/E/F/G`), every
+>   `⏭ NOT STARTED — Phase X` label, every `NEXT` / `CURRENT PHASE` marker, and the §12 "final order"
+>   table. Execution status is **not** maintained here. **Phase A is CLOSED; B1 (All Vehicles) is
+>   CLOSED; B2 is in progress.** The current feature numbering is B1…B11 in `REBUILD-PLAN.md` §5.2.
+> - **Superseded details to know before reading any step list:** Home, All Vehicles, Profile Hub,
+>   bottom tabs, onboarding, and the drawer are **built**; the Vehicle Details request flow is
+>   **built** but its coordinate/channel/lifecycle extension is **not** (B2.5B–D).
+>
+> The master rule for this plan: the goal is FUNCTIONAL PARITY with legacy Yamak — not identical
+> architecture.
+>
+> THE SCREEN-LEVEL REFERENCE DOCUMENT.
 > Strategy: **ONE SCREEN AT A TIME** and **ONE SMALL STEP AT A TIME**.
+> (Execution order and current status are NOT maintained here — see `REBUILD-PLAN.md` §5–§6.)
 > A step = one small, testable change. After each step there is a **STOP** gate.
 > At every STOP: save, run the app, confirm the step works, then optionally `git commit`.
 > NEVER auto-continue beyond a STOP. Wait for explicit confirmation.
@@ -254,8 +270,9 @@ NEXT STEP
    Register, Email OTP, SecureStore session persistence, Home data sections, Map, and Vehicle Details
    implemented. The historical CLI bootstrap steps (PHASE 0 / `YAMAK-SETUP-001…005`) are **done or
    superseded** — see `REBUILD-PLAN.md` §8.
-2. **Start from the CURRENT execution order:** `REBUILD-PLAN.md` §5 (phases A–G) /
-   `12-rebuild-order.md` §2. The next task is the **authenticated app shell**, not a CLI setup task.
+2. **Start from the CURRENT execution order:** `REBUILD-PLAN.md` §5 + §6 only. The next task is
+   **B2.5A — Request Lifecycle + Channel Analysis (analysis only)** — not a CLI setup task and not a
+   shell task. (`12-rebuild-order.md` §2 is HISTORICAL and must not be used.)
 3. Read each task's "Goal + evidence". The legacy Yamak project is ONLY a functional/design/API
    reference — never a template for the new project structure.
 4. Follow the **GLOBAL MANDATORY RULES** (Section 0) for every step:
@@ -263,14 +280,15 @@ NEXT STEP
    → wait for my explicit confirmation → then the next step.
 5. Never auto-continue past a STOP. One small step per execution unless I ask for more.
 
-## 2. First task directive (user rule) — CURRENT
+## 2. First task directive (user rule) — status snapshot
 
 - ⛔ **SUPERSEDED:** "the rebuild starts with YAMAK-SETUP-001 → 005 (PHASE 0)". The Expo foundation
   is complete; Phase 0 is history.
-- ✅ **CURRENT:** the rebuild continues with **Phase A — Authenticated App Shell Completion**,
-  then Phase B (Profile Hub), C, D, E, F, G. See `REBUILD-PLAN.md` §5 and §6 (next 10 tasks).
+- ⛔ **SUPERSEDED:** "next = Phase A / authenticated shell". **Phase A (A1–A7) is CLOSED.**
+- ✅ **CURRENT (2026-11-03):** finish the tracked-request work — **B2.5A analysis**, then B2.5B–F,
+  B2.6–B2.8, then **B3 My Requests**. See `REBUILD-PLAN.md` §5.2 and §6.
 - Login and About Yamak App remain **documented but NOT to be implemented in this pass**
-  (Login is also formally deferred to Phase F).
+  (Login is deferred to **B10**).
 - ✅ **The rebuild runs on Expo**, using the CURRENT official Expo documentation
   (`https://docs.expo.dev/`) as the technical authority.
 
@@ -448,24 +466,26 @@ MIGRATION to YamakExpoNew (Expo)                        ✅ done
         ↓
 Register → Email OTP → Home slices → Map → Vehicle Details  ✅ done
         ↓
-**Phase A — Authenticated App Shell**                   ⬅️ CURRENT
+**Phase A — Authenticated App Shell**                   ✅ CLOSED (historical)
 ```
 
 </details>
 
-### ✅ CURRENT ORDER (authoritative)
+### ⛔ HISTORICAL ORDER (A–G letters — SUPERSEDED, do not execute)
+
+> This A–G block was the plan before Phase A closed. It is retained as history only.
+> **The current order is the Phase B feature numbering B1…B11 in `REBUILD-PLAN.md` §5.2**, and the
+> single next step is `REBUILD-PLAN.md` §6 (currently **B2.5A**).
 
 ```
-Phase A — Authenticated App Shell Completion   ← CURRENT NEXT PHASE
-Phase B — Profile Hub (SCREEN-016)
-Phase C — All Vehicles + Vehicle Details request flow
-Phase D — Profile Features (Edit Profile, My Cars, Favorites, Notifications)
-Phase E — Secondary screens
-Phase F — Deferred auth / integrations
-Phase G — Final legacy parity audit
+Phase A — Authenticated App Shell Completion   ✅ CLOSED (A1–A7)
+Phase B — Profile Hub contents                 → superseded by B4–B8
+Phase C — All Vehicles + request flow          → B1 delivered; B2.3/B2.4C delivered
+Phase D — Profile Features                     → B4/B5/B6/B7
+Phase E — Secondary screens                    → B8/B9
+Phase F — Deferred auth / integrations         → B10
+Phase G — Final legacy parity audit            → B11
 ```
-
-See `REBUILD-PLAN.md` §5 and §6 for the full detail and the next 10 tasks.
 
 ---
 
@@ -538,7 +558,8 @@ Do NOT bulk-copy the legacy project.
 >   (`ApiError` from `src/api/api-error.ts`). There is **no** `makeApiCall` helper and
 >   **no** axios.
 >
-> **Status legend:** ✅ DONE · 🟡 PARTIAL · ⏭ NOT STARTED (deferred to Phase F) · ⛔ BLOCKED.
+> **Status legend:** ✅ DONE · 🟡 PARTIAL · ⏭ NOT STARTED (Login/auth set deferred to **B10**) ·
+> ⛔ BLOCKED. These per-screen status labels are a snapshot; current state is `PROJECT_CONTEXT.md`.
 
 ### YAMAK-SCREEN-001 — LOGIN (exemplar; documented fully)
 
@@ -549,11 +570,10 @@ Current evidence: `src/api/auth.ts`, `src/auth/auth-context.tsx`, `src/api/http-
 Learning concepts: View/Text/TextInput, StyleSheet, keyboard handling, validation, fetch,
 SecureStore persistence, session gating.
 
-> ⏭ **NOT STARTED — deferred to Phase F (see `12-rebuild-order.md`).**
-> Reason: there is still **no real authenticated destination** — A1 sends an authenticated
-> session to `/map` only because it is the one route already inside `(app)`, and the app shell
-> (Home / Profile / tabs) is Phase A. Building Login before that exists would produce a screen
-> that authenticates into nothing.
+> ⏭ **NOT STARTED — deferred to B10 (Remaining Auth & Integrations).**
+> Reason: the authenticated shell now exists (Phase A closed), so Login is no longer blocked by
+> architecture — it is simply sequenced after the tracked-request work (B2/B3) and the remaining
+> profile features. Building it earlier would divert from the approved roadmap.
 
 - Step 1 — Create `src/app/login.tsx` returning a basic centered `<View>` with an empty `<Text>`. Confirm it is reachable as `/login`. **RUN → VERIFY → STOP.**
 - Step 2 — Add the Yamak logo image at the top (from `assets/images/appLogo.png`). **RUN → VERIFY → STOP.**
@@ -586,11 +606,11 @@ Concepts: multi-field forms, terms checkbox, country code.
 - Step 7 — Validation (name min 3, email, phone regex, password min 8, `isAgreed` true). **RUN → VERIFY → STOP.** ✅
 - Step 8 — `signup` API wrapper in `src/api/auth.ts` (`register` body `{name,email,phone}`). **RUN → VERIFY → STOP.** ✅
 - Step 9 — On success `router.push({ pathname: '/email-otp', params: { email } })`. **RUN → VERIFY → STOP.** ✅
-- Step 10 — Add "Already have account?" link → Login (once SCREEN-001 exists). **RUN → VERIFY → STOP.** ⏭ Phase F
+- Step 10 — Add "Already have account?" link → Login (once SCREEN-001 exists). **RUN → VERIFY → STOP.** ⏭ B10
 
 ### YAMAK-SCREEN-008 — FORGOT PASSWORD (email form)
 
-> ⏭ NOT STARTED — Phase F (paired with SCREEN-001).
+> ⏭ NOT STARTED — B10 (paired with SCREEN-001).
 
 Goal: request reset code. Legacy evidence: `components/auth/EmailForgotPassword.tsx`, `auth/send-reset-password`.
 - Step 1 — Basic route `src/app/forgot-password.tsx`. **RUN → VERIFY → STOP.**
@@ -600,7 +620,7 @@ Goal: request reset code. Legacy evidence: `components/auth/EmailForgotPassword.
 
 ### YAMAK-SCREEN-006 — RESET OTP
 
-> ⏭ NOT STARTED — Phase F.
+> ⏭ NOT STARTED — B10.
 
 Goal: validate reset code. Legacy evidence: `otpResetPasswordScreen.tsx`, `auth/check-reset-password`.
 - Step 1 — Basic route `src/app/reset-otp.tsx`. **RUN → VERIFY → STOP.**
@@ -611,7 +631,7 @@ Goal: validate reset code. Legacy evidence: `otpResetPasswordScreen.tsx`, `auth/
 
 ### YAMAK-SCREEN-007 — NEW PASSWORD
 
-> ⏭ NOT STARTED — Phase F.
+> ⏭ NOT STARTED — B10.
 
 Goal: set new password. Legacy evidence: `NewPasswordScreen.tsx`, `resetPasswordValidationSchema`, `auth/reset-password`.
 - Step 1 — Basic route `src/app/new-password.tsx` + two password fields. **RUN → VERIFY → STOP.**
@@ -621,7 +641,7 @@ Goal: set new password. Legacy evidence: `NewPasswordScreen.tsx`, `resetPassword
 
 ### YAMAK-SCREEN-003 — PHONE LOGIN (auth)
 
-> ⏭ NOT STARTED — Phase F.
+> ⏭ NOT STARTED — B10.
 
 Goal: request SMS code. Legacy evidence: `authScreen.tsx`, `auth/sendCode`.
 - Step 1 — Basic route `src/app/phone-login.tsx`. **RUN → VERIFY → STOP.**
@@ -631,7 +651,7 @@ Goal: request SMS code. Legacy evidence: `authScreen.tsx`, `auth/sendCode`.
 
 ### YAMAK-SCREEN-004 — PHONE OTP VERIFICATION
 
-> ⏭ NOT STARTED — Phase F.
+> ⏭ NOT STARTED — B10.
 
 Goal: verify SMS code and authenticate. Legacy evidence: `otpVerificationScreen.tsx`, `auth/checkCode`.
 - Step 1 — Basic route `src/app/phone-otp.tsx` (no animation). **RUN → VERIFY → STOP.**
@@ -642,35 +662,33 @@ Goal: verify SMS code and authenticate. Legacy evidence: `otpVerificationScreen.
 ### YAMAK-SCREEN-005 — EMAIL OTP VERIFICATION
 
 > 🟡 **PARTIAL.** Route `src/app/email-otp.tsx` → `/email-otp` exists and is reachable from
-> Register. Remaining before DONE: resend + countdown parity with legacy, and the
-> post-verification transition (success must enter the authenticated shell, which does not
-> exist yet — so success currently has nowhere correct to go).
+> Register. The **Email OTP → authenticated shell transition is DELIVERED** (Phase A2,
+> runtime-verified 2026-10-02). Remaining before DONE: resend + countdown parity with legacy.
 
 Goal: complete signup. Legacy evidence: `otpEmailVerificationScreen.tsx`, `auth/verify-email`.
 - Step 1 — Basic route `src/app/email-otp.tsx`. **RUN → VERIFY → STOP.** ✅
 - Step 2 — Code input. **RUN → VERIFY → STOP.** ✅
 - Step 3 — Resend + countdown. **RUN → VERIFY → STOP.** ⏭
 - Step 4 — `emailVerify(email, code)`. **RUN → VERIFY → STOP.** 🟡
-- Step 5 — On success enter the authenticated shell (blocked on Phase A) instead of returning to Register. **RUN → VERIFY → STOP.** ⛔ blocked on Phase A
+- Step 5 — On success enter the authenticated shell. **RUN → VERIFY → STOP.** ✅ DONE (A2)
 
 ---
 
 ## 6. APP SHELL SCREENS
 
-> ⛔ **PHASE A — this section is the immediate next work.** The authenticated shell still does not
-> exist: `src/app/(app)/_layout.tsx` is `<UserLocationProvider><Slot /></UserLocationProvider>`
-> with the A1 gate and **no tabs and no drawer**. Every "open the app after login" outcome depends
-> on it.
+> ✅ **PHASE A CLOSED.** The authenticated shell is built: `src/app/(app)/_layout.tsx` hosts the
+> `UserLocationProvider` + the A1 gate + **tabs and drawer**. Home, Map and Profile are all
+> reachable. The notes below are retained as the historical build order for those screens.
 >
-> **Naming rule:** the tab group already exists as the directory `src/app/(app)/(tabs)/`
-> (it currently holds only `map.tsx`). Home and Profile are added as sibling route files in
-> that same group — **do not** create `src/app/(tabs)/` at the root. The drawer (if legacy
-> parity requires it) is a `<Drawer>` from `expo-router/drawer` declared **inside the `(app)`
-> group**, above the tabs.
+> **Naming rule:** the tab group exists as the directory `src/app/(app)/(tabs)/`. Home and Profile
+> are sibling route files in that same group — **do not** create `src/app/(tabs)/` at the root.
+> The drawer is a `<Drawer>` from `expo-router/drawer` declared **inside the `(app)` group**,
+> above the tabs.
 
 ### YAMAK-SCREEN-009 — ONBOARDING
 
-> ⏭ NOT STARTED — Phase A.
+> ✅ **DONE (Phase A6, backend-managed, runtime-verified).** Shown once inside the authenticated
+> area. Steps retained as history.
 > ⚠️ Placement verified from legacy: onboarding is **inside** the authenticated area, not before
 > auth. Legacy's `DrawerStackNavigator` conditionally registers `"onboarding"` above an
 > always-present `"drawer"` screen, and onboarding exits via `replace` in the same session.
@@ -684,16 +702,14 @@ Concepts: FlatList carousel, Lottie, first-launch flag.
 - Step 3 — Add "Get started" / "Skip" → clears the flag, `router.replace('/(app)/(tabs)')`. **RUN → VERIFY → STOP.**
 - Step 4 — Add language picker (EN/AR) persisting to `lang`. **RUN → VERIFY → STOP.**
 
-### YAMAK-SCREEN-016 — PROFILE HUB — ⛔ MUST PRECEDE SCREEN-017 / SCREEN-018
+### YAMAK-SCREEN-016 — PROFILE HUB — ✅ DONE (Phase A4)
 
-> ⏭ NOT STARTED — Phase A (second half).
-> ⛔ **HARD DEPENDENCY RULE:** SCREEN-017 (Edit Profile) and SCREEN-018 (My Cars) are reached
-> **through** this hub, and legacy routes the drawer's `Profile` entry and the `Profile` tab to
-> the **same** screen. Rebuilding Edit Profile or My Cars before the hub exists would require
-> inventing a navigation parent that does not exist yet. **Do not start SCREEN-017/018 until
-> SCREEN-016 is DONE.**
-> Also: this hub is where **logout** lives. Until it exists there is no way out of an
-> authenticated session — that is the concrete reason it is Phase A and not Phase D.
+> ✅ **DONE.** Delivered and runtime-verified in Phase A4, with logout wired to `signOut()`.
+> The dependency rule below is preserved as history — it was satisfied.
+> ⛔ **HISTORICAL HARD DEPENDENCY RULE:** SCREEN-017 (Edit Profile) and SCREEN-018 (My Cars) are
+> reached **through** this hub, and legacy routes the drawer's `Profile` entry and the `Profile`
+> tab to the **same** screen. That is why the hub shipped first.
+> Also: this hub is where **logout** lives, so it was the concrete reason it was Phase A.
 
 Goal: display user + menu. Legacy evidence: `ProfileScreen.tsx`, `Profile*` components, `app-users/profile`.
 Concepts: fetch-on-mount, context refresh, grid of navigation buttons.
@@ -715,23 +731,23 @@ Concepts: fetch-on-mount, context refresh, grid of navigation buttons.
 > **No `services`/`adds`/`vehicles` Zustand stores** — each hook owns local state, exactly as
 > decided for slices 1–3B. Sections that need to share a selection pass it upward as a prop/callback.
 >
-> 🔴 **Blocking gap: there is no Home ROUTE.** The components
-> `ServicesList`, `AddsCarousel`, `VehiclesList`, `ViewMap` all exist and are verified, but
-> **nothing mounts them** — `src/app/(app)/(tabs)/` contains only `map.tsx`. Home is Phase A.
+> 🔴 **HISTORICAL GAP (resolved in Phase A3):** the components
+> `ServicesList`, `AddsCarousel`, `VehiclesList`, `ViewMap` were built before a Home route
+> existed. Home now lives at `src/app/(app)/(tabs)/home.tsx`.
 
 ### YAMAK-SCREEN-010 — HOME
 
-> 🟡 **PARTIAL — data slices done, composition + route NOT done.**
+> ✅ **DONE (Phase A3).** Route `src/app/(app)/(tabs)/home.tsx`; all four verified sections are
+> mounted in legacy order with the custom header. Steps retained as history.
 > ✅ `src/api/services.ts` + `src/hooks/use-services.ts` + `components/home/{ServicesList,ServiceItem}.tsx`
 > ✅ `src/api/adds.ts` + `src/hooks/use-adds.ts` + `components/home/{AddsList,AddsCarousel,AddCard}.tsx`
 > ✅ `src/api/vehicles.ts` + `src/location/*` + `src/hooks/use-vehicles.ts` + `components/home/{VehiclesList,VehicleItem,ApiErrorRow}.tsx`
 > ✅ `src/components/home/ViewMap.tsx` (approved "Nearby on radar" CTA → `router.push('/map')`)
-> ⛔ Missing: `src/app/(app)/(tabs)/index.tsx`, the custom header, and section tap wiring.
 
 Goal: services + adds + vehicles dashboard, faithful port of legacy `HomeScreen`.
 Legacy evidence: `HomeScreen.tsx`, `components/home/*`, `services`, `adds`, `vehicles`.
 Concepts: parallel fetching, loading placeholders, horizontal lists, localized names.
-- Step 1 — Create `src/app/(app)/(tabs)/index.tsx` and mount the already-built sections in legacy order (ViewMap → services → vehicles → ads). **RUN → VERIFY → STOP.**
+- Step 1 — Create `src/app/(app)/(tabs)/home.tsx` and mount the already-built sections in legacy order (ViewMap → services → vehicles → ads). **RUN → VERIFY → STOP.** ✅
 - Step 2 — Add the custom header (logo right, map button left → `router.push('/map')`). **RUN → VERIFY → STOP.**
 - Step 3 — Mount `ViewMap` (`useServices`-independent, purely navigational). **RUN → VERIFY → STOP.** ✅ component exists
 - Step 4 — Mount `ServicesList`; wire `onServicePress(service)` → `router.push({ pathname: '/map', params: { serviceId: service._id } })`. **RUN → VERIFY → STOP.** ✅ component exists
@@ -743,7 +759,8 @@ Concepts: parallel fetching, loading placeholders, horizontal lists, localized n
 
 ### YAMAK-SCREEN-011 — ALL VEHICLES
 
-> ⏭ NOT STARTED — Phase C.
+> ✅ **DONE — B1 CLOSED, commit `50e9c67`.** Route + pagination + service filter + pull-to-refresh
+> shipped and runtime-verified. Steps retained as history.
 
 Goal: full list w/ pagination + filters. Legacy evidence: `AllVicelessScreen.tsx`, `AllVehiclesList`.
 - Step 1 — Basic route `src/app/(app)/(tabs)/vehicles.tsx` (or a pushed route — decide and record; legacy reached it from a "see more" affordance). **RUN → VERIFY → STOP.**
@@ -760,23 +777,25 @@ Goal: full list w/ pagination + filters. Legacy evidence: `AllVicelessScreen.tsx
 > Map marker press now pushes this route, and `VehiclesList` excludes the current vehicle.
 > Learn from this screen — do **not** rebuild it.
 >
-> ⚠️ **Deliberately NOT implemented: `POST /requests`.** The endpoint is public/unauthenticated
-> and silently drops `payload` — a backend-owner decision that is still open. The screen is
-> contact-only (`tel:` / `wa.me` / share sheet) so the first build creates **no** order rows and
-> sends **no** driver emails. TODO markers record the deferred request call.
+> ✅ **Request flow DELIVERED (B2.3, commit `253dc04`; idempotency + 409 in B2.4C).** The screen now
+> creates a tracked request through the **canonical** `POST /api/mobile/v1/requests` (authenticated,
+> mobile v1). The old "contact-only / endpoint silently drops payload" statement is **SUPERSEDED**.
+> The mandatory coordinate/channel/lifecycle extension is **NOT yet implemented** — it is
+> **B2.5B–D** per `REQ-DEC-001…012` in `REBUILD-PLAN.md` §4.5. B2.5A is analysis only.
+> Steps 1–3, 5–6 remain accurate; Step 4 is now done.
 
 Goal: detail + available services + contact. Legacy evidence: `VehiclesDetailsScreen.tsx`, `components/vehicleDetails/*`.
 APIs: `vehicles/:id` (public), `services/:id/vehicles`.
 - Step 1 — Route + `vehicles/:id` fetch. **RUN → VERIFY → STOP.** ✅
 - Step 2 — Render info + phone/address (`Linking.openURL`). **RUN → VERIFY → STOP.** ✅
 - Step 3 — Render available services list (`services/:id/vehicles`). **RUN → VERIFY → STOP.** ✅
-- Step 4 — Add request CTA → `POST requests`. **RUN → VERIFY → STOP.** ⛔ DEFERRED — backend decision pending
+- Step 4 — Add request CTA → `POST /api/mobile/v1/requests`. **RUN → VERIFY → STOP.** ✅ DONE (B2.3 / B2.4C)
 - Step 5 — Add WhatsApp share + `YourSaftyMatter`/`ShareWithus` blocks. **RUN → VERIFY → STOP.** ✅ (share sheet; WhatsApp via `wa.me` fallback)
 - Step 6 — Loading / error (sanitized `ApiError`) / missing-vehicle states. **RUN → VERIFY → STOP.** ✅
 
 ### YAMAK-SCREEN-014 — FAVORITES
 
-> ⏭ NOT STARTED — Phase B.
+> ⏭ NOT STARTED — **B6**. No backend favorites routes exist.
 > ⚠️ Verified gap: the backend has **no favorites routes at all** (grep of `routes/`) and legacy
 > Vehicle Details has no favorites. Favorites is therefore **local-only persistence** — do not
 > invent a favorites endpoint.
@@ -789,7 +808,8 @@ Goal: locally-persisted favorites. Legacy evidence: `FavotiesScreen.tsx`, `Favor
 
 ### YAMAK-SCREEN-015 — NOTIFICATIONS
 
-> ⏭ NOT STARTED — Phase B. Deps on nothing remote beyond the endpoint itself.
+> ⏭ NOT STARTED — **B7**. Deps on nothing remote beyond the endpoint itself. The 🔔 app-bar button
+> and FCM belong to the same feature.
 
 Goal: paginated notification list. Legacy evidence: `NotificationsScreen.tsx`, `user-notifications/mine?page=`.
 - Step 1 — Basic route `src/app/(app)/(tabs)/notifications.tsx`. **RUN → VERIFY → STOP.**
@@ -813,8 +833,8 @@ Goal: paginated notification list. Legacy evidence: `NotificationsScreen.tsx`, `
 > the dependency is pinned to `1.28.2` (an intentional override of the SDK-57 `1.27.2` pin)
 > because the approved visual needs it. Recorded in `PROJECT_CONTEXT.md`.
 >
-> ⚠️ The map's app-bar buttons (☰ Menu · 🔔 Notifications) are still inert, because the drawer
-> and Notifications do not exist. Wiring them belongs to Phase A.
+> ⚠️ The map's app-bar buttons were inert in the shipped B1 baseline. ☰ Menu was resolved by the
+> A7 drawer; 🔔 Notifications remains inert and is **B7** work.
 
 Goal: nearby providers on map. Legacy evidence: `MapScreen.tsx`, `components/map/*`, `userLocation.store`.
 - Step 1 — Map route registered inside the `(app)/(tabs)` group. **RUN → VERIFY → STOP.** ✅
@@ -823,20 +843,19 @@ Goal: nearby providers on map. Legacy evidence: `MapScreen.tsx`, `components/map
 - Step 4 — Fetch `GET /services/{serviceId}/vehicles`; draw markers from `geoLocation.coordinates`. **RUN → VERIFY → STOP.** ✅
 - Step 5 — Service filter chips (`MapServiceChips`, self-fetching via the shared `useServices()`) update markers. **RUN → VERIFY → STOP.** ✅
 - Step 6 — Marker press → `router.push('/vehicle/[id]')` (Vehicle Details now exists). **RUN → VERIFY → STOP.** ✅
-- Step 7 — Wire the app-bar ☰ Menu and 🔔 Notifications buttons once the drawer / Notifications route exist. **RUN → VERIFY → STOP.** ⏭ Phase A / B
+- Step 7 — Wire the app-bar ☰ Menu and 🔔 Notifications buttons once the drawer / Notifications route exist. **RUN → VERIFY → STOP.** ☰ ✅ DONE (A7) · 🔔 ⏭ B7
 
 ---
 
 ## 9. PROFILE EXTENSIONS
 
-> ⛔ **Both screens below are blocked behind YAMAK-SCREEN-016 (Profile Hub).**
-> See the hard dependency rule in §6. Neither Edit Profile nor My Cars may be started first.
+> ✅ **Dependency satisfied:** YAMAK-SCREEN-016 (Profile Hub) shipped in Phase A4, so Edit Profile
+> and My Cars are no longer blocked by it. Both are now sequenced as **B4** and **B5**.
 
 ### YAMAK-SCREEN-017 — EDIT PROFILE
 
-> ⏭ NOT STARTED — Phase D. ⛔ Blocked on SCREEN-016.
-> **Do not treat this as "the next screen".** The App Shell (Phase A) and Profile Hub
-> (SCREEN-016) both come first.
+> ⏭ NOT STARTED — **B4**. (The old "blocked on SCREEN-016 / not the next screen" gate is
+> superseded — the hub exists.)
 
 Goal: update profile. Legacy evidence: `EditProfileScreen.tsx`, `ProfileMapView`, `PATCH app-users/profile`.
 - Step 1 — Basic route `src/app/(app)/profile/edit.tsx`, prefilled from `useAuth()` + `app-users/profile`. **RUN → VERIFY → STOP.**
@@ -846,7 +865,7 @@ Goal: update profile. Legacy evidence: `EditProfileScreen.tsx`, `ProfileMapView`
 
 ### YAMAK-SCREEN-018 — MY CARS
 
-> ⏭ NOT STARTED — Phase D. ⛔ Blocked on SCREEN-016.
+> ⏭ NOT STARTED — **B5**. (Hub dependency satisfied in Phase A4.)
 
 Goal: CRUD cars. Legacy evidence: `MyCarScreen.tsx`, `components/Profile/myCarList/*`, `user-cars`.
 - Step 1 — Basic route `src/app/(app)/profile/cars.tsx`. **RUN → VERIFY → STOP.**
@@ -860,21 +879,21 @@ Goal: CRUD cars. Legacy evidence: `MyCarScreen.tsx`, `components/Profile/myCarLi
 
 ### YAMAK-SCREEN-019 — CONTACT US
 
-> ⏭ NOT STARTED — Phase E.
+> ⏭ NOT STARTED — **B8**.
 
 Goal: contact options. Legacy evidence: `ContactUsScreen.tsx`, `messages.ts`.
 - Step 1 — Static route `src/app/(app)/profile/contact.tsx` with phone/mail/WhatsApp buttons (`Linking.openURL`). **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-020 — PRIVACY & POLICY
 
-> ⏭ NOT STARTED — Phase E.
+> ⏭ NOT STARTED — **B8**.
 
 Goal: legal content. Legacy evidence: `PrivacyAndPolicyScreen.tsx`.
 - Step 1 — Modal route (`src/app/(app)/profile/privacy.tsx` + `<Stack.Screen options={{ presentation: 'modal' }} />`) with text (from `app-setting` or static). **RUN → VERIFY → STOP.**
 
 ### YAMAK-SCREEN-021 — JOIN US
 
-> ⏭ NOT STARTED — Phase E.
+> ⏭ NOT STARTED — **B8**.
 
 Goal: static join-us content. Legacy evidence: `JoinUsScreen.tsx`.
 - Step 1 — Static content + contact CTA. **RUN → VERIFY → STOP.**
@@ -888,7 +907,7 @@ Goal: about/branding page. Legacy evidence: `AboutYamakAppScreen.tsx`.
 
 ### YAMAK-SCREEN-023 — FRESHCHAT
 
-> ⛔ **PLANNED — NOT YET MIGRATED.** No Freshchat SDK is installed in YamakExpoNew. Requires the
+> ⛔ **PLANNED — NOT YET MIGRATED (B10).** No Freshchat SDK is installed in YamakExpoNew. Requires the
 > Freshchat Expo plugin and its API credentials, which are not present. Do not scaffold it now.
 
 Goal: support chat. Legacy evidence: `FreshCharScreen.tsx`, `freshchat.config.ts`.
@@ -897,7 +916,7 @@ Goal: support chat. Legacy evidence: `FreshCharScreen.tsx`, `freshchat.config.ts
 
 ### YAMAK-SCREEN-024 — NO NETWORK
 
-> ⏭ NOT STARTED — Phase E.
+> ⏭ NOT STARTED — **B9**.
 
 Goal: offline state + retry. Legacy evidence: `NoNetworkScreen.tsx`, NetInfo.
 - Step 1 — Route `src/app/(app)/no-network.tsx`; show when offline (or on error). **RUN → VERIFY → STOP.**
@@ -927,79 +946,85 @@ Goal: offline state + retry. Legacy evidence: `NoNetworkScreen.tsx`, NetInfo.
 
 ---
 
-## 12. FINAL ORDER TABLE (current build sequence — A–G)
+## 12. HISTORICAL ORDER TABLE (A–G letters — SUPERSEDED)
 
-> The authoritative sequence is `12-rebuild-order.md`. This table is the screen-level index of
-> that plan. **The historical CLI sequence (Phase 0 SETUP-001…005 + the old 1–32 table) is
-> SUPERSEDED** — the project already exists as an Expo app, so there is nothing to scaffold.
+> ⛔ **NON-CURRENT.** The A–G tables below are a 2026-10 snapshot and are **not** the build
+> sequence. They are preserved to explain how the project reached its current state.
+>
+> **CURRENT ROADMAP:** `REBUILD-PLAN.md` §5 (Phase B feature numbering B1…B11) + §6 (single next
+> step). **CURRENT STATE:** `PROJECT_CONTEXT.md`. **TASK LEDGER:**
+> `11-rebuild-backlog.md` (supporting). `12-rebuild-order.md` is likewise historical.
+>
+> The historical CLI sequence (Phase 0 SETUP-001…005 + the old 1–32 table) is **SUPERSEDED** —
+> the project already exists as an Expo app, so there is nothing to scaffold.
 
-### Phase A — Authenticated App Shell Completion 🔴 CURRENT PHASE
+### Phase A — Authenticated App Shell Completion ✅ CLOSED (historically "🔴 CURRENT PHASE")
 
 | # | Task | Screen | Route | Depends on | Status |
 |---|---|---|---|---|---|
 | A1 | Session gate for the `(app)` group | — | `src/app/(app)/_layout.tsx` | AuthProvider exists | ✅ **DONE** 2026-10-02 — also gated `index.tsx` + `register.tsx` |
-| A2 | Email OTP → authenticated app transition | SCREEN-005 | `src/app/email-otp.tsx` | A1 | ⏭ **NEXT** (success still dead-ends) |
-| A3 | Home tab (mount verified components) | SCREEN-010 | `(app)/(tabs)/index.tsx` | A1 | 🟡 components done |
-| A4 | **Profile Hub tab + logout** | SCREEN-016 | `(app)/(tabs)/profile.tsx` | A1 | ⏭ ⛔ GATES `017` / `018` |
-| A5 | Tab bar wiring (Home · Map · Profile) | — | `(app)/(tabs)/_layout.tsx` | A3, A4 | ⏭ |
-| A6 | Onboarding (post-auth, first launch) | SCREEN-009 | `(app)/onboarding.tsx` | A5 | ⏭ |
-| A7 | Drawer — **only if** legacy parity requires it | — | `(app)/_layout.tsx` | A5 | ⛔ optional, decide explicitly |
+| A2 | Email OTP → authenticated app transition | SCREEN-005 | `src/app/email-otp.tsx` | A1 | ✅ **DONE** 2026-10-02 (no dead end) |
+| A3 | Home tab (mount verified components) | SCREEN-010 | `(app)/(tabs)/home.tsx` | A1 | ✅ **DONE** |
+| A4 | **Profile Hub tab + logout** | SCREEN-016 | `(app)/(tabs)/profile.tsx` | A1 | ✅ **DONE** |
+| A5 | Tab bar wiring (Home · Map · Profile) | — | `(app)/(tabs)/_layout.tsx` | A3, A4 | ✅ **DONE** |
+| A6 | Onboarding (post-auth, first launch) | SCREEN-009 | `(app)/onboarding.tsx` | A5 | ✅ **DONE** (backend-managed) |
+| A7 | Drawer | — | `(app)/_layout.tsx` | A5 | ✅ **DONE** (approved UI) |
 
-### Phase B — Profile Hub Contents
-
-| # | Task | Screen | Depends on | Status |
-|---|---|---|---|---|
-| B1 | Favorites (local-only persistence) | SCREEN-014 | A3 | ⏭ |
-| B2 | Notifications | SCREEN-015 | A3 | ⏭ |
-| B3 | Profile sub-routes reachable from the hub | — | A3 | ⏭ |
-
-### Phase C — All Vehicles + Request
+### Phase B — Profile Hub Contents (historical → current B6/B7/B8)
 
 | # | Task | Screen | Depends on | Status |
 |---|---|---|---|---|
-| C1 | All Vehicles list + filters | SCREEN-011 | A2 | ⏭ |
-| C2 | Vehicle Details ↔ list/marker cross-push polish | SCREEN-012 | C1 | ✅ route exists |
-| C3 | `POST /requests` | SCREEN-012 | ⛔ backend decision | ⛔ BLOCKED |
+| B1 | Favorites (local-only persistence) | SCREEN-014 | A3 | ⏭ current: **B6** |
+| B2 | Notifications | SCREEN-015 | A3 | ⏭ current: **B7** |
+| B3 | Profile sub-routes reachable from the hub | — | A3 | ⏭ current: **B4/B5/B8** |
 
-### Phase D — Profile Features
-
-| # | Task | Screen | Depends on | Status |
-|---|---|---|---|---|
-| D1 | Edit Profile | SCREEN-017 | **A3 (Profile Hub) — mandatory** | ⏭ |
-| D2 | My Cars CRUD | SCREEN-018 | **A3 (Profile Hub) — mandatory** | ⏭ |
-
-### Phase E — Secondary Screens
+### Phase C — All Vehicles + Request (historical → B1 + B2)
 
 | # | Task | Screen | Depends on | Status |
 |---|---|---|---|---|
-| E1 | Contact Us | SCREEN-019 | A3 | ⏭ |
-| E2 | Privacy & Policy | SCREEN-020 | A3 | ⏭ |
-| E3 | Join Us | SCREEN-021 | A3 | ⏭ |
-| E4 | No Network | SCREEN-024 | — | ⏭ |
-| E5 | About Yamak | SCREEN-022 | — | ⛔ PLANNED ONLY |
-| E6 | Freshchat | SCREEN-023 | ⛔ SDK not installed | ⛔ NOT YET MIGRATED |
+| C1 | All Vehicles list + filters | SCREEN-011 | A2 | ✅ **DONE** as **B1**, `50e9c67` |
+| C2 | Vehicle Details ↔ list/marker cross-push polish | SCREEN-012 | C1 | ✅ **DONE** |
+| C3 | `POST /api/mobile/v1/requests` | SCREEN-012 | — | ✅ **DONE** as **B2.3/B2.4C**; coordinate/channel/lifecycle extension = **B2.5B–D** (the old "BLOCKED" status is superseded) |
 
-### Phase F — Deferred Auth & Integrations
+### Phase D — Profile Features (historical → B4/B5)
 
 | # | Task | Screen | Depends on | Status |
 |---|---|---|---|---|
-| F1 | Login | SCREEN-001 | A1 | ⏭ |
-| F2 | Forgot Password | SCREEN-008 | F1 | ⏭ |
-| F3 | Reset OTP | SCREEN-006 | F2 | ⏭ |
-| F4 | New Password | SCREEN-007 | F3 | ⏭ |
-| F5 | Phone Login | SCREEN-003 | A1 | ⏭ |
-| F6 | Phone OTP | SCREEN-004 | F5 | ⏭ |
-| F7 | Email OTP — resend + success transition | SCREEN-005 | A1 | 🟡 PARTIAL |
-| F8 | Google Sign-In / Firebase / Sentry | — | ⛔ not installed | ⛔ PLANNED |
+| D1 | Edit Profile | SCREEN-017 | Hub ✅ (A4) | ⏭ current: **B4** |
+| D2 | My Cars CRUD | SCREEN-018 | Hub ✅ (A4) | ⏭ current: **B5** |
 
-### Phase G — Legacy Parity Audit
+### Phase E — Secondary Screens (historical → B8/B9/B10)
+
+| # | Task | Screen | Depends on | Status |
+|---|---|---|---|---|
+| E1 | Contact Us | SCREEN-019 | Hub ✅ | ⏭ current: **B8** |
+| E2 | Privacy & Policy | SCREEN-020 | Hub ✅ | ⏭ current: **B8** |
+| E3 | Join Us | SCREEN-021 | Hub ✅ | ⏭ current: **B8** |
+| E4 | No Network | SCREEN-024 | — | ⏭ current: **B9** |
+| E5 | About Yamak | SCREEN-022 | — | ⛔ PLANNED ONLY (user directive) |
+| E6 | Freshchat | SCREEN-023 | SDK not installed | ⛔ NOT YET MIGRATED — current: **B10** |
+
+### Phase F — Deferred Auth & Integrations (historical → B10)
+
+| # | Task | Screen | Depends on | Status |
+|---|---|---|---|---|
+| F1 | Login | SCREEN-001 | A1 ✅ | ⏭ current: **B10** |
+| F2 | Forgot Password | SCREEN-008 | F1 | ⏭ current: **B10** |
+| F3 | Reset OTP | SCREEN-006 | F2 | ⏭ current: **B10** |
+| F4 | New Password | SCREEN-007 | F3 | ⏭ current: **B10** |
+| F5 | Phone Login | SCREEN-003 | A1 ✅ | ⏭ current: **B10** |
+| F6 | Phone OTP | SCREEN-004 | F5 | ⏭ current: **B10** |
+| F7 | Email OTP — resend + countdown | SCREEN-005 | A1 ✅ | 🟡 PARTIAL (success transition ✅ A2) |
+| F8 | Google Sign-In / Firebase / Sentry | — | not installed | ⛔ PLANNED — current: **B10** |
+
+### Phase G — Legacy Parity Audit (historical → B11)
 
 | # | Task | Depends on | Status |
 |---|---|---|---|
-| G1 | Screen-by-screen functional diff vs legacy | Phases A–E | ⏭ |
-| G2 | API contract diff vs `04-api-catalog.md` | A–E | ⏭ |
-| G3 | i18n / RTL audit (`ar`/`en`) | A–E | ⏭ |
-| G4 | Confirm no legacy defect was ported | A–E | ⏭ |
+| G1 | Screen-by-screen functional diff vs legacy | Phases A–E | ⏭ current: **B11** |
+| G2 | API contract diff vs `04-api-catalog.md` | A–E | ⏭ current: **B11** |
+| G3 | i18n / RTL audit (`ar`/`en`) | A–E | ⏭ current: **B11** |
+| G4 | Confirm no legacy defect was ported | A–E | ⏭ current: **B11** |
 
 ### Optional / user decision (never planned speculatively)
 
@@ -1011,15 +1036,16 @@ Goal: offline state + retry. Legacy evidence: `NoNetworkScreen.tsx`, NetInfo.
 | Email validations | SCREEN-028 | ⏭ user decision |
 | Form / FormAuth | SCREEN-029 | ⛔ SKIP (legacy duplicate) |
 
-### ⛔ Ordering rules that must not be violated
+### ⛔ Ordering rules — historical (current rules live in `REBUILD-PLAN.md` §5.7)
 
-1. **A3 (Profile Hub) precedes D1 (Edit Profile) and D2 (My Cars).** Those screens are reached
-   through the hub; the hub is also the only logout path.
-2. **A1 precedes every route under `(app)`.** No authenticated screen may exist outside a gate.
-3. **A2/A3 precede A4**, and A4 precedes A5/A6.
-4. **C3 (`POST /requests`) stays blocked** until the backend owner decides auth + `payload`
-   handling. The contact-only Vehicle Details design is the approved interim state.
-5. **No screen may be started before its phase's dependencies above are ✅.**
+1. **Hub before Edit Profile / My Cars.** ✅ satisfied — the hub shipped in A4.
+2. **A1 precedes every route under `(app)`.** ✅ satisfied.
+3. **A2/A3 precede A4, and A4 precedes A5/A6.** ✅ satisfied.
+4. **~~C3 (`POST /requests`) stays blocked.~~** ✅ **SUPERSEDED** — the canonical
+   `POST /api/mobile/v1/requests` shipped in B2.3 (commit `253dc04`). What remains is the
+   mandatory coordinate/channel/lifecycle extension in **B2.5B–D**, not a permission block.
+5. **No screen may be started before its dependencies above are ✅.** Still a general rule;
+   see `REBUILD-PLAN.md` §5.7 for the current dependency set.
 
 ## 13. Completion checklist per step, then per screen
 

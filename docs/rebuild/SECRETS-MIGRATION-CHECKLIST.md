@@ -1,5 +1,8 @@
 # YAMAK MOBILE — SECRETS MIGRATION CHECKLIST
 
+> **Role:** supporting operational checklist. It does not sequence work. Current roadmap:
+> `REBUILD-PLAN.md` §5–§6; current state: `PROJECT_CONTEXT.md`.
+>
 > # 🔒 SECURITY RULES (UNCHANGED — STILL FULLY BINDING)
 >
 > 1. This file lists **WHERE** secrets/keys live and their **VARIABLE NAMES** only.

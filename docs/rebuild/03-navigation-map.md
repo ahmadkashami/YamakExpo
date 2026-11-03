@@ -228,8 +228,10 @@ Drawer behavior may be layered on the authenticated shell **where legacy parity 
 ## 8. Expo Router implementation guidance (current)
 
 - **Routes are files.** `src/app/index.tsx`, `src/app/register.tsx`, `src/app/email-otp.tsx`,
-  `src/app/(app)/_layout.tsx`, `src/app/(app)/(tabs)/map.tsx`,
-  `src/app/(app)/vehicle/[id].tsx` — this is the current tree.
+  `src/app/(app)/_layout.tsx`, `src/app/(app)/(tabs)/_layout.tsx`,
+  `src/app/(app)/(tabs)/home.tsx`, `(app)/(tabs)/map.tsx` and `(app)/(tabs)/profile.tsx`,
+  `src/app/(app)/vehicle/[id].tsx`, `src/app/(app)/onboarding.tsx` — this is the current tree.
+  Current route facts always win; verify against `PROJECT_CONTEXT.md`.
 - **`_layout.tsx` files are navigators.** A layout wraps its children in a Stack or Tabs and is
   where shared providers belong (e.g. `UserLocationProvider` is mounted in `src/app/(app)/_layout.tsx`).
 - **Route groups `(group)`** group routes without affecting the URL. `(tabs)` gives the bottom tab
@@ -244,23 +246,30 @@ Drawer behavior may be layered on the authenticated shell **where legacy parity 
   deliberately **ungated** so that A1 does not perform A2's success navigation.
 - **Deep links** must keep working; `/map` and `/vehicle/{id}` are deep-linkable today.
 
-## 9. Current-vs-target navigation status
+## 9. Current-vs-target navigation status (snapshot 2026-11-03 — verify against `PROJECT_CONTEXT.md`)
+
+> This table is a navigation snapshot, not the execution plan. **Phase A (A1–A7) is CLOSED**;
+> B1 is closed and B2 is in progress. `REBUILD-PLAN.md` §5–§6 own sequencing.
 
 | Area | Status |
 |---|---|
 | Root layout + `AuthProvider` + splash-held auth restore gate | ✅ DONE |
 | Unauthenticated routes (`/`, `/register`, `/email-otp`) | ✅ DONE |
-| `/` → redirect to `/register` | ✅ DONE (placeholder until the authenticated landing is approved/built) |
-| `/map` route + screen | ✅ DONE (root stack; not yet inside the tabs group) |
+| `/` → redirect to `/register` | ✅ DONE (unauthenticated landing; authenticated session enters `(app)`) |
+| Auth/session **routing** gate (startup + `(app)` group + register guard) | ✅ DONE (A1) |
+| Email OTP → authenticated shell transition | ✅ DONE (A2) |
+| Authenticated layout (providers + tabs + drawer) | ✅ DONE (A4/A5/A7) |
+| Bottom tabs (Home / Map / Profile) | ✅ DONE (A5) |
+| Drawer / side menu | ✅ DONE (A7) |
+| Onboarding gate (inside the authenticated area) | ✅ DONE (A6) |
+| Home route `(app)/(tabs)/home.tsx` | ✅ DONE (A3) |
+| `/map` route + screen (inside `(app)/(tabs)`) | ✅ DONE (B1) |
 | `/vehicle/[id]` route + screen | ✅ DONE (above the tabs) |
-| Auth/session **routing** gate (redirect unauthenticated → auth, authenticated → shell) | ⏳ **TODO — Phase A1** |
-| Email OTP → authenticated shell transition | ⏳ **TODO — Phase A2** |
-| Onboarding gate | ⏳ **TODO — Phase A3** |
-| Authenticated layout | ⏳ **TODO — Phase A4** |
-| Bottom tabs (Home / Map / Profile) | ⏳ **TODO — Phase A5** |
-| Drawer / side menu (only if parity requires) | ⏳ **TODO — Phase A6** |
-| All vehicles route | ⏳ **TODO — Phase C1** |
-| Profile extensions routes | ⏳ **TODO — Phase D** |
+| All vehicles route | ✅ DONE — B1 (`50e9c67`) |
+| Request flow route/action (`POST /api/mobile/v1/requests`) | ✅ DONE — B2.3/B2.4C |
+| Profile hub + logout | ✅ DONE (A4) |
+| Profile extensions routes (Edit Profile / My Cars / …) | ⏭ **B4/B5/B8** (not yet built) |
+| My Requests list | ⏭ **B3** (not yet built) |
 
 ## 10. Do NOT reintroduce
 

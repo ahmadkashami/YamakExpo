@@ -61,7 +61,9 @@ An explicit user decision outranks any document, including this one.
 > mislead.
 
 - **Active project:** `YamakExpoNew` (Expo + Expo Router). Mobile branch `main`,
-  HEAD **`253dc04`** (`feat(requests): add mobile service request workflow`).
+  HEAD **`91cf051`** (`docs: align Yamak roadmap with request tracking`). (Previous recorded
+  baseline `253dc04` remains part of HEAD; feature commits `50e9c67` (B1) and `253dc04` (B2.3)
+  are included.)
 - **Phase A — AUTHENTICATED APP SHELL (A1–A7): ✅ CLOSED.**
 - **Phase B — B1 All Vehicles: ✅ CLOSED** (commit `50e9c67`).
 - **Phase B — B2 Vehicle Details + tracked request workflow: 🔄 IN PROGRESS.** B2.1–B2.4C are
@@ -81,15 +83,25 @@ An explicit user decision outranks any document, including this one.
 - **Requests are now coordinate-mandatory for every channel** (`app`, `whatsapp`, `phone`), and
   **channel is data, never status**. See `REQ-DEC-001…012` (§5.3 of
   `docs/rebuild/REBUILD-PLAN.md`, restated at the end of this file).
+- **Documentation hygiene (2026-11-03, this pass):** root rebuild docs were aligned to a single
+  current execution plan. `12-rebuild-order.md` is now explicitly `HISTORICAL / SUPERSEDED`
+  (banner + relabeled old phase tables + corrected stale `NEXT TASK` / `CURRENT NEXT PHASE` /
+  `C2 blocked` markers); `11-rebuild-backlog.md` and `13-SCREEN-BY-SCREEN-REBUILD-PLAN.md`
+  were refreshed (status snapshots only); `03`, `06`, `14`, `YAMAK-MOBILE-REBUILD-SPEC.md`,
+  `EXPO-MIGRATION.md`, `PROJECT-STRUCTURE-LEARNING.md`, and `SECRETS-MIGRATION-CHECKLIST.md`
+  were corrected or bannered; `REBUILD-PLAN.md` gained a documentation-role index (§0.2) and a
+  current execution-plan summary (§0.3); `PROJECT_CONTEXT.md` had its HEAD reference refreshed.
+  `yamak-rebuild-notion-import.csv` was left **byte-identical** (format-sensitive Notion snapshot,
+  non-authoritative). `approve-ui/**` and `new-ui/**` were untouched. No product, backend,
+  dashboard, legacy source, packages, migrations, builds, or DB access.
 - **Commit/push status for this documentation pass: NOT YET** (explicitly forbidden by the task).
 - **Plan authority:** the latest **pushed** `PROJECT_CONTEXT.md` +
   `docs/rebuild/REBUILD-PLAN.md` on `ahmadkashami/YamakExpo` are the durable plan copy — re-read
   them from the remote before planning a new phase; no shadow plan files.
   `docs/rebuild/12-rebuild-order.md` is **SUPERSEDED** (its own banner): history only, never a
-  sequencing source. Older analysis docs (`11`, `13`, `14`, `YAMAK-MOBILE-REBUILD-SPEC.md`) still
-  contain superseded `NEXT` / `P0 — next` / "`POST /requests` blocked" markers; they are
-  **NON-CURRENT** and do not define the next step. Only this snapshot and
-  `REBUILD-PLAN.md` §6 do.
+  sequencing source. The other supporting docs (`11`, `13`, `14`, spec, expo-migration,
+  project-structure, secrets) are **NON-CURRENT for execution status** and do not define the next
+  step. Only this snapshot and `REBUILD-PLAN.md` §6 do.
 
 ---
 

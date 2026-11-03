@@ -1,26 +1,35 @@
-# YAMAK MOBILE — 12. REBUILD ORDER (SEQUENCING)
+# YAMAK MOBILE — 12. REBUILD ORDER (SEQUENCING) — HISTORICAL / SUPERSEDED
 
-> ⚠️ **SUPERSEDED BY THE CURRENT EXECUTION PLAN.** This file previously defined a Phase 0→7 CLI
-> sequence that is no longer the execution order.
+> # ⛔ HISTORICAL / SUPERSEDED EXECUTION ORDER — NON-CURRENT
 >
-> **CURRENT AUTHORITY:** `REBUILD-PLAN.md` §5 (Current Execution Plan) + `PROJECT_CONTEXT.md`.
-> Strategy: ONE SCREEN AT A TIME, infrastructure added ONLY when the current screen requires it
-> (JUST-IN-TIME). Full per-screen detail lives in `13-SCREEN-BY-SCREEN-REBUILD-PLAN.md`.
+> **This file is NOT the current plan and must never be used to sequence work.** It is preserved as
+> historical evidence of an earlier sequencing model. The plan it describes was replaced after
+> Phase A closed and Phase B was re-numbered.
 >
-> **Platform:** `YamakExpoNew` — Expo + React Native + TypeScript + **Expo Router**.
+> **CURRENT ROADMAP:** `docs/rebuild/REBUILD-PLAN.md` §5 (execution plan) + §6 (the single next step).
+> **CURRENT VERIFIED STATE:** `PROJECT_CONTEXT.md` (CURRENT MASTER STATUS).
+> **CURRENT TASK LEDGER:** `docs/rebuild/11-rebuild-backlog.md` (supporting, status-refreshed).
+>
+> **ACTIVE PROJECT:** `YamakExpoNew` — Expo + React Native + TypeScript + **Expo Router**.
+>
+> **Read every `CURRENT` / `NEXT` / `Phase A` / `Phase B` / `Phase C` label below as a snapshot of
+> 2026-10 (before Phase A closed).** Phase A (A1–A7) is now **CLOSED**; the old Phase B/C/D/E/F/G
+> letters are **superseded** by the Phase B feature numbering B1…B11 in `REBUILD-PLAN.md` §5.2.
+> The old `C2` / `POST /requests` "blocked" statement is superseded by B2.3/B2.4C.
 
 ---
 
-## Guide to reading this section
+## Guide to reading this section (historical)
 
-- Phase → group of steps that together deliver a runnable milestone.
+- Phase → group of steps that once formed a runnable milestone.
 - Each phase ends with a checkpoint ("app installs/runs/builds/works").
 - Do NOT start the next phase until the previous checkpoint passes.
 - Historical CLI phase ordering is retained in the Appendix for reference only.
+- **None of this is current execution authority.** See the banner above.
 
 ---
 
-## 1. WHY THE OLD ORDER NO LONGER HOLDS
+## 1. WHY THE OLD ORDER NO LONGER HELD (historical rationale — 2026-10)
 
 The original order assumed a strict waterfall: Foundations → Auth → App Shell → Home → Map →
 Profile. Reality in `YamakExpoNew` diverged:
@@ -38,25 +47,30 @@ Because Home / Map / Vehicle Details already exist, the correct remaining sequen
 
 ---
 
-## 2. CURRENT EXECUTION PLAN
+## 2. HISTORICAL EXECUTION PLAN (2026-10 snapshot — SUPERSEDED, DO NOT EXECUTE)
 
-### Phase A — AUTHENTICATED APP SHELL COMPLETION  ← **CURRENT NEXT PHASE**
+> ⛔ The phase tables below are the **old** A–G sequencing. They are retained to explain how the
+> project reached its current state. All of it is superseded by `REBUILD-PLAN.md` §5.2.
+
+### Phase A — AUTHENTICATED APP SHELL COMPLETION — ✅ CLOSED (historically "← CURRENT NEXT PHASE")
 
 | Order | Task | Rationale |
 |---|---|---|
-| A1 | Session gate for the `(app)` route group in `src/app/(app)/_layout.tsx` | Nothing under `(app)` can be routed safely until unauthenticated vs authenticated is decided in one place. ⬅️ **NEXT TASK** |
-| A2 | Natural Email OTP → authenticated app transition | Email OTP success currently renders a success state and stops; the shell must be reachable |
-| A3 | Home tab (`src/app/(app)/(tabs)/index.tsx`) | ✅ The four sections are built and verified but **nothing mounts them** — there is no Home route |
-| A4 | **Profile Hub tab (`SCREEN-016`)** + logout | Completes the tab set and provides the **only** logout path. ⛔ Must be DONE before `017` / `018` |
-| A5 | Bottom-tabs layout (`(app)/(tabs)/_layout.tsx`) | Needs all three destinations to exist; Map moves under the tabs group |
-| A6 | First-launch Onboarding gate | Legacy shows onboarding exactly once, **inside** the authenticated area — not before login |
-| A7 | Drawer / side-menu behavior — **only if legacy parity requires it** | Implement with the cleanest Expo-compatible approach; **do not** blindly recreate React Navigation architecture |
+| A1 | Session gate for the `(app)` route group in `src/app/(app)/_layout.tsx` | Nothing under `(app)` can be routed safely until unauthenticated vs authenticated is decided in one place. ✅ **DONE 2026-10-02** |
+| A2 | Natural Email OTP → authenticated app transition | Email OTP success previously rendered a success state and stopped. ✅ **DONE 2026-10-02** |
+| A3 | Home tab (`src/app/(app)/(tabs)/home.tsx`) | ✅ The four sections were built before anything mounted them. **DONE** |
+| A4 | **Profile Hub tab (`SCREEN-016`)** + logout | ✅ **DONE** |
+| A5 | Bottom-tabs layout (`(app)/(tabs)/_layout.tsx`) | ✅ **DONE** |
+| A6 | First-launch Onboarding gate | ✅ **DONE** (backend-managed) |
+| A7 | Drawer / side-menu | ✅ **DONE** (approved UI) |
 
 Checkpoint: after registering and verifying an email OTP, the app lands inside the authenticated
 shell; onboarding appears once on a fresh install; Home, Map and Profile are all reachable from the
 bottom tabs; logout returns to the unauthenticated area; a completed session survives app restart.
 
-### Phase B — PROFILE HUB CONTENTS
+### Phase B — PROFILE HUB CONTENTS (historical label — current equivalents are B6/B7/B8)
+
+> ⛔ Historical only. The current Phase B is the feature numbering B1…B11 in `REBUILD-PLAN.md` §5.2.
 
 > The **Profile Hub route itself (SCREEN-016) ships in Phase A** as the Profile tab (task **A4**) — it
 > is required to complete the shell and it carries the only logout path. Phase B fills in what the hub
@@ -64,24 +78,24 @@ bottom tabs; logout returns to the unauthenticated area; a completed session sur
 
 | Order | Task | Rationale |
 |---|---|---|
-| B1 | Wire the Map app-bar ☰ Menu / 🔔 Notifications buttons | The shipped Map has inert buttons; they need real destinations |
-| B2 | YAMAK-SCREEN-014 Favorites | Legacy stores favorites locally; no backend favorites routes exist |
-| B3 | YAMAK-SCREEN-015 Notifications | Paginated list; read side only (push is Phase F) |
-| B4 | Profile sub-route plumbing | Every hub entry gets a real route or an explicit not-yet note |
+| B1 | Wire the Map app-bar ☰ Menu / 🔔 Notifications buttons | ☰ resolved by the A7 drawer; 🔔 is still inert → **moved to B7 Notifications** |
+| B2 | YAMAK-SCREEN-014 Favorites | Legacy stores favorites locally; no backend favorites routes exist → **B6** |
+| B3 | YAMAK-SCREEN-015 Notifications | Paginated list + FCM → **B7** |
+| B4 | Profile sub-route plumbing | Absorbed into **B4–B8** |
 
 Checkpoint: the Profile Hub menu is fully wired — no entry leads to an invented or missing route,
 and the Map's app-bar buttons are no longer inert.
 
-### Phase C — COMPLETE CORE HOME FLOW
+### Phase C — COMPLETE CORE HOME FLOW (historical — All Vehicles delivered as B1)
 
 | Order | Task | Rationale |
 |---|---|---|
-| C1 | YAMAK-SCREEN-011 All Vehicles | "View All" from Home has no destination yet |
-| C2 | Finish Vehicle Details request flow — **`POST /requests`** | Services picker + request POST remain TODO (see `PROJECT_CONTEXT.md` 5A/5B for the backend/security decision) |
+| C1 | YAMAK-SCREEN-011 All Vehicles | ✅ **DELIVERED as B1**, commit `50e9c67` |
+| C2 | Finish Vehicle Details request flow — **`POST /requests`** | ✅ **DELIVERED as B2.3/B2.4C** (commit `253dc04`, backend `86cab6e`). The old "blocked / contact-only" statement is **SUPERSEDED**; the tracked-request extension continues in B2.5B–D |
 
 Checkpoint: Home → All Vehicles → Vehicle Details → request submission all work end to end.
 
-### Phase D — PROFILE FEATURES
+### Phase D — PROFILE FEATURES (historical — now B4/B5/B6/B7)
 
 | Order | Task | Rationale |
 |---|---|---|
@@ -90,7 +104,7 @@ Checkpoint: Home → All Vehicles → Vehicle Details → request submission all
 | D3 | YAMAK-SCREEN-014 Favorites | Legacy stores favorites locally; no backend favorites routes exist |
 | D4 | YAMAK-SCREEN-015 Notifications | Depends on the notifications backend shape (see `14` §3) |
 
-### Phase E — SECONDARY
+### Phase E — SECONDARY (historical — now B8/B9)
 
 | Order | Task |
 |---|---|
@@ -100,7 +114,7 @@ Checkpoint: Home → All Vehicles → Vehicle Details → request submission all
 | E4 | YAMAK-SCREEN-024 No network |
 | E5 | YAMAK-SCREEN-023 Freshchat (requires the Freshchat SDK) |
 
-### Phase F — DEFERRED AUTH / INTEGRATIONS
+### Phase F — DEFERRED AUTH / INTEGRATIONS (historical — now B10)
 
 | Order | Task |
 |---|---|
@@ -110,7 +124,7 @@ Checkpoint: Home → All Vehicles → Vehicle Details → request submission all
 | F4 | Social authentication (Google / Apple) |
 | F5 | FCM push and other native integrations, as dependencies require |
 
-### Phase G — FINAL LEGACY PARITY AUDIT
+### Phase G — FINAL LEGACY PARITY AUDIT (historical — now B11)
 
 Compare **every** legacy screen, route, action, API, and business rule against `YamakExpoNew`.
 
@@ -118,27 +132,27 @@ Compare **every** legacy screen, route, action, API, and business rule against `
 
 ---
 
-## 3. Final validating order (current)
+## 3. Final validating order (HISTORICAL — superseded; current order is `REBUILD-PLAN.md` §5)
 
 1. **Phase A** — authenticated app shell: auth gate → Email OTP transition → `(app)` layout → Home
-   tab → **Profile Hub tab (`SCREEN-016`)** → tabs layout → onboarding → drawer (only if required)
-2. **Phase B** — Profile Hub contents: Map app-bar wiring, Favorites, Notifications, sub-route plumbing
-3. **Phase C** — All Vehicles + Vehicle Details request flow (`POST /requests` blocked on a backend decision)
-4. **Phase D** — Edit Profile, My Cars (both gated on the Profile Hub)
-5. **Phase E** — secondary screens
-6. **Phase F** — deferred auth / native integrations
-7. **Phase G** — legacy parity audit
+   tab → **Profile Hub tab (`SCREEN-016`)** → tabs layout → onboarding → drawer. ✅ **CLOSED**
+2. **Phase B** — Profile Hub contents: Map app-bar wiring, Favorites, Notifications, sub-route plumbing. (Historical)
+3. **Phase C** — All Vehicles + Vehicle Details request flow. ✅ **DELIVERED** as B1 and B2.3/B2.4C; tracked-request extension continues in B2.5B–D
+4. **Phase D** — Edit Profile, My Cars (both now B4/B5)
+5. **Phase E** — secondary screens (now B8/B9)
+6. **Phase F** — deferred auth / native integrations (now B10)
+7. **Phase G** — legacy parity audit (now B11)
 
 ---
 
-## 4. Key dependency rules (current — validated in `14-REBUILD-READINESS-REPORT.md`)
+## 4. Key dependency rules (HISTORICAL — current rules: `REBUILD-PLAN.md` §5.7)
 
 - **No screen starts before its listed dependencies.**
-- Auth must be able to reach the authenticated area before any authenticated screen is finalized.
-- **Home / Map / Profile must live inside the authenticated shell** before profile extensions continue.
+- Auth must be able to reach the authenticated area before any authenticated screen is finalized. ✅ satisfied
+- **Home / Map / Profile must live inside the authenticated shell** before profile extensions continue. ✅ satisfied
 - **`SCREEN-016` Profile Hub MUST precede `SCREEN-017` Edit Profile, `SCREEN-018` My Cars, and any
-  profile-side navigation feature.**
-- **Do not start Edit Profile while Phase A or Phase B is incomplete.**
+  profile-side navigation feature.** ✅ satisfied (hub shipped in A4)
+- ~~Do not start Edit Profile while Phase A or Phase B is incomplete.~~ ✅ no longer a live gate; Edit Profile is now **B4**.
 - Native SDK tasks gate the screens that use them (Maps, Freshchat, Google/Apple Sign-In).
 - Stub/legacy screens are P3 and must not block P0/P1.
 - Copy, never invent: all endpoints/params shared from `04-api-catalog.md`.
