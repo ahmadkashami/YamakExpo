@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Linking, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 
 import { ApiErrorRow } from '@/components/home/ApiErrorRow';
@@ -10,6 +10,7 @@ import { DriverAvatar } from '@/components/vehicle-details/DriverAvatar';
 import { BackIcon, ShareIcon } from '@/components/vehicle-details/icons';
 import { SafetyCard } from '@/components/vehicle-details/SafetyCard';
 import { VehicleStatusPill } from '@/components/vehicle-details/VehicleStatusPill';
+import { useCreateRequest } from '@/hooks/use-create-request';
 import { useVehicleDetails } from '@/hooks/use-vehicle-details';
 import { useUserLocation } from '@/location';
 import { colors, radius, spacing, typography } from '@/theme';
@@ -153,6 +154,55 @@ export default function VehicleDetailsScreen() {
   }, [locationStatus, requestLocation, vehicleId]);
 
   const { vehicle, isLoading, error, refetch } = useVehicleDetails(vehicleId);
+  const { submit: createRequest, isSubmitting, error: createError, reset: resetCreateRequest } = useCreateRequest();
+  const [selectedServiceIds, setSelectedServiceIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    setSelectedServiceIds(new Set());
+    resetCreateRequest();
+  }, [vehicleId, resetCreateRequest]);
+
+  useEffect(() => {
+    if (createError !== null) {
+      Alert.alert('Request failed', createError.message);
+    }
+  }, [createError]);
+
+  const toggleService = useCallback((serviceId: number) => {
+    setSelectedServiceIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(serviceId)) {
+        next.delete(serviceId);
+      } else {
+        next.add(serviceId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleRequest = useCallback(async () => {
+    if (vehicle === null || vehicleId === null) {
+      return;
+    }
+    const driverId = vehicle.currentDriver?.id;
+    if (typeof driverId !== 'number') {
+      Alert.alert('Unable to send request', 'No provider assigned to this vehicle.');
+      return;
+    }
+    const services = Array.from(selectedServiceIds).filter((id) => typeof id === 'number' && id > 0);
+    if (services.length === 0) {
+      return;
+    }
+    const ok = await createRequest({
+      vehicleId,
+      driverId,
+      services,
+    });
+    if (ok) {
+      setSelectedServiceIds(new Set());
+      Alert.alert('Request sent', 'Request sent successfully.');
+    }
+  }, [createRequest, selectedServiceIds, vehicle, vehicleId]);
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -315,19 +365,48 @@ export default function VehicleDetailsScreen() {
               </View>
             )}
 
-            {/* Services — read-only chips; selection stays a deferred TODO. */}
+            {/* Services — multi-select for request */}
             {services.length === 0 ? null : (
               <View style={styles.card}>
                 <Text style={styles.sectionHeading}>Services</Text>
                 <View style={styles.chips}>
-                  {services.map((service) => (
-                    <View key={service.id} style={styles.chip}>
-                      <Text style={styles.chipLabel}>{service.name.en}</Text>
-                    </View>
-                  ))}
+                  {services.map((service) => {
+                    const selected = selectedServiceIds.has(service.id);
+                    return (
+                      <Pressable
+                        key={service.id}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        accessibilityLabel={service.name.en}
+                        onPress={() => toggleService(service.id)}
+                        style={[styles.chip, selected && styles.chipSelected]}
+                        disabled={isSubmitting}
+                      >
+                        <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>
+                          {service.name.en}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
               </View>
             )}
+
+            <View style={styles.card}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Send request"
+                disabled={selectedServiceIds.size === 0 || isSubmitting || vehicle.currentDriver?.id === undefined}
+                onPress={() => void handleRequest()}
+                style={({ pressed }) => [
+                  styles.requestButton,
+                  (selectedServiceIds.size === 0 || isSubmitting || vehicle.currentDriver?.id === undefined) && styles.requestButtonDisabled,
+                  pressed && !(selectedServiceIds.size === 0 || isSubmitting) && styles.requestButtonPressed,
+                ]}
+              >
+                <Text style={styles.requestButtonLabel}>{isSubmitting ? 'Sending...' : 'Request'}</Text>
+              </Pressable>
+            </View>
 
             <SafetyCard />
 
@@ -502,6 +581,29 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontWeight: '500',
     color: colors.fieldText,
+  },
+  chipSelected: {
+    backgroundColor: colors.navyDeep,
+    borderColor: colors.navyDeep,
+  },
+  chipLabelSelected: {
+    color: colors.brandText,
+  },
+  requestButton: {
+    backgroundColor: colors.navyDeep,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  requestButtonPressed: {
+    backgroundColor: colors.navyDeepDark,
+  },
+  requestButtonDisabled: {
+    opacity: 0.5,
+  },
+  requestButtonLabel: {
+    ...typography.buttonLabel,
+    color: colors.brandText,
   },
   invalidWrap: {
     flex: 1,

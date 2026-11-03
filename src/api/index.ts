@@ -16,6 +16,7 @@ export {
   type OnboardingSlide,
 } from './onboarding';
 export { ApiError, extractBackendMessage, type ApiErrorKind } from './api-error';
+export { createServiceRequest, type CreateServiceRequestInput, type CreateServiceRequestResult } from './requests';
 export { getAdds, type Add, type AddsMetaData, type AddsResponse } from './adds';
 export {
   getServices,
