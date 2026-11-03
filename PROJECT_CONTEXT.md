@@ -25,6 +25,8 @@ Recorded as DOCS-EXPO-001. Ten decisions, in the user's own terms:
    `react-native-config` and bare-RN are **NOT** to be forced.
 6. **The next phase is the Authenticated App Shell (Phase A).** The app shell must be completed
    before Edit Profile — "Edit Profile is next" is no longer a valid statement.
+   *(SUPERSEDED 2026-11-03 — Phase A is CLOSED; see CURRENT MASTER STATUS. The rule that Edit
+   Profile must not precede the shell remains valid and is already satisfied.)*
 7. **The Profile Hub (SCREEN-016) must precede Edit Profile (SCREEN-017) and My Cars (SCREEN-018)**
    and any profile-side navigation, because those screens are reached through the hub and the hub
    holds the only logout path.
@@ -39,7 +41,8 @@ Recorded as DOCS-EXPO-001. Ten decisions, in the user's own terms:
 ### Source-of-truth hierarchy (highest wins)
 
 1. `PROJECT_CONTEXT.md` — verified implementation facts, recorded decisions, this section.
-2. `docs/rebuild/REBUILD-PLAN.md` — phases A–G, next tasks, architecture authority.
+2. `docs/rebuild/REBUILD-PLAN.md` — current execution plan (Phase A closed, Phase B in progress),
+   request-tracking decisions (REQ-DEC), architecture authority.
 3. Legacy `yamak-mobile` — functional/business truth only (see item 4 above).
 4. `docs/rebuild/01–11` legacy-analysis documents — historical legacy evidence, NON-CURRENT for
    architecture.
@@ -47,6 +50,48 @@ Recorded as DOCS-EXPO-001. Ten decisions, in the user's own terms:
    (`https://docs.expo.dev/`, version-matched to the installed SDK).
 
 An explicit user decision outranks any document, including this one.
+
+---
+
+## CURRENT MASTER STATUS (authoritative snapshot — 2026-11-03)
+
+> **This section is the single current position.** The rest of this file is the detailed,
+> date-ordered slice record. Where an older section contradicts this snapshot, **this snapshot
+> wins**; the affected older text is marked HISTORICAL / SUPERSEDED where it would otherwise
+> mislead.
+
+- **Active project:** `YamakExpoNew` (Expo + Expo Router). Mobile branch `main`,
+  HEAD **`253dc04`** (`feat(requests): add mobile service request workflow`).
+- **Phase A — AUTHENTICATED APP SHELL (A1–A7): ✅ CLOSED.**
+- **Phase B — B1 All Vehicles: ✅ CLOSED** (commit `50e9c67`).
+- **Phase B — B2 Vehicle Details + tracked request workflow: 🔄 IN PROGRESS.** B2.1–B2.4C are
+  complete and runtime-verified; the B2.5 review opened a genuine requirements loop, so the
+  implementation now runs as **B2.5A → B2.5F**, then **B2.6 Design Review → B2.7 Approved UI →
+  B2.8 Final Verification + Commit**.
+- **⬅️ CURRENT NEXT STEP = B2.5A — Request Lifecycle + Channel Analysis (ANALYSIS ONLY).**
+  No schema, no migration, no product code, no dashboard code.
+- **B3 My Requests** is a new official Phase B feature (list + details for app / WhatsApp / phone
+  requests). **PLANNED — NOT IMPLEMENTED.**
+- **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
+  is **NOT IMPLEMENTED**.
+- **Canonical create contract:** `POST /api/mobile/v1/requests` — authenticated AppUser identity,
+  eligibility validation, multi-service, `Idempotency-Key` + fingerprint, atomic create/replay,
+  HTTP 409 on same-key/different-payload. There is **no** separate active Request v2 creation
+  contract.
+- **Requests are now coordinate-mandatory for every channel** (`app`, `whatsapp`, `phone`), and
+  **channel is data, never status**. See `REQ-DEC-001…012` (§5.3 of
+  `docs/rebuild/REBUILD-PLAN.md`, restated at the end of this file).
+- **Commit/push status for this documentation pass: NOT YET** (explicitly forbidden by the task).
+- **Plan authority:** the latest **pushed** `PROJECT_CONTEXT.md` +
+  `docs/rebuild/REBUILD-PLAN.md` on `ahmadkashami/YamakExpo` are the durable plan copy — re-read
+  them from the remote before planning a new phase; no shadow plan files.
+  `docs/rebuild/12-rebuild-order.md` is **SUPERSEDED** (its own banner): history only, never a
+  sequencing source. Older analysis docs (`11`, `13`, `14`, `YAMAK-MOBILE-REBUILD-SPEC.md`) still
+  contain superseded `NEXT` / `P0 — next` / "`POST /requests` blocked" markers; they are
+  **NON-CURRENT** and do not define the next step. Only this snapshot and
+  `REBUILD-PLAN.md` §6 do.
+
+---
 
 ## Tech Stack
 - Expo
@@ -71,6 +116,13 @@ An explicit user decision outranks any document, including this one.
 - `npx tsc --noEmit`: Run TypeScript validation.
 
 ## Current Implementation Position
+
+> ⚠️ **HISTORICAL AS-OF 2026-10-02 — kept as the Phase-A working record.** Several statements below
+> are **superseded by later work**: "no tab bar, drawer … or authenticated Home shell yet"
+> (A3/A5/A7 delivered all three), "`signOut()` … still has no call site" (the drawer logout calls
+> it), and "`email-otp.tsx` … still a dead end" (A2 completed the transition). For verified current
+> state use **CURRENT MASTER STATUS** at the top of this file.
+
 - Route tree: `src/app/_layout.tsx` (root Stack, `headerShown: false`, wraps `AuthProvider`), `index.tsx` (the startup gate), `register.tsx` (guarded), `email-otp.tsx` (ungated by design — it must be reachable while unauthenticated, and now completes signup itself) + the Step-4B group `(app)/(tabs)/map.tsx` with a gated `(app)/_layout.tsx` (route `/map`). No tab bar, drawer, `+not-found`, onboarding, or authenticated Home shell yet.
 - **Root startup gate (Step A1, done):** `src/app/index.tsx` reads `useAuth().status` and returns `<Redirect href="/map" />` when `authenticated`, `<Redirect href="/register" />` when `unauthenticated`, and the neutral `AuthGateLoading` surface while `loading`. It replaces the former unconditional `<Redirect href="/register" />`, which sent authenticated users to Register. The `/map` destination is only the entry route that already exists inside `(app)` — A1 does not decide the final post-OTP screen and does not create a Home route.
 - `(app)/_layout.tsx` is now protected: it renders `<Redirect href="/register" />` unless `status === 'authenticated'`, while still mounting the single shared `UserLocationProvider` around its `<Slot />` for authenticated users.
@@ -453,6 +505,14 @@ The approved visual is a **used-vehicle classifieds / marketplace listing** ("To
 | Palette: navy #0B2A4A / gold #E9A319 / emerald #128C7E | legacy WhatsApp-green `secondary` | theme: primary #15406F · gold #FBBF24 · no secondary | D | 5C token decision: approved navy is darker than theme primary and approved gold darker than theme gold; needs a mapping decision (5A already flagged missing secondary) |
 
 ### Request API concern (rule 12 — DO NOT implement yet)
+
+> **SUPERSEDED (2026-11-03) — historical decision record.** The "contact-only interim"
+> recommendation, and the classification of `POST /requests` as unusable in the rebuild, are
+> **NON-CURRENT**. The canonical authenticated contract now ships (`POST /api/mobile/v1/requests`,
+> B2.3/B2.4C), and every YAMAK-initiated interaction must create a tracked request carrying
+> **mandatory customer coordinates** for **all** channels (REQ-DEC-001…012). Kept because the
+> live-verified legacy defects and the stray `requests id=8` note remain valid history.
+
 `POST /requests` remains **functionally available but public/unauthenticated**, creates a real DB row, and emails the driver; `payload` is silently dropped (5A live-verified). Classification: **FUNCTIONALLY AVAILABLE BUT REQUIRES BACKEND/SECURITY DECISION.** Open questions (backend-owner, not fixable here): (a) should the order POST stay part of the Vehicle Details rebuild at all; (b) should contact initially work WITHOUT the POST (recommended: yes — `tel:`/`whatsapp://` only, so the first build creates no order rows and sends no driver emails, with the endpoint added back once auth/payload is decided); (c) should the endpoint require auth; (d) should `payload`/button/`userLocation` be persisted. Pending: purge stray dev row `requests id=8`.
 
 ### Route / architecture confirmation (rule 18)
@@ -462,7 +522,7 @@ Unchanged by the approved design: **`src/app/(app)/vehicle/[id].tsx` above `(tab
 - **KEEP EXACTLY:** app-bar structure (back + "Vehicle details" title); hero image slot (rounded, ~16/10, full-width); white rounded-card language on `#F8FAFC` with the persistent bottom bar (WhatsApp icon + navy "Call provider"); provider-card layout skeleton (avatar + name + subtitle) and its initials-avatar fallback pattern; neutral CTA wording — "Call provider", "Inquire via WhatsApp"; **NO "Order Now"**.
 - **KEEP WITH ADAPTATION:** availability pill ← vehicle.workStatus (verify value set; never hardcode); title ← `modelName` ‖ `company.name[currentLanguage]` (no year); provider card ← currentDriver (photo→initials fallback, name, company+branch name; all null-safe); WhatsApp/Call CTAs ← `Linking` `whatsapp://`/`tel:` with `encodeURIComponent` + null-phone guard (POST wiring deferred); non-profit notice ← approved "100% Free Facilitator • No Commission • Pay Driver Directly" wording (no "seller"/"0% commission"); share ← legacy app-link share (deep-link scope = decision); optional read-only `vehicle.services[]` chips.
 - **REMOVE:** entire price/rate UI (Fixed Price, KWD 14,900, Direct Provider Rate); specifications grid + "GCC Specifications"; "Verified Listing", "✓ Verified", "Dealer Certified", "Verified against Kuwait Ministry of Interior records"; ★ 4.9 / "(42 completed transactions)"; "Responds in < 15 mins"; "Member since 2021"; ♡ favourite + demo toast + its JS; gallery "1 / 6 photos"; eyebrow "SUV · 4WD"; Vehicle Overview prose + feature chips; location line (no data source — see D).
-- **DEFER / NEEDS DECISION:** location line display (D — no address/geocode source today); POST /requests wiring + auth + payload persistence (rule 12; recommend no-POST contact initially); services chips vs picker (D); share payload scope — app link vs vehicle deep link (D); theme-token mapping for approved navy/gold/emerald (D); safety block + other-vehicles row (legacy-supported, absent from approved design — include in 5C only if the screen keeps legacy sections).
+- **DEFER / NEEDS DECISION:** location line display (D — no address/geocode source today); POST /requests wiring + auth + payload persistence (rule 12; recommend no-POST contact initially); services chips vs picker (D); share payload scope — app link vs vehicle deep link (D); theme-token mapping for approved navy/gold/emerald (D); safety block + other-vehicles row (legacy-supported, absent from approved design — include in 5C only if the screen keeps legacy sections). **SUPERSEDED 2026-11-03:** the "recommend no-POST contact initially" item is NON-CURRENT — request creation is now required for all channels with mandatory coordinates; see the Request API concern note above and CURRENT MASTER STATUS.
 
 ### Learning review status (still NOT complete — mandatory gate before implementation)
 Covered so far: dynamic route `[id]` (5A). Remaining NEW concepts for the mandatory review (list only, NOT taught yet): route-param string→number coercion + NaN guard; external `Linking` safety (`tel:`/`whatsapp://` + Android intent failure); `encodeURIComponent` of the WhatsApp message; nullable contact handling (phoneNum/photo/name/currentDriver); image fallback strategy (iconMap null, initials avatar, no hardcoded legacy URLs); API 500-vs-404 behavior (live: missing model → 500, not 404); plus 5B additions — element-level data-provenance discipline (design numbers are never product data) and availability-status value mapping (workStatus → display string). 4C's review (demo-claims removal, approve-ui home/map authorities, consistency check, verification method) also still pending.
@@ -495,7 +555,13 @@ Covered so far: dynamic route `[id]` (5A). Remaining NEW concepts for the mandat
 - Location line: NOT deleted from the plan — deferred behind `TODO(VehicleDetails)` (no backend address; reverse geocoding pending); no fake text, no raw lat/lng.
 - REMOVED (unsupported): price/KWD, verified/dealer/MOI claims, rating/transactions, response-time/member-since, year/engine/mileage specs, ♥ favorite+toast, gallery counter, demo eyebrow/sale prose.
 
-### Contact (tel + WhatsApp ONLY; no POST /requests)
+### Contact (tel + WhatsApp ONLY; no POST /requests) — HISTORICAL, SUPERSEDED 2026-11-03
+> **SUPERSEDED.** This is the 5C contact-only implementation as delivered. B2.3 added the
+> authenticated create request, and the current requirement is that **every** channel creates a
+> tracked request with mandatory coordinates **before** any external handoff. The `tel:` /
+> `whatsapp://` mechanics and null-phone guards below remain valid; the "no POST /requests" part
+> does not.
+
 Whitespace-stripped phone; `tel:<phone>`; `whatsapp://send?phone=<digits>&text=<encoded>` with `https://wa.me/<digits>?text=<encoded>` fallback — `Linking.canOpenURL` + try/catch, graceful app-not-installed path. Null phone → both actions disabled (`disabled`, never `tel:undefined`, never a bad URL). `TODO(VehicleDetails)` marks where `POST /requests` returns after auth/payload is finalized. Grep confirms zero `POST /requests` usage; live `GET /requests` still shows count 8 (no new rows; `id=8` untouched).
 
 ### Navigation (both back paths runtime-verified)
@@ -526,10 +592,15 @@ Method: TEMP `src/app/index.tsx` redirect hook (documented 4C technique — **RE
 ### Learning review status (COMPLETE)
 route-param string→number coercion + NaN guard (parseVehicleId); external `Linking` safety (`tel:`/`whatsapp://`, intent failure, wa.me fallback); `encodeURIComponent` of the WhatsApp message; nullable contact handling (phoneNum/photo/name/currentDriver); image fallback strategy (iconMap → emoji placeholder, photo → initials, no hardcoded legacy URLs); API 500-vs-404 reality (frontend-only generic sanitized state); 5B element-level data-provenance (design numbers are never product data — enforced by removal); availability value mapping (`workStatus` → display); 4C demo-claims neutralization + approve-ui authority honored for the details screen; theme-token mapping decision applied (minimal justified additions on existing semantic tokens).
 
-## Next Approved Step
+## Next Approved Step — HISTORICAL / SUPERSEDED (2026-09-29 → 2026-10-12)
+
+> ⛔ **NON-CURRENT.** Every "next step" line below was correct for its own date and is kept as
+> history only. Phase A is **CLOSED**, B1 is **CLOSED**, and B2 is in progress. The only current
+> next step is the one in **CURRENT MASTER STATUS** at the top of this file: **B2.5A**.
+
 - **PHASE A / STEP A1 (session + auth gate) delivered, runtime-verified and committed** as `e5ec96b` — see the dedicated section above. The root startup gate, the `(app)` group gate and the `/register` gate are in place in both directions, `AuthProvider` is still the single session owner, and SecureStore is unchanged. `/email-otp` was deliberately left unguarded and unchanged by A1.
 - **PHASE A / STEP A2 (Email OTP → Authenticated App) delivered and runtime-verified, NOT YET committed** — see `PHASE A — STEP A2` at the end of this document. One file changed (`src/app/email-otp.tsx`): `authenticate()` is still the only session writer, then `router.replace(AUTHENTICATED_ENTRY_ROUTE)`. The old permanent success hold is now a transient confirmation; Back cannot re-enter Email OTP; invalid-OTP and network-failure behaviour is unchanged.
-- **NEXT APPROVED STEP = A3 — Home Route.** A3 owns the authenticated landing screen inside `(app)` and, with it, finally settles the destination question: create the Home route and repoint `AUTHENTICATED_ENTRY_ROUTE` at it (`/map` is still only the placeholder that A1/A2 had to use because it was the one entry route already inside `(app)`). Do not build tabs, the Profile Hub, onboarding or the drawer inside A3 — tabs are A5.
+- **NEXT APPROVED STEP = A3 — Home Route.** (SUPERSEDED — A3 shipped long ago; see **CURRENT MASTER STATUS**.) A3 owns the authenticated landing screen inside `(app)` and, with it, finally settles the destination question: create the Home route and repoint `AUTHENTICATED_ENTRY_ROUTE` at it (`/map` is still only the placeholder that A1/A2 had to use because it was the one entry route already inside `(app)`). Do not build tabs, the Profile Hub, onboarding or the drawer inside A3 — tabs are A5.
 - Slice 3B (location foundation + Vehicles) delivered and runtime-verified (see the architecture section above and the Verification entries). Nothing from 3B is mounted by any production screen yet (the Map consumes `useUserLocation()` via the shared provider).
 - **Step 4A (Map + ViewMap analysis) + Google Maps native config audit (both read-only) delivered** — verified facts and decisions recorded above. Step 4A's two original blockers were resolved for this slice: the `/map` route (deep-linkable, no Home shell) was explicitly approved, and `react-native-maps@1.27.2` was approved via `npx expo install` (bundled in Expo Go — no key needed there).
 - **Home slice 4B (Map tab) delivered and runtime-verified** — see the dedicated section and Verification entries above. `/map` now exists as a real screen; marker press remains local-selection-only by design (Vehicle Details still has no route). A real shared bug surfaced by live-verification (raw Laravel SQLSTATE leaked through `ApiError.message`) was fixed in `src/api/api-error.ts` (sanitizer) — see the section above.
@@ -554,6 +625,13 @@ route-param string→number coercion + NaN guard (parseVehicleId); external `Lin
 - **Payload (hardened):** `vehicleId` (int, required), `driverId` (int, required), `services` (array, min:1), `services.*` integers. **Header required:** `Idempotency-Key` (UUID v4).
 - **Eligibility:** `RequestEligibilityValidator` enforces vehicle exists + `work_status='online'` + `current_driver_id` set + driver matches vehicle's current driver + all services offered by vehicle via pivot.
 - **Creation:** `RequestCreationService` atomic create/replay with fingerprint `v1|u:{userId}|v:{vehicleId}|d:{driverId}|s:{sortedUniqueIntServiceIds}`, UUIDv4 key validation, same-key/same-payload replay, same-key/different-payload conflict (DomainException), 24h retention hint. Services cardinality = **multiple allowed** (array, min 1). Initial status = **server-controlled** `active`. Platform not accepted from client. Location not required by hardened contract. Notifications: **none** (mail removed in consolidated path; uses `MAIL_MAILER=array` in tests).
+
+> **SUPERSEDED 2026-11-03 (requirements evolution — not a defect).** The "location not required"
+> part of this contract is **NON-CURRENT**: every tracked request must now carry customer
+> latitude/longitude **and** a channel. The endpoint, auth, eligibility, idempotency, replay, and
+> 409 semantics above **remain current**. The server-controlled initial status `active` is also
+> **not** in the target lifecycle vocabulary (`contact_initiated / pending / accepted / completed /
+> not_completed / cancelled`) and must be reconciled in **B2.5A**.
 
 ### Implementation
 - `app/Http/Controllers/Api/Mobile/RequestController@store` rewired to use `RequestCreationService`; thin controller, maps exceptions to validation errors.
@@ -592,6 +670,11 @@ Legacy app would need to migrate to hardened contract (pre-release). Dashboard u
 { "vehicleId": <int>, "driverId": <int>, "services": [<int>, ...] }
 ```
 No userId/location/platform/status.
+
+> **HISTORICAL CONTRACT — B2.3 as delivered (2026-10-14).** Correct when location was not required.
+> **SUPERSEDED 2026-11-03:** a channel (`app` / `whatsapp` / `phone`) and mandatory customer
+> coordinates are now part of the create contract (B2.5B–D). The identity, driver-source,
+> idempotency, and double-submit behaviour below remain valid.
 
 ### Idempotency
 - UUID v4 generated client-side (crypto.randomUUID/getRandomValues fallback). Stored in hook attempt model with `payloadKey = v:{vehicleId}|d:{driverId}|s:{sortedUniqueServiceIds}`. Same payload failure → reuse same key for retry. Payload change → invalidate and generate new key. Success → clear attempt. On 409 conflict → clear attempt (no silent loop).
@@ -3454,3 +3537,204 @@ Git: `57bf936` + 1 modified + 4 untracked C.2 test files (unchanged in this step
 - Verdict: B2.4C IDEMPOTENCY CONFLICT 409 REPAIR PASS. B2.4 ACTUAL MOBILE REQUEST RUNTIME VERIFICATION PASS with the previously recorded scope limitation: different-vehicle reset remains source-verified only because the retained fixture has one vehicle; Other Vehicles renders empty. Existing screen-entry location priming remains distinct from submission's proven no-location behavior. Two stale pre-existing legacy tests remain noted above. B2.5 is next, NOT started. Commit NOT YET.
 
 - Final-source recheck: corrected a caught import-formatting error before completion; PHP syntax checks pass and combined guard/current-contract rerun passes 84 tests / 406 assertions. Temporary test SQLite removed again.
+
+---
+
+## PHASE B — B2.5 RE-SCOPE + REQUEST TRACKING DECISIONS (2026-11-03)
+
+**Verdict: REQUIREMENTS LOOP RECORDED — B2.5A IS THE NEXT STEP.** Documentation/plan alignment
+only: no product code, no Backend / Dashboard / Legacy change, no package, no build, no migration,
+no commit, no push. This section is the current authority for request tracking and supersedes every
+earlier statement that treats request creation as blocked, contact-only, or location-free.
+
+### 1. Verified state entering B2.5A
+
+- **Mobile:** `YamakExpoNew`, branch `main`, HEAD `253dc04e07213cdc910e0176e8c2bc55a8877141`
+  (`feat(requests): add mobile service request workflow`). Working tree clean before this
+  documentation pass.
+- **Phase A (A1–A7): CLOSED.** **B1 All Vehicles: CLOSED** (`50e9c67`).
+- **B2.1 → B2.4C: COMPLETE and runtime-verified.** The mobile can select multiple services and
+  create a real, persisted, owner-scoped request.
+- **B2.5 (Code Review / Learning): COMPLETE as a review gate — no code was produced.** Its finding
+  is the requirements change below, which is why B2's implementation now runs as B2.5A–F. (Older
+  sections dated before this one correctly said "B2.5 NOT started" *on their own date*; the review
+  has since been performed.)
+- **Relevant verified commits:**
+  - Backend `140e772` — consolidate mobile request creation onto the canonical v1 contract.
+  - Backend `86cab6e` — return HTTP 409 for same-key / different-payload idempotency conflicts
+    (B2.4C).
+  - Mobile `253dc04` — mobile service request workflow (B2.3).
+- **Proven request foundation (unchanged by this section):** authenticated AppUser identity (no
+  client impersonation); eligibility validation (vehicle online, current driver set and matching,
+  services offered by the vehicle); multi-service; `Idempotency-Key` (UUID v4) + canonical payload
+  fingerprint; atomic create/replay; same key + same payload → replay; same key + different payload
+  → **HTTP 409**; mobile double-tap protection; real DB persistence.
+
+### 2. Requirement evolution — explicit and deliberate
+
+The location requirement **changed**. It is not a past bug and no earlier work is retroactively
+wrong:
+
+- B2.3/B2.4 were implemented and verified against the contract that existed then: **location was
+  not required**.
+- The requirement now is: **every YAMAK-initiated interaction is a trackable Service Request**, and
+  **every tracked request requires the customer's latitude/longitude at creation, for every
+  channel**.
+- Therefore the "no location" contract is **SUPERSEDED** (REQ-DEC-012). Do not "fix" history; update
+  the contract forward through B2.5A–F.
+
+### 3. Recorded decisions — REQ-DEC-001…012 (authoritative)
+
+| ID | Decision |
+|---|---|
+| REQ-DEC-001 | Every YAMAK-initiated interaction creates a **trackable Service Request** — in-app request, WhatsApp handoff, and phone call alike. |
+| REQ-DEC-002 | **Channel is data, never status.** `channel ∈ {app, whatsapp, phone}` attributes the request; it never replaces its lifecycle state. |
+| REQ-DEC-003 | **Customer latitude/longitude are mandatory at creation, for every channel.** |
+| REQ-DEC-004 | **Snapshot semantics:** coordinates are captured once at creation and never rewritten by later re-resolution. |
+| REQ-DEC-005 | **Never store fake or placeholder coordinates** — `0,0`, emulator defaults, and guesses are rejected. |
+| REQ-DEC-006 | **No valid location ⇒ no tracked request.** Surface the location problem; never fall back to an untracked contact. |
+| REQ-DEC-007 | **Reuse the existing single `UserLocationProvider`** (`src/location`). No second location stack. |
+| REQ-DEC-008 | **WhatsApp/Phone order is fixed:** select services → obtain location → create the tracked request → **then** open the external app. Never the reverse. |
+| REQ-DEC-009 | **Lifecycle (conceptual; schema names not final):** `contact_initiated`, `pending`, `accepted`, `completed`, `not_completed`, `cancelled`. Initial status: app → `pending`; whatsapp/phone → `contact_initiated`. Validated in B2.5A. |
+| REQ-DEC-010 | **Status history is required:** from-status, to-status, actor, optional reason, timestamp. No table/column names approved yet. |
+| REQ-DEC-011 | **Coordinate privacy:** the provider must not receive customer latitude/longitude before accepting. Post-accept visibility needs **both** per-request authorization **and** an accepted/eligible state. Admin visibility is subject to admin authorization. |
+| REQ-DEC-012 | **Requirement evolution is not a defect.** The earlier location-free contract is superseded, not invalid. |
+
+**Canonical create endpoint:** `POST /api/mobile/v1/requests`, inside the global
+`/api/mobile/v1/` namespace. No separate active Request v2 creation contract.
+
+### 4. Lifecycle and status history
+
+- The six conceptual states above are the **target vocabulary** for analysis; they are **not** an
+  approved database enum and no column/table name is approved.
+- **Initial status by channel:** app → `pending`; whatsapp/phone → `contact_initiated`.
+- The current implementation writes the server-controlled status `active`, which is **not** in the
+  target vocabulary. Reconciling `active` (mapping vs migration vs retaining as an internal legacy
+  value) is an explicit B2.5A decision, not something to change now.
+- **Status history** is an approved requirement: from-status, to-status, actor, optional reason,
+  timestamp. Who writes each transition (admin, provider, system) must be decided in B2.5A.
+- **Negative outcomes** (`not_completed`, `cancelled`) must be able to carry a reason.
+
+### 5. Channels
+
+| Channel | Who initiates | Initial status | Tracked request created | External app opened |
+|---|---|---|---|---|
+| `app` | Customer, in-app | `pending` | Yes — before/at submit | n/a |
+| `whatsapp` | Customer, from Vehicle Details | `contact_initiated` | **Yes — before** the WhatsApp handoff | After creation succeeds |
+| `phone` | Customer, from Vehicle Details | `contact_initiated` | **Yes — before** the dialer handoff | After creation succeeds |
+
+Channel values and the request-tracking flow are **not implemented yet** (see B2.5B–D).
+
+### 6. Location rules
+
+- Coordinates are **mandatory** at creation for all channels (REQ-DEC-003).
+- They are a **snapshot** (REQ-DEC-004), so later location changes never alter an existing request.
+- **Fake coordinates are forbidden** (REQ-DEC-005); `0,0` must never be accepted as "valid".
+- **No valid location ⇒ no tracked request** (REQ-DEC-006): the flow must show the location problem
+  and stop, rather than silently creating an untracked or coordinate-less request.
+- The single shared **`UserLocationProvider`** is the only location source (REQ-DEC-007).
+- **Privacy (REQ-DEC-011):** providers see no coordinates before acceptance; after acceptance,
+  visibility requires per-request authorization **and** an accepted/eligible state; admin access
+  requires admin authorization.
+
+### 7. WhatsApp / phone flow order (decision, not yet implemented)
+
+```text
+select services
+  → obtain a valid location (shared provider)
+  → create the tracked request (channel = whatsapp | phone)
+  → only after success: open WhatsApp / the dialer
+```
+
+Opening WhatsApp or the dialer first, and creating the request afterwards (or not at all), is
+**wrong** under the current requirement.
+
+### 8. B3 — My Requests (new official Phase B feature)
+
+- The authenticated customer can see **their own** tracked requests for **all three channels**, as
+  a list plus a details view.
+- **PLANNED — NOT IMPLEMENTED.** Provisional sequence (order fixed; titles may be refined in
+  B3.1): B3.1 legacy/read-contract analysis → B3.2 read-contract decision (list/detail,
+  pagination, status vocabulary, channel) → B3.3 data layer (API module + hook) → B3.4 functional
+  list screen + real entry point → B3.5 functional details screen → B3.6 runtime verification →
+  B3.7 code review/learning → B3.8 design review → B3.9 approved UI → B3.10 final verification +
+  commit.
+- Ownership filtering is mandatory: a user must never see another user's requests.
+- B3 must not start until the tracked-request read contract is stable (after B2.5C; ideally after
+  B2.5F).
+
+### 9. Admin Dashboard — request tracking requirement
+
+The dashboard must be able to inspect tracked request details: list and details including
+**channel**, **status**, **coordinates**, and **lifecycle history**, under admin authorization.
+**NOT IMPLEMENTED.** Delivered by **B2.5E**.
+
+### 10. Provider lifecycle scope — FUTURE (explicitly outside the current MVP queue)
+
+| Provider action | State |
+|---|---|
+| View incoming requests | FUTURE |
+| Accept / reject | FUTURE |
+| Complete / not-complete **with a reason** | FUTURE |
+| View customer coordinates **after acceptance** | FUTURE |
+| Open the request location in Maps | FUTURE |
+
+Do not add provider routes, screens, or role plumbing while B2/B3 are open.
+
+### 11. B2.5A–F and B2.6–B2.8 — approved sequence
+
+| Step | Scope | Gate |
+|---|---|---|
+| **B2.5A** | **Request lifecycle + channel analysis** | ⬅️ **CURRENT NEXT STEP** |
+| B2.5B | Backend model extension (channel, coordinates, lifecycle, status history) | Needs B2.5A decisions; **migration only with explicit approval** |
+| B2.5C | Canonical contract update | After B2.5B |
+| B2.5D | Mobile integration update (location-gated create for all channels) | After B2.5C |
+| B2.5E | Dashboard request tracking | After B2.5C |
+| B2.5F | Request-tracking runtime verification | After B2.5D + B2.5E |
+| B2.6 | Design review | After B2.5F |
+| B2.7 | Approved UI implementation | After B2.6 approval |
+| B2.8 | Final verification + commit | After B2.7 |
+
+### 12. Feature lifecycle (mandatory) and the B2 deviation
+
+```text
+Analyze → Architecture → Functional implementation → Runtime verification
+  → Code review / learning → Design review → Approved UI → Final verification
+  → Commit (explicit approval only) → Sync remote (push + verify)
+```
+
+B2's **intentional deviation**: the review gate produced a genuine requirements loop, so the
+sequence is `B2.5 → user decisions → B2.5A–F → B2.6 → B2.7 → B2.8`. This is the lifecycle applied
+honestly, not a shortcut.
+
+### 13. Git sync, multi-repo, and remote plan authority
+
+- **After every approved local commit:** verify the tree, `git push origin <branch>`, compare
+  `git rev-parse HEAD` with `git rev-parse origin/<branch>` — they **must match** — then report the
+  commit hash and push result. Never report "pushed" without that proof.
+- **Multi-repo:** push only the repository that received the commit; for cross-repo features verify
+  **each** affected repo's HEAD vs `origin/<branch>`. The **Legacy** repo is read-only unless
+  explicitly approved.
+- **Remote plan authority:** the latest **pushed** `PROJECT_CONTEXT.md` +
+  `docs/rebuild/REBUILD-PLAN.md` on `ahmadkashami/YamakExpo` are the durable plan copy. Re-read
+  them from the remote before planning a new phase. No shadow/local-only plan files.
+- **This pass performed no commit and no push** (explicitly forbidden).
+
+### 14. Open decisions reserved for B2.5A
+
+1. Exact schema names and value sets for channel, statuses, and status history.
+2. How the existing `active` status is reconciled (map / migrate / keep internally).
+3. Whether coordinates are stored as numeric columns or a geometry/point type, and precision.
+4. Required vs optional `reason` for `not_completed` / `cancelled`.
+5. Which actor types are recorded (customer / provider / admin / system).
+6. Exact location-unavailable UX per channel (retry vs open settings vs abort).
+7. Whether the create fingerprint changes when channel/coordinates change (expected: yes).
+8. Read contract for B3 and Dashboard (shape, pagination, fields, ownership scoping).
+9. What the provider may see before acceptance (no coordinates — confirm everything else).
+10. Fate of the stray dev row `requests id=8` (still pending user purge).
+
+### 15. Current next step
+
+> ## ⬅️ **B2.5A — Request Lifecycle + Channel Analysis (ANALYSIS ONLY).**
+> Read-only. No schema, migration, product code, or dashboard code. Produce the decisions listed
+> above, then stop for approval.
