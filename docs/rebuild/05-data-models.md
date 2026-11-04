@@ -122,6 +122,41 @@ used to link providers to services. Rebuild MUST confirm the real API shape.
 ### 3.6 Notification (INFERRED)
 `user-notifications/mine` returns a paginated list; fields UNKNOWN.
 
+### 3.7 ServiceRequest — CURRENT vs APPROVED TARGET (B2.5A, 2026-11-04)
+
+**CURRENT** (approved analysis findings): ServiceRequest persists platform, app_user_id, driver_id,
+company_id, branch_id, status (`active`), services pivot and timestamps. vehicleId is validated but
+the selected vehicle is not persisted. Driver is operational provider identity; Company/Branch are
+organizational context; no authenticated Provider/Driver account exists.
+
+**APPROVED TARGET — NOT IMPLEMENTED (B2.5B):**
+
+- Keep platform (technical client, e.g. mobile). Add channel app/whatsapp/phone, separate from status.
+- Add vehicle_id; require for new requests, nullable historically when not reliably reconstructable.
+  No MVP request-time name snapshots; existing vehicle/driver/company/branch foreign keys suffice.
+- Add latitude/longitude, recommended decimal(10,7). Nullable historically; required by validation/
+  business logic for every new channel. Immutable request-time snapshot; never fabricate 0,0.
+  Individual zeros may be valid; reject only the fake pair when both are zero.
+- Lifecycle: contact_initiated, pending, accepted, completed, not_completed, cancelled. App initially
+  pending; external initially contact_initiated. Allowed transitions in the authoritative closure.
+- service_request_status_histories: id, service_request_id, from_status, to_status, actor_type,
+  nullable actor_id, reason_note, created_at. Actors system/app_user/admin/provider, simple fields;
+  no polymorphic actors. Initial NULL → status row in the request/services/idempotency transaction.
+- request_reasons reference catalog (id/code, label/translation; active if needed later) +
+  service_request_status_history_reasons pivot (status_history_id, reason_id/code). One history entry
+  → many selected reasons. Never use service_requests.reason/reasonCodes as the sole history source.
+  Exact migrations/relationships/indexes/constraints finalized in B2.5B; relational direction supports
+  reporting/filtering/analytics; avoid JSON unless later analysis proves a material benefit without harm.
+- Ten stable reason codes: too_far, service_cannot_be_provided, materials_unavailable,
+  customer_unreachable, customer_cancelled, provider_unavailable, service_unavailable,
+  location_inaccessible, price_not_agreed, other. Both not_completed/cancelled require at least one
+  distinct catalog reason; other requires reasonNote. Otherwise note optional/normally NULL.
+  Approved extensions only; never silently rename codes. Labels in PROJECT_CONTEXT.md closure.
+- Future historical backfill: active → pending; channel → app; coordinates NULL; vehicle_id NULL
+  unless reliably known. No fabricated provider actions/reasons/detailed lifecycle. Synthetic initial
+  history remains a B2.5B choice; if used, identify clearly as a system migration event.
+- MVP request number = ServiceRequest.id. No migration created/applied in this documentation closure.
+
 ## 4. Local (non-API) data
 - `constants/data.ts`: helps with `ServicesDummy` + `Locations` (mock map markers).
   Legacy uses these as fallback UI data. In the rebuild this should be removed and replaced with real API data.

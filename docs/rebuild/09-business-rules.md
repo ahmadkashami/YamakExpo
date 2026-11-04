@@ -55,7 +55,36 @@
 
 ## D. Requests & support
 
-- **BR-030** Service/roadside request is created via `POST requests` from the vehicle-detail/request flow. (CONFIRMED)
+- **BR-030** Current canonical create is authenticated `POST /api/mobile/v1/requests`. B2.5A
+  decisions approved; extension is NOT IMPLEMENTED. All channels app/whatsapp/phone create tracked
+  requests; channel is separate from status and from platform (technical client, retained).
+- **BR-030A — Approved target:** every new request persists selected vehicle and fresh customer
+  latitude/longitude, request-time snapshots (recommended decimal(10,7)). Refresh via the existing
+  UserLocationProvider; denied/unavailable/timed-out/invalid blocks creation. No stale-memory reuse.
+  Never fabricate location; reject both-zero pair, do not reject an individual zero merely for being zero.
+- **BR-030B — Lifecycle:** app pending → accepted → completed; WhatsApp/phone contact_initiated →
+  accepted → completed. pending/contact_initiated → cancelled; accepted → not_completed/cancelled.
+  No contact_initiated → pending normal flow. completed/not_completed/cancelled terminal, no normal
+  reopening; later correction requires controlled transitions and history. No additional statuses.
+- **BR-030C — Fixed reasons:** both not_completed/cancelled require reasonCodes array, minimum one,
+  distinct, all approved catalog values; multi-select. other requires reasonNote; otherwise note
+  optional/normally null. Fixed codes replace free-text-only reasons and attach to history via a
+  relational catalog/pivot, enabling deterministic reporting by provider/company/channel. Full ten-code
+  catalog/Arabic meanings: PROJECT_CONTEXT.md §B2.5A DECISION CLOSURE; no silent code renaming.
+- **BR-030D — Tracking:** create transaction includes request, services pivot, idempotency claim,
+  initial history. Fingerprint v2 = user + vehicle + driver + sorted services + channel, excluding GPS.
+  External opening only after persistence; failure keeps contact_initiated, shows future UI error,
+  no automatic duplicate, handoff status or history event. External effects do not control DB atomicity.
+- **BR-030E — Privacy:** provider sees no coordinates before acceptance; afterwards requires BOTH
+  per-request authorization and eligible state. Authentication alone insufficient. Admin needs admin
+  authorization; customer sees own request. Dedicated Mobile and Dashboard resources; no shared leakage.
+  Provider actions/auth remain future, excluded from B2.5B–F. Admin transitions require one controlled
+  domain/service path validating transitions/reasons and persisting history.
+- **BR-030F — Compatibility/read safety:** future historical active → pending, channel → app,
+  coordinates NULL, vehicle_id NULL unless reliably known. Never fabricate historical lifecycle/reasons.
+  Canonical future v1 list/detail owner-scoped to authenticated app_user_id, foreign detail 404.
+  **KNOWN SECURITY GAP — NOT EXPOSED AS B3 YET:** current v1 index can return all requests; correct
+  before My Requests. B3 later. MVP uses ServiceRequest.id; lifecycle notifications deferred to FCM work.
 - **BR-031** WhatsApp share text is prefixed: EN `"Hello from yamak app . I need your help with {names}"`,
   AR equivalent; selected service names joined by ` --- `. (CONFIRMED `messages.ts`)
 - **BR-032** Contact/Support surfaces: phone links, mail, WhatsApp, Freshchat widget (no backend endpoint). (CONFIRMED)

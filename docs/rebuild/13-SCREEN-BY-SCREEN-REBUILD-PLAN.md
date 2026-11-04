@@ -271,7 +271,7 @@ NEXT STEP
    implemented. The historical CLI bootstrap steps (PHASE 0 / `YAMAK-SETUP-001…005`) are **done or
    superseded** — see `REBUILD-PLAN.md` §8.
 2. **Start from the CURRENT execution order:** `REBUILD-PLAN.md` §5 + §6 only. The next task is
-   **B2.5A — Request Lifecycle + Channel Analysis (analysis only)** — not a CLI setup task and not a
+   **B2.5B — Backend Request Model Extension** (B2.5A complete / decisions approved) — not a CLI setup task and not a
    shell task. (`12-rebuild-order.md` §2 is HISTORICAL and must not be used.)
 3. Read each task's "Goal + evidence". The legacy Yamak project is ONLY a functional/design/API
    reference — never a template for the new project structure.
@@ -285,7 +285,7 @@ NEXT STEP
 - ⛔ **SUPERSEDED:** "the rebuild starts with YAMAK-SETUP-001 → 005 (PHASE 0)". The Expo foundation
   is complete; Phase 0 is history.
 - ⛔ **SUPERSEDED:** "next = Phase A / authenticated shell". **Phase A (A1–A7) is CLOSED.**
-- ✅ **CURRENT (2026-11-03):** finish the tracked-request work — **B2.5A analysis**, then B2.5B–F,
+- ✅ **CURRENT (2026-11-04):** B2.5A ✅ COMPLETE / DECISIONS APPROVED; next **B2.5B**, then B2.5C–F,
   B2.6–B2.8, then **B3 My Requests**. See `REBUILD-PLAN.md` §5.2 and §6.
 - Login and About Yamak App remain **documented but NOT to be implemented in this pass**
   (Login is deferred to **B10**).
@@ -475,7 +475,7 @@ Register → Email OTP → Home slices → Map → Vehicle Details  ✅ done
 
 > This A–G block was the plan before Phase A closed. It is retained as history only.
 > **The current order is the Phase B feature numbering B1…B11 in `REBUILD-PLAN.md` §5.2**, and the
-> single next step is `REBUILD-PLAN.md` §6 (currently **B2.5A**).
+> single next step is `REBUILD-PLAN.md` §6 (currently **B2.5B**; B2.5A decisions approved).
 
 ```
 Phase A — Authenticated App Shell Completion   ✅ CLOSED (A1–A7)
@@ -781,8 +781,23 @@ Goal: full list w/ pagination + filters. Legacy evidence: `AllVicelessScreen.tsx
 > creates a tracked request through the **canonical** `POST /api/mobile/v1/requests` (authenticated,
 > mobile v1). The old "contact-only / endpoint silently drops payload" statement is **SUPERSEDED**.
 > The mandatory coordinate/channel/lifecycle extension is **NOT yet implemented** — it is
-> **B2.5B–D** per `REQ-DEC-001…012` in `REBUILD-PLAN.md` §4.5. B2.5A is analysis only.
+> **B2.5B–D** per `REBUILD-PLAN.md` §5.3 and `PROJECT_CONTEXT.md` §B2.5A DECISION CLOSURE.
+> B2.5A is ✅ COMPLETE / DECISIONS APPROVED; B2.5B is next, not started here.
 > Steps 1–3, 5–6 remain accurate; Step 4 is now done.
+
+Future request requirements only (no screen redesign in this closure): keep platform, add channel;
+persist selected vehicle and fresh request-time location for app/WhatsApp/phone. Refresh via the
+single UserLocationProvider; invalid/denied/unavailable/timed-out blocks creation. No stale reuse,
+no fake 0,0; an individual zero may be valid. Select services → refresh → create/persist → external
+handoff. Failed handoff retains contact_initiated, shows future error, no automatic duplicate,
+new status or history event. App starts pending, external starts contact_initiated; accepted →
+completed/not_completed/cancelled; pending/contact_initiated may cancel. No normal contact_initiated
+→ pending or terminal reopening. Both negative outcomes need fixed distinct nonempty multi-select
+reasonCodes; other requires reasonNote (otherwise optional/normally null). Full catalog/transition
+matrix in the closure. Fingerprint adds channel, excludes GPS. Future B3 uses v1 owner-scoped
+list/detail (foreign detail 404) and dedicated Mobile Resource; current v1 index security gap must
+be corrected before shipment. Provider auth/actions remain future; location requires acceptance
+plus per-request authorization. No lifecycle notification work in B2.5B–F.
 
 Goal: detail + available services + contact. Legacy evidence: `VehiclesDetailsScreen.tsx`, `components/vehicleDetails/*`.
 APIs: `vehicles/:id` (public), `services/:id/vehicles`.

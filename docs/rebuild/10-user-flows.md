@@ -81,9 +81,33 @@
 3. Filter by service (`servicesListMap`); card detail view; request CTA.
 
 ## UF-009 — Request roadside assistance
-1. From VehicleDetail (or Map) → "request" → `POST requests` (BR-030) with selected service/car info.
-2. WhatsApp share (BR-031) builds message from selected service names (Contact/Share flows).
-3. Confirmation/contact steps (freshchat fallback).
+
+**Current:** Vehicle Details supports authenticated multi-service create at
+`POST /api/mobile/v1/requests`; WhatsApp/phone currently hand off externally without the extension.
+**Approved target (B2.5A closed; B2.5B–F not implemented):**
+
+1. Select services and vehicle/current driver; choose channel app, whatsapp or phone (platform stays separate).
+2. Refresh customer location with the single UserLocationProvider before every new tracked request.
+   Fresh valid latitude/longitude required for all channels. If denied/unavailable/timed-out/invalid,
+   stop without creation/handoff. No stale-memory reuse or fake 0,0; an individual zero may be valid.
+3. Create at canonical v1 with idempotency: user + vehicle + driver + sorted services + channel,
+   excluding GPS jitter from fingerprint. Persist request, services, claim and initial history atomically.
+4. App begins pending. WhatsApp/phone begins contact_initiated; only after persistence open WhatsApp
+   (BR-031 message) or dialer. Creation failure prevents tracked handoff. Opening failure retains
+   request/status, shows future B2.5D error, creates no automatic duplicate/status/history event.
+5. App pending → accepted → completed; external contact_initiated → accepted → completed.
+   pending/contact_initiated may cancel; accepted may become not_completed/cancelled. No normal
+   contact_initiated → pending. Terminal outcomes do not reopen in normal flow.
+6. Both not_completed/cancelled require ≥1 distinct fixed catalog reasonCodes (multi-select).
+   other requires reasonNote; otherwise note optional/normally null. Reasons attach to history.
+   Admin enforces transition/reason/history through controlled domain/service logic; provider actions
+   remain future. Privacy: provider sees location only after acceptance + per-request authorization.
+7. Future B3 My Requests lists/details all three channels at canonical v1 owner-scoped reads;
+   foreign detail 404. Current v1 index security gap must be fixed before shipment. Dedicated Mobile
+   resource, separate Dashboard resource; customer sees own coordinates, authorized admin may inspect.
+
+No UI redesign, provider auth or lifecycle notifications in this closure. Full decisions/catalog:
+`PROJECT_CONTEXT.md` §B2.5A DECISION CLOSURE.
 
 ## UF-010 — Favorites
 1. Favorites via Profile or drawer.

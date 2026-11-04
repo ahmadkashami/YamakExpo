@@ -46,8 +46,8 @@ current plan lives in this file (§5–§6) and in `PROJECT_CONTEXT.md`.
 ### 0.3 Current execution plan (single source of truth)
 
 - **Current roadmap:** `REBUILD-PLAN.md` §5 (Phase B feature numbering B1…B11).
-- **Single next step:** `REBUILD-PLAN.md` §6 (**B2.5A — Request Lifecycle + Channel Analysis,
-  analysis only**).
+- **Single next step:** `REBUILD-PLAN.md` §6 (**B2.5B — Backend Request Model Extension**).
+  B2.5A is ✅ COMPLETE / DECISIONS APPROVED; no implementation in this closure.
 - **Verified state:** `PROJECT_CONTEXT.md` (CURRENT MASTER STATUS).
 - **Task ledger:** `11-rebuild-backlog.md` (supporting).
 - **Historical order:** `12-rebuild-order.md` (non-current).
@@ -144,7 +144,7 @@ Superseded decision**.
 ## 4. CURRENT IMPLEMENTATION STATUS — VERIFIED 2026-11-03
 
 > Only what is proven is recorded. Anything not listed here is NOT implemented.
-> Mobile baseline: branch `main`, HEAD **`91cf051`** (`docs: align Yamak roadmap with request tracking`).
+> Mobile baseline: branch `main`, HEAD **`a6ec5ac7be61e54f790221fe9438d9d73108a5b2`** (decision-closure starting HEAD).
 > (Previous recorded baseline `253dc04` — `feat(requests): add mobile service request workflow` — is
 > superseded by the roadmap-alignment commit; the feature commits `50e9c67` (B1) and `253dc04`
 > (B2.3) remain part of HEAD.)
@@ -277,8 +277,8 @@ Commit `50e9c67`. See §4.5.
 | B2.4 | Actual mobile runtime verification | ✅ DONE (PASS with recorded scope limits) |
 | B2.4C | Idempotency conflict → HTTP 409 repair + re-verification | ✅ DONE (backend `86cab6e`) |
 | **B2.5** | Code review / learning gate | ✅ **COMPLETE (review only — triggered the requirements loop below)** |
-| **B2.5A** | **Request lifecycle + channel analysis** | ⬅️ **CURRENT NEXT STEP** |
-| B2.5B | Backend model extension (channel, coordinates, lifecycle, status history) | ⏳ Blocked on B2.5A |
+| **B2.5A** | **Request Lifecycle + Channel Analysis** | ✅ **COMPLETE / DECISIONS APPROVED** |
+| B2.5B | Backend Request Model Extension (vehicle, channel, coordinates, history, fixed reason catalog + multi-select transition reasons) | ⬅️ **CURRENT NEXT STEP — NOT STARTED** |
 | B2.5C | Canonical contract update | ⏳ Blocked on B2.5B |
 | B2.5D | Mobile integration update (location-gated create for all channels) | ⏳ Blocked on B2.5C |
 | B2.5E | Dashboard request tracking | ⏳ Blocked on B2.5C |
@@ -293,40 +293,34 @@ customer coordinates. B2.3/B2.4 were correct **for the contract that existed the
 required"); that contract is now **SUPERSEDED**. The re-scoped sequence above is the approved way
 to absorb the change without pretending the earlier work was wrong.
 
-##### B2.5A — Request Lifecycle + Channel Analysis (analysis only)
+##### B2.5A — Request Lifecycle + Channel Analysis — ✅ COMPLETE / DECISIONS APPROVED
 
-Produces the decision-ready analysis for B2.5B–F. **No schema, no migration, no product code, no
-dashboard code.** Must cover, at minimum:
-
-1. **Channels** — enumerate `app`, `whatsapp`, `phone`; who initiates, what the customer sees, and
-   what the provider/dashboard must be able to see for each.
-2. **Lifecycle** — the conceptual states `contact_initiated`, `pending`, `accepted`, `completed`,
-   `not_completed`, `cancelled`; legal transitions; who may perform each transition; the optional
-   reason on negative outcomes.
-3. **Initial status per channel** — app → `pending`; whatsapp/phone → `contact_initiated`.
-4. **Reconciliation with today's data** — the current canonical create writes `active`, which is
-   **not** in the target vocabulary. B2.5A must decide: map, migrate, or keep as an internal
-   legacy value. Nothing is changed in B2.5A.
-5. **Location capture point per channel** — where the coordinates are obtained, how an
-   unavailable/denied location blocks creation, and how a stale fix is handled.
-6. **Status history** — required fields (from, to, actor, optional reason, timestamp); who writes.
-7. **Coordinate privacy** — see §5.4.
-8. **Impact inventory** — Backend model/contract, Mobile screens/hooks, Dashboard list/details,
-   tests, and the existing stray dev row `requests id=8` (still pending user purge).
-9. **Open decisions** — every item that still needs explicit user approval before B2.5B.
+Analysis verdict supplied by the approved closure brief: **B2.5A ANALYSIS PASS — READY FOR BUSINESS DECISIONS**.
+Decisions closed 2026-11-04; authoritative record and full reason catalog:
+`PROJECT_CONTEXT.md` §B2.5A DECISION CLOSURE. No implementation in this closure.
 
 ##### B2.5B–B2.5F — delivery sequence
 
-- **B2.5B — Backend model extension.** Schema/model changes for channel, coordinates, lifecycle,
-  and status history. **A migration is created only when explicitly approved in that task** — see
+- **B2.5B — Backend Request Model Extension.** Add vehicle_id, channel, latitude/longitude;
+  replace active for new rows; historical compatibility/backfill; status-history structure;
+  fixed reason catalog + multi-select history-reason relationship; model/casts/relationships,
+  indexes/constraints, migration safety and tests. Excludes Mobile API payload implementation,
+  location UI, handoff code, Dashboard/My Requests UI, provider auth and notifications.
+  **A migration is created only when explicitly approved in that task** — see
   the global migration rule.
 - **B2.5C — Canonical contract update.** `POST /api/mobile/v1/requests` accepts the channel and the
   mandatory coordinates, validates them, keeps atomic create/replay, and extends the fingerprint so
-  a different channel/location is a different logical request.
+  channel joins user + vehicle + driver + sorted services in fingerprint v2. Latitude/longitude
+  are persisted but excluded from attempt identity: GPS jitter must not create retry duplicates.
+  Dedicated Mobile Request Resource replaces conceptual dependence on Dashboard serialization.
 - **B2.5D — Mobile integration update.** All three channels create a tracked request **before** any
-  external handoff; location comes from the existing shared provider; no fake coordinates.
+  external handoff; refresh through the single shared UserLocationProvider before each new request.
+  No stale memory reuse or fake coordinates. No valid location means no request. Failed external
+  handoff retains contact_initiated, shows an error, creates no automatic duplicate/status/history event.
 - **B2.5E — Dashboard request tracking.** Admin can list and inspect tracked requests: channel,
-  status, coordinates, and lifecycle history (subject to admin authorization).
+  customer, provider/driver, vehicle, company/branch, services, status, coordinates, history, fixed
+  selected reasons and timestamps (admin authorization). One controlled domain/service path enforces
+  allowed transitions, reason validation and history persistence; no arbitrary request->update(status).
 - **B2.5F — Runtime verification.** Prove each channel end-to-end, DB truth, location blocking,
   privacy, and dashboard visibility. No code review substitutes for runtime proof.
 
@@ -375,17 +369,52 @@ Recorded as **REQ-DEC-001…012**. These outrank any older "contact-only / no PO
 | REQ-DEC-002 | **Channel is data, never status.** `channel ∈ {app, whatsapp, phone}` is an attribute of the request and never substitutes for its lifecycle state. |
 | REQ-DEC-003 | **Customer latitude/longitude are mandatory at creation for every channel.** No tracked request exists without a valid location. |
 | REQ-DEC-004 | **Snapshot semantics.** Coordinates are captured once at creation and stored as the historical record; later re-resolution never rewrites them. |
-| REQ-DEC-005 | **Never store fake or placeholder coordinates.** `0,0`, emulator defaults, and "best guess" values are rejected. |
+| REQ-DEC-005 | **Never store fake or placeholder coordinates.** Reject the fake `latitude == 0 AND longitude == 0` pair and invented defaults. Individual zero values may be valid; do not reject merely for being zero. |
 | REQ-DEC-006 | **No valid location ⇒ no tracked request.** The flow surfaces the location problem; it must not silently continue and must not fall back to an untracked contact. |
-| REQ-DEC-007 | **Reuse the existing single `UserLocationProvider`** (`src/location`). No second location stack, no parallel permission flow. |
+| REQ-DEC-007 | **Refresh before every new request through the existing single `UserLocationProvider`** (`src/location`). No stale memory reuse, second provider or parallel permission flow. |
 | REQ-DEC-008 | **Fixed WhatsApp/Phone order:** select services → obtain location → create the tracked request → **then** open the external app. Opening WhatsApp or the dialer first is wrong. |
-| REQ-DEC-009 | **Lifecycle (conceptual, names not yet final as schema):** `contact_initiated`, `pending`, `accepted`, `completed`, `not_completed`, `cancelled`. Initial status: app → `pending`; whatsapp/phone → `contact_initiated`. Final mapping is validated in B2.5A. |
-| REQ-DEC-010 | **Status history is required:** from-status, to-status, actor, optional reason, timestamp. No table/column names are approved yet. |
+| REQ-DEC-009 | **Approved lifecycle vocabulary:** `contact_initiated`, `pending`, `accepted`, `completed`, `not_completed`, `cancelled`. Initial: app → pending; whatsapp/phone → contact_initiated. Historical active → pending. |
+| REQ-DEC-010 | **Status history required:** service_request_status_histories; from/to, actor, reason_note, timestamp. Both not_completed and cancelled require fixed multi-select reasonCodes; other requires reasonNote. Exact migrations belong to B2.5B. |
 | REQ-DEC-011 | **Coordinate privacy:** a provider must **not** receive customer latitude/longitude before accepting. Post-accept visibility requires both a per-request authorization and an accepted/eligible state. Admin visibility is subject to admin authorization. |
 | REQ-DEC-012 | **Requirement evolution is not a defect.** B2.3/B2.4 were correct under "location not required"; that contract is superseded, not retroactively wrong. Do not "fix history". |
 
 **Canonical create endpoint (unchanged decision):** `POST /api/mobile/v1/requests` under the global
 `/api/mobile/v1/` namespace. There is **no** separate active Request v2 creation contract.
+
+### 5.3.1 B2.5A approved request architecture — target, not implemented
+
+- Keep `platform` (technical client, e.g. mobile); add `channel` (app/whatsapp/phone), separate from
+  status. Persist validated `vehicle_id`; no MVP name snapshots beyond existing relationships.
+- Immutable request-time latitude/longitude for every new channel; recommendation decimal(10,7).
+  Historical rows nullable; new requests required by validation/business logic.
+- Normal MVP transitions: app pending → accepted → completed; external contact_initiated → accepted
+  → completed. pending/contact_initiated may cancel; accepted may become not_completed or cancelled.
+  No contact_initiated → pending normal flow. completed/not_completed/cancelled are terminal; no
+  normal reopening. Later administrative correction requires controlled transitions and history.
+- Both negative outcomes require nonempty distinct `reasonCodes` from the ten-code catalog in
+  `PROJECT_CONTEXT.md` §B2.5A DECISION CLOSURE. `other` requires `reasonNote`; otherwise note optional,
+  normally absent/NULL. Free text cannot replace fixed codes; never silently rename implemented codes.
+- Reasons attach to history: `request_reasons` catalog + `service_request_status_history_reasons`
+  pivot, one history entry → many reasons. Relational direction supports deterministic reporting
+  by reason/provider/company/channel. Avoid JSON unless B2.5B proves a material benefit without
+  harming reporting; exact migration design belongs there.
+- History: id, service_request_id, from_status, to_status, actor_type, nullable actor_id, reason_note,
+  created_at. Actors system/app_user/admin/provider; no polymorphic actor model. Creation transaction
+  includes request, services pivot, idempotency claim and initial NULL → status history entry.
+  External handoffs/notifications never control DB atomicity.
+- Future backfill: active → pending; channel → app; latitude/longitude NULL; vehicle_id NULL unless
+  reliably known. No fabricated actions/reasons/lifecycle. Optional synthetic initial history, if
+  B2.5B chooses it, must be identifiable as a system migration event.
+- Approved future Mobile POST/list/detail: `/api/mobile/v1/requests` and detail `/{id}`. Reads scoped
+  to authenticated app_user_id; wrong-owner detail 404. No mixed v1-create/v2-read final architecture.
+  B3 implementation stays later. **KNOWN SECURITY GAP — NOT EXPOSED AS B3 YET:** current v1 index
+  can return all requests; correct before shipping My Requests.
+- Separate Mobile Request Resource from Dashboard Request Resource (B2.5C/B3); no generic coordinate
+  or admin-field leakage through shared requestResource serialization. Customers see own coordinates.
+- Driver is operational provider identity; Company/Branch organizational context. No authenticated
+  provider account exists. Provider lifecycle/location remains future; no provider auth in B2.5B–F.
+- Use ServiceRequest.id for MVP request numbers. No lifecycle notification/email work in B2.5B–F;
+  defer to Notifications/FCM. No additional statuses/channels, pricing, payments, ratings, SLA or assignment.
 
 ### 5.4 Coordinate privacy, provider scope, and future work
 
@@ -458,7 +487,7 @@ not a process break.
 ### 5.7 Dependency rules (current, enforced)
 
 - **No screen starts before its listed dependencies.**
-- B2 implementation work is **gated on B2.5A decisions**. Do not start B2.5B early.
+- B2.5A decisions are approved; **B2.5B is next, not implemented by this documentation closure**.
 - Request-tracking changes land Backend → contract → Mobile → Dashboard, in that order.
 - My Requests (B3) starts only after the tracked-request contract is stable (B2.5C, ideally B2.5F).
 - **Explicit user approval is required** before: any migration, any schema change, any commit,
@@ -469,10 +498,11 @@ not a process break.
 
 ## 6. CURRENT NEXT STEP — exactly one
 
-> ## ⬅️ **NEXT = B2.5A — Request Lifecycle + Channel Analysis (ANALYSIS ONLY)**
+> ## ⬅️ **NEXT = B2.5B — Backend Request Model Extension**
 >
-> - Read-only. **No** schema change, **no** migration, **no** product code, **no** dashboard code.
-> - Owner of the deliverable: the B2.5A analysis section appended to `PROJECT_CONTEXT.md`.
+> B2.5A is ✅ COMPLETE / DECISIONS APPROVED. Scope: §5.2 + the PROJECT_CONTEXT.md decision closure.
+> B2.5B is NOT started here; migration approval remains specific to that later task.
+> Do not implement, commit or push in this documentation closure.
 >
 > Nothing else is queued as "next". If another document names a different next task, this file wins
 > — unless the user explicitly overrides it.

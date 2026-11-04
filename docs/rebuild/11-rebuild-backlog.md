@@ -183,6 +183,24 @@
 
 ---
 
+## 7.1 Request lifecycle decision gate (2026-11-04)
+
+Supporting status ledger; execution authority remains `REBUILD-PLAN.md` §5–§6.
+
+| Step | State / scope |
+|---|---|
+| B2.5A — Request Lifecycle + Channel Analysis | ✅ COMPLETE / DECISIONS APPROVED |
+| B2.5B — Backend Request Model Extension | **CURRENT NEXT STEP — NOT STARTED**: vehicle_id, channel, latitude/longitude, replace active for new rows, historical compatibility/backfill, status history, fixed reason catalog + multi-select history-reason relationship, model/casts/relationships/indexes/constraints, migration safety and tests |
+| B2.5C → B2.5D → B2.5E → B2.5F | Canonical Request Contract Update → Mobile Request Integration Update → Dashboard Request Tracking → Actual Runtime Verification |
+| B2.6 → B2.7 → B2.8 | Vehicle Request Design Review → Approved UI → Final Verification + Commit / closure |
+
+B2.5B excludes Mobile API payloads, location UI, handoff code, Dashboard/My Requests UI, provider
+auth and notifications. Migrations need explicit approval in that task. B3 remains later: canonical
+v1 owner-scoped list/detail, wrong-owner 404, dedicated Mobile resource. **KNOWN SECURITY GAP — NOT
+EXPOSED AS B3 YET:** current v1 index can return all requests; fix before My Requests ships.
+Full lifecycle/reasons/privacy/backfill decisions: `PROJECT_CONTEXT.md` §B2.5A DECISION CLOSURE.
+No implementation, migration, commit or push in this documentation closure.
+
 ## 8. Housekeeping (not product work)
 
 | ID | Task | Status |

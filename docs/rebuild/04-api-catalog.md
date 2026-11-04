@@ -96,11 +96,37 @@ Conventions used by endpoints:
 | 21 | POST | `user-cars` | `addUserCars` | body `{ any }` (plate/model etc., INFERRED) |
 | 22 | DELETE | `user-cars/:id` | `deleteUserCars` | path id |
 
-### REQUESTS / ORDERS (`requests.api.ts`)
+### REQUESTS / ORDERS — historical legacy contract (`requests.api.ts`)
 
 | # | Method | Path | Function | Notes |
 |---|---|---|---|---|
 | 23 | POST | `requests` | `sendOrderRequests` | body `{ any }`; used when requesting roadside assistance from vehicle/order flow |
+
+#### Current vs approved target — B2.5A decisions (2026-11-04)
+
+Current canonical create: authenticated `POST /api/mobile/v1/requests`, body
+`{vehicleId, driverId, services}`, `Idempotency-Key`; authenticated AppUser ownership,
+eligibility, atomic create/replay and same-key/different-payload HTTP 409 remain the baseline.
+Current create writes `active`, validates but does not persist vehicleId, and Mobile responses
+reuse Dashboard `requestResource` (findings carried from the approved brief).
+
+**APPROVED TARGET — NOT IMPLEMENTED:** retain v1 POST; add channel and mandatory fresh latitude/
+longitude for every app/whatsapp/phone create (B2.5C/D). Keep platform separately as technical client.
+Fingerprint v2 adds channel to user + vehicle + driver + sorted services, excludes coordinates.
+App starts pending; external channels contact_initiated. Persist request before external handoff;
+failed opening retains the request/status with no automatic duplicate or history event.
+
+Future canonical reads (B3): `GET /api/mobile/v1/requests` and
+`GET /api/mobile/v1/requests/{id}`, scoped to authenticated `app_user_id`; foreign detail → 404.
+No mixed v1-create/v2-read final architecture. **KNOWN SECURITY GAP — NOT EXPOSED AS B3 YET:**
+current v1 index can return all requests; fix before My Requests ships. Use dedicated Mobile Request
+Resource, separate from Dashboard serialization; no generic coordinate/admin-field leakage.
+
+Future controlled transition payload direction (no new endpoint approved here):
+`{"status":"not_completed","reasonCodes":["too_far","materials_unavailable"]}`.
+For both not_completed/cancelled: nonempty distinct catalog codes required; other requires reasonNote,
+otherwise note optional/normally null. Reasons belong to history, not a single request-level reason.
+See `PROJECT_CONTEXT.md` §B2.5A DECISION CLOSURE for the ten-code catalog and privacy rules.
 
 ### NOTIFICATIONS
 
