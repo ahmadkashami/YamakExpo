@@ -12,6 +12,12 @@ export type ContactBarProps = {
    * nothing is ever invoked (never `tel:undefined`, never a bad WhatsApp URL).
    */
   disabled?: boolean;
+  /**
+   * True while the screen owns a fresh-location read, a tracked POST or an
+   * external handoff. Both actions are disabled so a second channel cannot run
+   * concurrently; the parent restores this on every completion/failure path.
+   */
+  busy?: boolean;
 };
 
 /**
@@ -20,33 +26,39 @@ export type ContactBarProps = {
  * facilitator-aligned — YAMAK connects the user with the independent provider,
  * it never sells or fulfils the service ("Call provider", not "Order Now").
  */
-export function ContactBar({ onWhatsApp, onCall, disabled = false }: ContactBarProps) {
+export function ContactBar({
+  onWhatsApp,
+  onCall,
+  disabled = false,
+  busy = false,
+}: ContactBarProps) {
   const insets = useSafeAreaInsets();
+  const actionsDisabled = disabled || busy;
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Inquire via WhatsApp"
-        accessibilityState={{ disabled }}
-        disabled={disabled}
+        accessibilityState={{ disabled: actionsDisabled, busy }}
+        disabled={actionsDisabled}
         onPress={onWhatsApp}
-        style={({ pressed }) => [styles.waButton, (pressed || disabled) && styles.dimmed]}
+        style={({ pressed }) => [styles.waButton, (pressed || actionsDisabled) && styles.dimmed]}
       >
-        <WhatsAppIcon color={disabled ? colors.placeholder : colors.successText} size={22} />
+        <WhatsAppIcon color={actionsDisabled ? colors.placeholder : colors.successText} size={22} />
       </Pressable>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Call provider"
-        accessibilityState={{ disabled }}
-        disabled={disabled}
+        accessibilityState={{ disabled: actionsDisabled, busy }}
+        disabled={actionsDisabled}
         onPress={onCall}
         style={({ pressed }) => [
           styles.callButton,
-          disabled && styles.callButtonDisabled,
-          pressed && !disabled && styles.callButtonPressed,
+          actionsDisabled && styles.callButtonDisabled,
+          pressed && !actionsDisabled && styles.callButtonPressed,
         ]}
       >
-        <PhoneIcon color={colors.wordmark} size={18} />
+        <PhoneIcon color={actionsDisabled ? colors.placeholder : colors.wordmark} size={18} />
         <Text style={styles.callLabel}>Call provider</Text>
       </Pressable>
     </View>

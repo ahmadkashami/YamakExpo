@@ -1,6 +1,9 @@
 export {
   registerUser,
+  loginUser,
   verifyEmailOtp,
+  type LoginRequest,
+  type LoginResponse,
   type RegisteredUser,
   type RegisterRequest,
   type RegisterResponse,
@@ -16,7 +19,18 @@ export {
   type OnboardingSlide,
 } from './onboarding';
 export { ApiError, extractBackendMessage, type ApiErrorKind } from './api-error';
-export { createServiceRequest, type CreateServiceRequestInput, type CreateServiceRequestResult } from './requests';
+export {
+  createServiceRequest,
+  createTrackedServiceRequest,
+  type CreateServiceRequestInput,
+  type CreateServiceRequestResult,
+  type CreateTrackedServiceRequestInput,
+  type CreateTrackedServiceRequestResult,
+  type RequestChannel,
+  type TrackedServiceRequestData,
+  type TrackedServiceRequestDriver,
+  type TrackedServiceRequestService,
+} from './requests';
 export { getAdds, type Add, type AddsMetaData, type AddsResponse } from './adds';
 export {
   getServices,

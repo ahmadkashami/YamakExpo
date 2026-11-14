@@ -1,15 +1,45 @@
 import { useCallback, useRef, useState } from 'react';
 
-import { ApiError, createServiceRequest, type CreateServiceRequestInput } from '@/api';
+import {
+  ApiError,
+  createServiceRequest,
+  createTrackedServiceRequest,
+  extractBackendMessage,
+  type CreateServiceRequestInput,
+  type CreateTrackedServiceRequestInput,
+  type TrackedServiceRequestData,
+} from '@/api';
 
 type CreateRequestAttempt = {
   key: string;
   payloadKey: string;
 };
 
+type TrackedAttempt = {
+  key: string;
+  identity: string;
+};
+
+type CompletedTrackedRequest = {
+  identity: string;
+  request: TrackedServiceRequestData;
+};
+
 function stablePayloadKey(input: CreateServiceRequestInput): string {
   const services = [...input.services].sort((a, b) => a - b);
   return `v:${input.vehicleId}|d:${input.driverId}|s:${services.join(',')}`;
+}
+
+/**
+ * Logical identity for a tracked attempt.
+ *
+ * Coordinates are deliberately excluded: refreshing GPS for the same logical
+ * request must reuse the existing Idempotency-Key. Channel and the sorted
+ * service ids are included, so changing either starts a new logical attempt.
+ */
+function stableTrackedIdentity(input: CreateTrackedServiceRequestInput): string {
+  const services = [...input.services].sort((a, b) => a - b);
+  return `v:${input.vehicleId}|d:${input.driverId}|s:${services.join(',')}|c:${input.channel}`;
 }
 
 function generateUuidV4(): string {
@@ -37,8 +67,75 @@ function generateUuidV4(): string {
   });
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Minimal runtime guard for the C4 payload. This is intentionally not a full
+ * schema validator: it only rejects missing/mistyped identity fields and
+ * collection shapes so a malformed 2xx envelope is never reported as success.
+ * `driver` is checked only as an object/null because `phoneNum` is nullable
+ * and is not needed to create or replay a request.
+ */
+function isTrackedRequestData(value: unknown): value is TrackedServiceRequestData {
+  if (!isObjectRecord(value)) {
+    return false;
+  }
+  if (typeof value.id !== 'number' || typeof value._id !== 'string') {
+    return false;
+  }
+  if (value.channel !== 'app' && value.channel !== 'whatsapp' && value.channel !== 'phone') {
+    return false;
+  }
+  if (typeof value.status !== 'string') {
+    return false;
+  }
+  if (value.vehicleId !== null && typeof value.vehicleId !== 'number') {
+    return false;
+  }
+  if (value.driverId !== null && typeof value.driverId !== 'string') {
+    return false;
+  }
+  if (value.driver !== null && !isObjectRecord(value.driver)) {
+    return false;
+  }
+  if (!Array.isArray(value.services)) {
+    return false;
+  }
+  if (value.createdAt !== null && typeof value.createdAt !== 'string') {
+    return false;
+  }
+  return true;
+}
+
+/** Turn a raw tracked response into a success result or a distinct failure. */
+function parseTrackedResponse(envelope: unknown): SubmitTrackedResult {
+  if (
+    isObjectRecord(envelope) &&
+    envelope.success === true &&
+    isTrackedRequestData(envelope.data)
+  ) {
+    return { ok: true, request: envelope.data, wasCached: false };
+  }
+
+  const message = extractBackendMessage(envelope);
+  return {
+    ok: false,
+    error: new ApiError('http', message ?? 'Request could not be created.', {
+      body: envelope,
+    }),
+  };
+}
+
+export type SubmitTrackedResult =
+  | { ok: true; request: TrackedServiceRequestData; wasCached: boolean }
+  | { ok: false; error: ApiError };
+
 export type UseCreateRequestResult = {
   submit: (input: CreateServiceRequestInput) => Promise<boolean>;
+  submitTracked: (input: CreateTrackedServiceRequestInput) => Promise<SubmitTrackedResult>;
+  startNewTrackedRequest: () => void;
   isSubmitting: boolean;
   error: ApiError | null;
   reset: () => void;
@@ -48,6 +145,9 @@ export function useCreateRequest(): UseCreateRequestResult {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const attemptRef = useRef<CreateRequestAttempt | null>(null);
+  const trackedAttemptRef = useRef<TrackedAttempt | null>(null);
+  const completedTrackedRef = useRef<CompletedTrackedRequest | null>(null);
+  const trackedGenerationRef = useRef(0);
   const inFlightRef = useRef(false);
 
   const reset = useCallback(() => {
@@ -94,5 +194,79 @@ export function useCreateRequest(): UseCreateRequestResult {
     [],
   );
 
-  return { submit, isSubmitting, error, reset };
+  /**
+   * Explicitly discard the current tracked attempt and its cached success so
+   * the next `submitTracked` call starts a brand-new logical request. This is
+   * the only supported way to begin a new request for an identical payload;
+   * a GPS refresh alone must not rotate the key.
+   */
+  const startNewTrackedRequest = useCallback(() => {
+    trackedGenerationRef.current += 1;
+    trackedAttemptRef.current = null;
+    completedTrackedRef.current = null;
+  }, []);
+
+  const submitTracked = useCallback(
+    async (input: CreateTrackedServiceRequestInput): Promise<SubmitTrackedResult> => {
+      const identity = stableTrackedIdentity(input);
+
+      // A repeated call for the same completed attempt returns its result
+      // without issuing another POST.
+      const completed = completedTrackedRef.current;
+      if (completed !== null && completed.identity === identity) {
+        return { ok: true, request: completed.request, wasCached: true };
+      }
+
+      // Same admission guard as the legacy path: never allow a concurrent
+      // tracked POST, and never queue an automatic retry.
+      if (inFlightRef.current) {
+        return {
+          ok: false,
+          error: new ApiError('network', 'A request is already in progress.'),
+        };
+      }
+
+      let attempt = trackedAttemptRef.current;
+      if (attempt !== null && attempt.identity !== identity) {
+        // New channel/services/vehicle/driver means a new logical attempt,
+        // which gets its own Idempotency-Key.
+        trackedAttemptRef.current = null;
+        attempt = null;
+      }
+      if (attempt === null) {
+        attempt = { key: generateUuidV4(), identity };
+        trackedAttemptRef.current = attempt;
+      }
+
+      const generation = trackedGenerationRef.current;
+      inFlightRef.current = true;
+      try {
+        // The generated key is retained for network failures, HTTP 422 and
+        // malformed/unsuccessful envelopes. Only a 409 drops the attempt.
+        const envelope: unknown = await createTrackedServiceRequest(input, attempt.key);
+        const outcome = parseTrackedResponse(envelope);
+        if (!outcome.ok) {
+          return outcome;
+        }
+        if (trackedGenerationRef.current === generation) {
+          completedTrackedRef.current = { identity, request: outcome.request };
+          trackedAttemptRef.current = null;
+        }
+        return outcome;
+      } catch (cause) {
+        const apiError = cause instanceof ApiError ? cause : ApiError.network(cause);
+        if (apiError.status === 409 && trackedGenerationRef.current === generation) {
+          // Conflicted attempt: surface the error distinctly and clear it.
+          // There is no automatic resubmission.
+          trackedAttemptRef.current = null;
+        }
+        return { ok: false, error: apiError };
+      } finally {
+        inFlightRef.current = false;
+      }
+    },
+    [],
+  );
+
+  return { submit, submitTracked, startNewTrackedRequest, isSubmitting, error, reset };
 }
