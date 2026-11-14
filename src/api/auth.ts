@@ -28,6 +28,25 @@ export function registerUser(payload: RegisterRequest): Promise<RegisterResponse
   return apiPost<RegisterResponse, RegisterRequest>('auth/signup', payload);
 }
 
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type LoginResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    isVerified: boolean;
+    user: RegisteredUser;
+    accessToken: string;
+  };
+};
+
+export function loginUser(payload: LoginRequest): Promise<LoginResponse> {
+  return apiPost<LoginResponse, LoginRequest>('auth/login', payload);
+}
+
 export type VerifyEmailOtpRequest = {
   email: string;
   code: string;
