@@ -27,7 +27,7 @@ export const colors = {
   userMarker: '#2563EB',
   /** Approve-ui blue-500/25 — user-marker pulse-ring tint. */
   userMarkerPulse: 'rgba(59, 130, 246, 0.25)',
-  wordmark: '#E9A319',
+  wordmark: '#C99600',
   routeGold: '#F4A817',
   routeBlue: '#38BDF8',
   brandText: '#FFFFFF',
