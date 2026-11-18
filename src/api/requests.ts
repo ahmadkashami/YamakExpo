@@ -1,4 +1,5 @@
-import { apiPost } from './http-client';
+import { ApiError } from './api-error';
+import { apiGet, apiPost } from './http-client';
 import type { ServiceName } from './services';
 
 /**
@@ -126,4 +127,136 @@ export function createTrackedServiceRequest(
       },
     },
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/* B3.3 — My Requests read data layer                                          */
+/* -------------------------------------------------------------------------- */
+
+/** Default and ceiling documented in the approved B3.2 pagination contract. */
+export const MY_REQUESTS_DEFAULT_PER_PAGE = 20;
+export const MY_REQUESTS_MAX_PER_PAGE = 50;
+
+export type MyRequestVehicleSummary = {
+  labelNumber: string | null;
+  modelName: string | null;
+};
+
+export type MyRequestServiceSummary = {
+  id: number;
+  name: ServiceName;
+};
+
+/**
+ * Exact list allowlist emitted by `Mobile\MyRequestSummaryResource`.
+ *
+ * Deliberately absent: coordinates, driver phone, customer identity,
+ * idempotency keys, status history, reason data, transitions and audit actors.
+ */
+export type MyRequestListItem = {
+  id: number;
+  channel: RequestChannel;
+  status: string;
+  createdAt: string | null;
+  vehicle_summary: MyRequestVehicleSummary | null;
+  services_summary: MyRequestServiceSummary[];
+};
+
+export type MyRequestsMetaData = {
+  totalCount: number;
+  currentCount: number;
+  currentPage: number;
+  itemsPerPage: number;
+  lastPage: number;
+};
+
+export type MyRequestsResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    list: MyRequestListItem[];
+    metaData: MyRequestsMetaData;
+  } | null;
+  errors: unknown;
+};
+
+export type MyRequestVehicleDetail = MyRequestVehicleSummary & {
+  type: string | null;
+  status: string | null;
+  workStatus: string | null;
+};
+
+/** Only toStatus + createdAt are ever present in the public timeline. */
+export type MyRequestTimelineEntry = {
+  toStatus: string;
+  createdAt: string | null;
+};
+
+/**
+ * Detail allowlist. `owner_coords` is NULL for historical requests with no
+ * saved snapshot; individual missing components are also NULL. Never inferred.
+ */
+export type MyRequestDetail = MyRequestListItem & {
+  vehicle: MyRequestVehicleDetail | null;
+  provider_name: string | null;
+  provider_phone: string | null;
+  owner_coords: {
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
+  timeline: MyRequestTimelineEntry[];
+};
+
+export type MyRequestDetailsResponse = {
+  success: boolean;
+  message: string;
+  data: MyRequestDetail | null;
+  errors: unknown;
+};
+
+export type MyRequestsQuery = {
+  page?: number;
+  perPage?: number;
+};
+
+function toPositiveInteger(value: number | undefined, fallback: number): number {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0
+    ? value
+    : fallback;
+}
+
+/** Shared by the API functions and hooks so query normalization has one owner. */
+export function normalizeMyRequestsQuery(options: MyRequestsQuery = {}): Required<MyRequestsQuery> {
+  return {
+    page: toPositiveInteger(options.page, 1),
+    perPage: Math.min(
+      toPositiveInteger(options.perPage, MY_REQUESTS_DEFAULT_PER_PAGE),
+      MY_REQUESTS_MAX_PER_PAGE,
+    ),
+  };
+}
+
+/**
+ * `GET /api/mobile/v1/requests` — owner-scoped by the authenticated AppUser.
+ *
+ * No `userId` is accepted: Sanctum Bearer identity is the only ownership input.
+ * Returns the standard `{ success, message, data, errors }` envelope with the
+ * mobile `{ list, metaData }` pagination shape used by the other v1 lists.
+ */
+export function getMyRequests(options: MyRequestsQuery = {}): Promise<MyRequestsResponse> {
+  const { page, perPage } = normalizeMyRequestsQuery(options);
+  return apiGet<MyRequestsResponse>(`requests?page=${page}&perPage=${perPage}`);
+}
+
+/**
+ * `GET /api/mobile/v1/requests/{id}` — owner-only detail.
+ *
+ * A foreign or nonexistent id produces HTTP 404 (ApiError with status 404);
+ * existence is never distinguishable. Invalid ids fail locally without a call.
+ */
+export function getMyRequestDetails(requestId: number): Promise<MyRequestDetailsResponse> {
+  if (!Number.isInteger(requestId) || requestId <= 0) {
+    throw new ApiError('http', 'Invalid request id.');
+  }
+  return apiGet<MyRequestDetailsResponse>(`requests/${encodeURIComponent(String(requestId))}`);
 }
