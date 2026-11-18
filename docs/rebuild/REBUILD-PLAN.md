@@ -228,7 +228,7 @@ Superseded decision**.
 | **Tracked lifecycle statuses** | ❌ **NOT IMPLEMENTED** (today the server sets `active`) → B2.5A–D |
 | **Status history** | ❌ **NOT IMPLEMENTED** → B2.5B–D |
 | **WhatsApp / phone → tracked request** | ❌ **NOT IMPLEMENTED** (today they only hand off externally) → B2.5A–D |
-| **My Requests (list + details)** | B3.3 data layer + B3.4 list **IMPLEMENTED / PUSHED**; B3.5 details not started |
+| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED** |
 | **Dashboard request tracking** | ❌ **NOT IMPLEMENTED** → B2.5E |
 | **Provider lifecycle actions** | ❌ **FUTURE** (deliberately out of the MVP queue) |
 
@@ -327,7 +327,7 @@ Decisions closed 2026-11-04; authoritative record and full reason catalog:
 - **B2.5F — Runtime verification.** Prove each channel end-to-end, DB truth, location blocking,
   privacy, and dashboard visibility. No code review substitutes for runtime proof.
 
-#### B3 - My Requests - **B3.3 + B3.4 COMPLETE; B3.5 NOT STARTED**
+#### B3 - My Requests - **B3.3 + B3.4 + B3.5 COMPLETE; B3.6 NOT STARTED**
 
 New official Phase B feature: the authenticated user can see **their own** tracked requests
 (app, WhatsApp, and phone), with a list and a details view. Provisional plan (titles may be
@@ -346,18 +346,28 @@ refined in B3.1 analysis; **the order is fixed**):
 | B3.9 | Approved UI implementation |
 | B3.10 | Final verification + commit |
 
-**B3.3 / B3.4 closure (this task):** B3.3 owner-scoped v1 reads and the Expo API/hook layer were
+**B3.3 / B3.4 / B3.5 closure:** B3.3 owner-scoped v1 reads and the Expo API/hook layer were
 implemented, committed and pushed in the backend and Expo repositories respectively; POST creation
 was preserved unchanged. B3.4 added the protected `src/app/(app)/my-requests.tsx` list route and a
-single Profile Hub entry, with no Drawer/tab redesign and no detail-hook call from the list.
+single Profile Hub entry, with no Drawer/tab redesign and no detail-hook call from the list. B3.5
+added the protected `src/app/(app)/my-requests/[id].tsx` detail route, connected list rows to it via
+typed Expo Router navigation, and reused `useMyRequestDetails()` exclusively. Only the approved
+customer detail allowlist is rendered; internal actor/reason/transition/idempotency/admin fields are
+never referenced, coordinates are shown only when actually returned, and no status controls or
+phone/WhatsApp launch actions exist. Shared labels/date/service/vehicle formatting lives in
+`src/utils/my-request-display.ts`.
+
 Runtime verification on an Android emulator with a **local mock stub** of the B3.3 read contract
-observed: protected deep-link redirect to `/login`, Profile Hub entry navigation, loading,
+observed: protected deep-link redirect to `/login`, Profile Hub entry navigation, list loading,
 non-empty, empty, error + Retry, pull-to-refresh and Previous/Next pagination; three rapid Next
-taps produced exactly one page-2 request; injected phone/coordinate/audit/idempotency fields were
-not rendered; all requests carried `Authorization`. No production endpoint or real request record
-was used. Pre-existing, unrelated check findings (the `app-tabs.web.tsx` TypeScript route error and
-two `react-hooks/set-state-in-effect` ESLint findings in `use-my-requests.ts`) are recorded, not
-hidden. **Stop before B3.5 Request Details.**
+taps produced exactly one page-2 request. B3.5 verification covered list-to-details navigation for
+`Request #901`, `GET /api/mobile/v1/requests/901 auth=present` in the mock log, loading, success,
+missing-field fallbacks without fabricated coordinates, HTTP 404, generic error + Retry,
+pull-to-refresh, back navigation, public timeline and absence of injected sensitive fields in UI
+dumps. A 401 response invoked the existing sign-out/redirect flow. No production endpoint or real
+request record was used. Pre-existing, unrelated check findings (the `app-tabs.web.tsx` TypeScript
+route error and two `react-hooks/set-state-in-effect` ESLint findings in `use-my-requests.ts`) are
+recorded, not hidden. **Stop before B3.6 formal runtime verification.**
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 

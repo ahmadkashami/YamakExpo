@@ -74,8 +74,8 @@ An explicit user decision outranks any document, including this one.
 - **⬅️ CURRENT NEXT STEP = B2.5B — Backend Request Model Extension.**
   Not started here. No schema, migration, product code or dashboard code changed.
 - **B3 My Requests** is a new official Phase B feature (list + details for app / WhatsApp / phone
-  requests). **B3.3 DATA LAYER + B3.4 LIST SCREEN IMPLEMENTED, RUNTIME VERIFIED WITH A LOCAL
-  MOCK API, COMMITTED AND PUSHED.** B3.5 details screen remains unimplemented and out of scope.
+  requests). **B3.3 DATA LAYER + B3.4 LIST SCREEN + B3.5 DETAILS SCREEN IMPLEMENTED, VERIFIED
+  WITH A LOCAL MOCK API, COMMITTED AND PUSHED.** Formal B3.6 runtime verification is not started.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3675,7 +3675,7 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
 
 - The authenticated customer can see **their own** tracked requests for **all three channels**, as
   a list plus a details view.
-- **PLANNED — NOT IMPLEMENTED.** Provisional sequence (order fixed; titles may be refined in
+- **B3.3 / B3.4 / B3.5 IMPLEMENTED; B3.6+ PLANNED.** Sequence (order fixed; titles were refined in
   B3.1): B3.1 legacy/read-contract analysis → B3.2 read-contract decision (list/detail,
   pagination, status vocabulary, channel) → B3.3 data layer (API module + hook) → B3.4 functional
   list screen + real entry point → B3.5 functional details screen → B3.6 runtime verification →
@@ -3685,29 +3685,43 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
 - B3 must not start until the tracked-request read contract is stable (after B2.5C; ideally after
   B2.5F).
 
-#### B3.3 / B3.4 closure (this task)
+#### B3.3 / B3.4 / B3.5 closure
 
 - **B3.3 data layer** is implemented and pushed in both repositories: backend owner-scoped v1
   list/detail reads with dedicated Mobile resources and wrong-owner detail 404; Expo typed
-  `GET /api/mobile/v1/requests` client plus `useMyRequests()` / `useMyRequestDetails()` hooks with
-  stale-response and in-flight guards. `POST /api/mobile/v1/requests` creation is unchanged.
+  `GET /api/mobile/v1/requests` and `GET /api/mobile/v1/requests/{id}` clients plus
+  `useMyRequests()` / `useMyRequestDetails()` hooks with stale-response and in-flight guards.
+  `POST /api/mobile/v1/requests` creation is unchanged.
 - **B3.4 My Requests list** is implemented and pushed: protected route
   `src/app/(app)/my-requests.tsx` directly under `(app)`, one navigation entry in the Profile Hub
   (`profile.tsx`), no Drawer/tab redesign. It renders only the B3.3 list allowlist (id, channel,
   status, createdAt, vehicle/services summaries; `provider_name` only via a defensive optional
   guard) and never calls the detail hook from the list.
+- **B3.5 Request Details** is implemented and pushed: protected route
+  `src/app/(app)/my-requests/[id].tsx`, connected from list rows with a typed Expo Router push.
+  The screen consumes only `useMyRequestDetails()`: no endpoint, hook, type, auth or networking is
+  duplicated, and no `userId` is sent. It renders the approved customer detail allowlist (public
+  id, status, channel, created date, vehicle summary/details, services, provider name/phone as
+  plain text, saved coordinates only when present, and public timeline entries containing only
+  `toStatus` + `createdAt`). Internal actor/reason/transition/idempotency/admin fields are never
+  referenced; there are no status controls and no phone/WhatsApp launch actions. Shared display
+  formatting lives in `src/utils/my-request-display.ts` so list and details stay consistent.
 - **Runtime evidence (local mock API, Android emulator, Expo Go):** unauthenticated deep link to
-  `/my-requests` redirects to `/login`; Profile Hub entry opens the list; loading, non-empty,
-  empty, error + Retry, refresh and Previous/Next pagination states were all observed; three rapid
-  Next taps produced exactly one `GET requests?page=2`; injected sensitive fields (phone,
-  coordinates, customer/admin/reason/idempotency/actor fields) were absent from the rendered UI;
-  every API call carried `Authorization`. The mock API is a local stub of the documented B3.3
+  `/my-requests` redirects to `/login`; Profile Hub entry opens the list; list loading, non-empty,
+  empty, error + Retry, refresh and Previous/Next pagination states were observed; three rapid Next
+  taps produced exactly one `GET requests?page=2`. For B3.5, tapping `Request #901` opened the
+  correct detail route and the mock log recorded `GET /api/mobile/v1/requests/901 auth=present`;
+  loading, success, missing-field fallbacks (no fabricated coordinates), HTTP 404, generic error +
+  Retry, pull-to-refresh, back navigation and public timeline were exercised on the emulator. A
+  401 response invoked the existing auth sign-out flow and returned to the existing sign-in UI.
+  Injected sensitive fields (actor, reason, transitions, idempotency, customer/admin/other phone
+  fields) were absent from rendered UI dumps. The mock API is a local stub of the documented B3.3
   contract - no production endpoint or real request record was used.
-- The only cross-cutting check findings are pre-existing and unrelated to B3.3/B3.4: the known
+- The only cross-cutting check findings are pre-existing and unrelated to B3.3–B3.5: the known
   `src/components/app-tabs.web.tsx` TypeScript route error, and two `react-hooks/set-state-in-effect`
   ESLint findings on the intentional guarded fetch-on-mount calls in `use-my-requests.ts`. Neither
   is a runtime blocker; neither was hidden or rewritten in this task.
-- **STOP:** B3.5 Request Details is not implemented or started in this task.
+- **STOP:** B3.6 formal runtime verification is not started; no B3.6 work was performed.
 
 ### 9. Admin Dashboard - request tracking requirement
 

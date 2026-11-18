@@ -8,6 +8,14 @@ import { ApiErrorRow } from '@/components/home/ApiErrorRow';
 import { BackIcon } from '@/components/vehicle-details/icons';
 import { useMyRequests } from '@/hooks/use-my-requests';
 import { colors, radius, spacing, typography } from '@/theme';
+import {
+  CHANNEL_LABELS,
+  STATUS_LABELS,
+  formatCreatedAt,
+  labelFor,
+  servicesSummary,
+  vehicleSummary,
+} from '@/utils/my-request-display';
 
 /**
  * B3.4 MY REQUESTS — functional list using the B3.3 read hook only.
@@ -18,77 +26,12 @@ import { colors, radius, spacing, typography } from '@/theme';
  * tab/drawer frame.
  *
  * Data authority: `useMyRequests()` (`GET /api/mobile/v1/requests`). This screen
- * owns NO fetch, cache, pagination state or detail navigation. It renders only
- * the B3.3 list allowlist: id, channel, status, createdAt, vehicle summary and
- * services summary. No coordinates, phone numbers, actor ids, reasons or admin
- * fields are requested or displayed. Request Details (B3.5) is NOT implemented.
+ * owns NO fetch, cache or pagination state. It renders only the B3.3 list
+ * allowlist: id, channel, status, createdAt, vehicle summary and services
+ * summary. No coordinates, phone numbers, actor ids, reasons or admin fields
+ * are requested or displayed. Row presses only navigate to the B3.5 detail
+ * route; the list never calls the detail hook or fetches detail data.
  */
-
-const CHANNEL_LABELS: Record<string, string> = {
-  app: 'App',
-  whatsapp: 'WhatsApp',
-  phone: 'Phone',
-};
-
-/** Approved REQ-DEC-009 vocabulary. Unknown values fall back to raw data. */
-const STATUS_LABELS: Record<string, string> = {
-  contact_initiated: 'Contact initiated',
-  pending: 'Pending',
-  accepted: 'Accepted',
-  completed: 'Completed',
-  not_completed: 'Not completed',
-  cancelled: 'Cancelled',
-};
-
-const MONTHS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-] as const;
-
-function labelFor(value: string, labels: Record<string, string>): string {
-  return labels[value] ?? value.replace(/_/g, ' ');
-}
-
-/**
- * Backend `createdAt` uses `optional()->toJSON()` with microseconds, e.g.
- * `2026-11-18T09:12:33.000000Z`. Normalise to a Date-parsable UTC string before
- * formatting instead of assuming strict ISO-8601 parsing.
- */
-function formatCreatedAt(value: string | null): string {
-  if (value === null || value.length === 0) {
-    return '—';
-  }
-
-  const normalized = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)
-    ? `${value.slice(0, 19)}Z`
-    : value;
-  const date = new Date(normalized);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const month = MONTHS[date.getUTCMonth()] ?? '';
-  const year = date.getUTCFullYear();
-  const hours = String(date.getUTCHours()).padStart(2, '0');
-  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-  return `${day} ${month} ${year}, ${hours}:${minutes} UTC`;
-}
-
-function vehicleSummary(item: MyRequestListItem): string {
-  const summary = item.vehicle_summary;
-  const parts = [summary?.labelNumber, summary?.modelName].filter(
-    (part): part is string => typeof part === 'string' && part.length > 0,
-  );
-  return parts.length > 0 ? parts.join(' · ') : 'Vehicle unavailable';
-}
-
-function servicesSummary(item: MyRequestListItem): string {
-  const names = item.services_summary.map(
-    (service) => service.name?.en || service.name?.ar || `Service #${service.id}`,
-  );
-  return names.length > 0 ? names.join(', ') : 'No services listed';
-}
 
 /**
  * B3.3 decision B3.3-001 kept `provider_name` out of the LIST resource, so the
@@ -101,11 +44,22 @@ function providerName(item: MyRequestListItem): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 }
 
-function MyRequestCard({ item }: { item: MyRequestListItem }) {
+function MyRequestCard({
+  item,
+  onPress,
+}: {
+  item: MyRequestListItem;
+  onPress: () => void;
+}) {
   const provider = providerName(item);
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open request ${item.id} details`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+    >
       <View style={styles.cardHeader}>
         <Text style={styles.requestId}>Request #{item.id}</Text>
         <View style={styles.statusPill}>
@@ -140,7 +94,7 @@ function MyRequestCard({ item }: { item: MyRequestListItem }) {
           <Text style={styles.detailValue}>{provider}</Text>
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -208,6 +162,15 @@ export default function MyRequestsScreen() {
       router.replace('/home');
     }
   }, [router]);
+
+  // Row press is navigation only. The list never fetches or renders detail
+  // data; the protected detail route owns its own B3.3 hook call.
+  const openRequest = useCallback(
+    (id: number) => {
+      router.push({ pathname: '/my-requests/[id]', params: { id: String(id) } });
+    },
+    [router],
+  );
 
   const listExtraData = useMemo(
     () => ({ page, isLoading, isRefreshing, error }),
@@ -325,7 +288,9 @@ export default function MyRequestsScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <MyRequestCard item={item} />}
+        renderItem={({ item }) => (
+          <MyRequestCard item={item} onPress={() => openRequest(item.id)} />
+        )}
         extraData={listExtraData}
         refreshing={isRefreshing}
         onRefresh={handleRefresh}
@@ -393,6 +358,9 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: spacing.lg,
+  },
+  cardPressed: {
+    opacity: 0.7,
   },
   cardHeader: {
     flexDirection: 'row',
