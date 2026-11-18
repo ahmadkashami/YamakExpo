@@ -228,7 +228,7 @@ Superseded decision**.
 | **Tracked lifecycle statuses** | ❌ **NOT IMPLEMENTED** (today the server sets `active`) → B2.5A–D |
 | **Status history** | ❌ **NOT IMPLEMENTED** → B2.5B–D |
 | **WhatsApp / phone → tracked request** | ❌ **NOT IMPLEMENTED** (today they only hand off externally) → B2.5A–D |
-| **My Requests (list + details)** | ❌ **NOT STARTED** → B3 |
+| **My Requests (list + details)** | B3.3 data layer + B3.4 list **IMPLEMENTED / PUSHED**; B3.5 details not started |
 | **Dashboard request tracking** | ❌ **NOT IMPLEMENTED** → B2.5E |
 | **Provider lifecycle actions** | ❌ **FUTURE** (deliberately out of the MVP queue) |
 
@@ -279,7 +279,7 @@ Commit `50e9c67`. See §4.5.
 | **B2.5** | Code review / learning gate | ✅ **COMPLETE (review only — triggered the requirements loop below)** |
 | **B2.5A** | **Request Lifecycle + Channel Analysis** | ✅ **COMPLETE / DECISIONS APPROVED** |
 | B2.5B | Backend Request Model Extension (vehicle, channel, coordinates, history, fixed reason catalog + multi-select transition reasons) | ⬅️ **CURRENT NEXT STEP — NOT STARTED** |
-| B2.5C | Canonical contract update | ⏳ Blocked on B2.5B |
+| B2.5C | Canonical contract update (evolves the single canonical v1 endpoint; no Request v2 API) | ⏳ Blocked on B2.5B |
 | B2.5D | Mobile integration update (location-gated create for all channels) | ⏳ Blocked on B2.5C |
 | B2.5E | Dashboard request tracking | ⏳ Blocked on B2.5C |
 | B2.5F | Request-tracking runtime verification | ⏳ Blocked on B2.5D + B2.5E |
@@ -313,6 +313,9 @@ Decisions closed 2026-11-04; authoritative record and full reason catalog:
   channel joins user + vehicle + driver + sorted services in fingerprint v2. Latitude/longitude
   are persisted but excluded from attempt identity: GPS jitter must not create retry duplicates.
   Dedicated Mobile Request Resource replaces conceptual dependence on Dashboard serialization.
+  This **evolves the existing canonical v1 endpoint only**. It must not introduce, activate or
+  maintain a separate `POST /api/mobile/v2/requests` contract. The current disabled v2 POST route
+  (404) is legacy scaffolding; its removal belongs to a later explicitly approved consolidation.
 - **B2.5D — Mobile integration update.** All three channels create a tracked request **before** any
   external handoff; refresh through the single shared UserLocationProvider before each new request.
   No stale memory reuse or fake coordinates. No valid location means no request. Failed external
@@ -324,7 +327,7 @@ Decisions closed 2026-11-04; authoritative record and full reason catalog:
 - **B2.5F — Runtime verification.** Prove each channel end-to-end, DB truth, location blocking,
   privacy, and dashboard visibility. No code review substitutes for runtime proof.
 
-#### B3 — My Requests — **PLANNED, NOT STARTED**
+#### B3 - My Requests - **B3.3 + B3.4 COMPLETE; B3.5 NOT STARTED**
 
 New official Phase B feature: the authenticated user can see **their own** tracked requests
 (app, WhatsApp, and phone), with a list and a details view. Provisional plan (titles may be
@@ -343,7 +346,20 @@ refined in B3.1 analysis; **the order is fixed**):
 | B3.9 | Approved UI implementation |
 | B3.10 | Final verification + commit |
 
-#### B4–B11 — FUTURE PHASE B ORDER (after B3)
+**B3.3 / B3.4 closure (this task):** B3.3 owner-scoped v1 reads and the Expo API/hook layer were
+implemented, committed and pushed in the backend and Expo repositories respectively; POST creation
+was preserved unchanged. B3.4 added the protected `src/app/(app)/my-requests.tsx` list route and a
+single Profile Hub entry, with no Drawer/tab redesign and no detail-hook call from the list.
+Runtime verification on an Android emulator with a **local mock stub** of the B3.3 read contract
+observed: protected deep-link redirect to `/login`, Profile Hub entry navigation, loading,
+non-empty, empty, error + Retry, pull-to-refresh and Previous/Next pagination; three rapid Next
+taps produced exactly one page-2 request; injected phone/coordinate/audit/idempotency fields were
+not rendered; all requests carried `Authorization`. No production endpoint or real request record
+was used. Pre-existing, unrelated check findings (the `app-tabs.web.tsx` TypeScript route error and
+two `react-hooks/set-state-in-effect` ESLint findings in `use-my-requests.ts`) are recorded, not
+hidden. **Stop before B3.5 Request Details.**
+
+#### B4-B11 - FUTURE PHASE B ORDER (after B3)
 
 | # | Feature |
 |---|---|
@@ -378,8 +394,15 @@ Recorded as **REQ-DEC-001…012**. These outrank any older "contact-only / no PO
 | REQ-DEC-011 | **Coordinate privacy:** a provider must **not** receive customer latitude/longitude before accepting. Post-accept visibility requires both a per-request authorization and an accepted/eligible state. Admin visibility is subject to admin authorization. |
 | REQ-DEC-012 | **Requirement evolution is not a defect.** B2.3/B2.4 were correct under "location not required"; that contract is superseded, not retroactively wrong. Do not "fix history". |
 
-**Canonical create endpoint (unchanged decision):** `POST /api/mobile/v1/requests` under the global
-`/api/mobile/v1/` namespace. There is **no** separate active Request v2 creation contract.
+**Canonical create endpoint (reinforced decision):** `POST /api/mobile/v1/requests` under the global
+`/api/mobile/v1/` namespace is the **only** canonical Mobile request creation endpoint. The
+application is **not publicly released**, so no published mobile client requires backward
+compatibility through a second Request API version. There is **no** active Request v2 creation
+contract, and a new API version is not justified merely because the project is still evolving
+pre-release. The disabled `POST /api/mobile/v2/requests` route (returns 404) is **legacy
+scaffolding, not an approved contract**; it must not be activated or maintained, and its removal is
+recorded for a later explicitly approved consolidation/cleanup. Approved future reads also use
+`/api/mobile/v1/requests`; no mixed v1-create/v2-read final architecture.
 
 ### 5.3.1 B2.5A approved request architecture — target, not implemented
 
@@ -405,10 +428,11 @@ Recorded as **REQ-DEC-001…012**. These outrank any older "contact-only / no PO
 - Future backfill: active → pending; channel → app; latitude/longitude NULL; vehicle_id NULL unless
   reliably known. No fabricated actions/reasons/lifecycle. Optional synthetic initial history, if
   B2.5B chooses it, must be identifiable as a system migration event.
-- Approved future Mobile POST/list/detail: `/api/mobile/v1/requests` and detail `/{id}`. Reads scoped
-  to authenticated app_user_id; wrong-owner detail 404. No mixed v1-create/v2-read final architecture.
-  B3 implementation stays later. **KNOWN SECURITY GAP — NOT EXPOSED AS B3 YET:** current v1 index
-  can return all requests; correct before shipping My Requests.
+- Approved future Mobile POST/list/detail: `/api/mobile/v1/requests` and detail `/{id}` — the single
+  canonical v1 namespace for both creation and reads. Reads scope to authenticated app_user_id;
+  wrong-owner detail 404. No mixed v1-create/v2-read final architecture; the target has **no Request
+  v2 API**. B3 implementation stays later. **KNOWN SECURITY GAP — NOT EXPOSED AS B3 YET:** current
+  v1 index can return all requests; correct before shipping My Requests.
 - Separate Mobile Request Resource from Dashboard Request Resource (B2.5C/B3); no generic coordinate
   or admin-field leakage through shared requestResource serialization. Customers see own coordinates.
 - Driver is operational provider identity; Company/Branch organizational context. No authenticated

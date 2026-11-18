@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { Alert, Linking, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 
@@ -33,6 +34,12 @@ function ProfileMenuItem({ label, onPress, testID, external = false }: ProfileMe
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const router = useRouter();
+
+  // B3.4: the single real entry point to the protected My Requests list.
+  const handleMyRequests = useCallback(() => {
+    router.push('/my-requests');
+  }, [router]);
 
   const handleLogout = useCallback(() => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -105,6 +112,11 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.menu}>
+        <ProfileMenuItem
+          label="My Requests"
+          onPress={handleMyRequests}
+          testID="menu-my-requests"
+        />
         <ProfileMenuItem label="Share" onPress={handleShareApp} testID="menu-share" />
         <ProfileMenuItem
           label="About Us"

@@ -74,13 +74,19 @@ An explicit user decision outranks any document, including this one.
 - **⬅️ CURRENT NEXT STEP = B2.5B — Backend Request Model Extension.**
   Not started here. No schema, migration, product code or dashboard code changed.
 - **B3 My Requests** is a new official Phase B feature (list + details for app / WhatsApp / phone
-  requests). **PLANNED — NOT IMPLEMENTED.**
+  requests). **B3.3 DATA LAYER + B3.4 LIST SCREEN IMPLEMENTED, RUNTIME VERIFIED WITH A LOCAL
+  MOCK API, COMMITTED AND PUSHED.** B3.5 details screen remains unimplemented and out of scope.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
-- **Canonical create contract:** `POST /api/mobile/v1/requests` — authenticated AppUser identity,
-  eligibility validation, multi-service, `Idempotency-Key` + fingerprint, atomic create/replay,
-  HTTP 409 on same-key/different-payload. There is **no** separate active Request v2 creation
-  contract.
+- **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
+  request creation endpoint — authenticated AppUser identity, eligibility validation, multi-service,
+  `Idempotency-Key` + fingerprint, atomic create/replay, HTTP 409 on same-key/different-payload.
+  The application is **not publicly released**, so no published mobile client requires backward
+  compatibility through a second Request API version, and a new API version is **not** justified
+  merely because the project is still evolving pre-release. There is **no** active Request v2
+  creation contract. The disabled `POST /api/mobile/v2/requests` route (returns 404) is **legacy
+  scaffolding, not an approved contract**; it must not be activated or maintained, and its removal
+  is recorded for a later explicitly approved consolidation/cleanup (not this task).
 - **Requests are now coordinate-mandatory for every channel** (`app`, `whatsapp`, `phone`), and
   **channel is data, never status**. See `REQ-DEC-001…012` (§5.3 of
   `docs/rebuild/REBUILD-PLAN.md`, restated at the end of this file).
@@ -3679,7 +3685,31 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
 - B3 must not start until the tracked-request read contract is stable (after B2.5C; ideally after
   B2.5F).
 
-### 9. Admin Dashboard — request tracking requirement
+#### B3.3 / B3.4 closure (this task)
+
+- **B3.3 data layer** is implemented and pushed in both repositories: backend owner-scoped v1
+  list/detail reads with dedicated Mobile resources and wrong-owner detail 404; Expo typed
+  `GET /api/mobile/v1/requests` client plus `useMyRequests()` / `useMyRequestDetails()` hooks with
+  stale-response and in-flight guards. `POST /api/mobile/v1/requests` creation is unchanged.
+- **B3.4 My Requests list** is implemented and pushed: protected route
+  `src/app/(app)/my-requests.tsx` directly under `(app)`, one navigation entry in the Profile Hub
+  (`profile.tsx`), no Drawer/tab redesign. It renders only the B3.3 list allowlist (id, channel,
+  status, createdAt, vehicle/services summaries; `provider_name` only via a defensive optional
+  guard) and never calls the detail hook from the list.
+- **Runtime evidence (local mock API, Android emulator, Expo Go):** unauthenticated deep link to
+  `/my-requests` redirects to `/login`; Profile Hub entry opens the list; loading, non-empty,
+  empty, error + Retry, refresh and Previous/Next pagination states were all observed; three rapid
+  Next taps produced exactly one `GET requests?page=2`; injected sensitive fields (phone,
+  coordinates, customer/admin/reason/idempotency/actor fields) were absent from the rendered UI;
+  every API call carried `Authorization`. The mock API is a local stub of the documented B3.3
+  contract - no production endpoint or real request record was used.
+- The only cross-cutting check findings are pre-existing and unrelated to B3.3/B3.4: the known
+  `src/components/app-tabs.web.tsx` TypeScript route error, and two `react-hooks/set-state-in-effect`
+  ESLint findings on the intentional guarded fetch-on-mount calls in `use-my-requests.ts`. Neither
+  is a runtime blocker; neither was hidden or rewritten in this task.
+- **STOP:** B3.5 Request Details is not implemented or started in this task.
+
+### 9. Admin Dashboard - request tracking requirement
 
 The dashboard must be able to inspect tracked request details: list and details including
 **channel**, **status**, **coordinates**, and **lifecycle history**, under admin authorization.
@@ -3877,6 +3907,23 @@ Example future transition payload (direction only; no status endpoint approved h
 - MVP uses `ServiceRequest.id` (e.g. Request #125); formatted request numbers are deferred.
   Lifecycle notification/email work is excluded from B2.5B–F; revisit with Notifications/FCM.
 
+### Canonical Mobile request API — single v1 contract (pre-release decision)
+
+The application has **not been publicly released**. Therefore no published mobile client requires
+backward compatibility through a second Request API version, and a new API version is **not**
+justified merely because the project is still evolving during pre-release development.
+
+| Aspect | Recorded decision |
+|---|---|
+| **Target architecture** | Exactly one canonical Mobile request API: `POST /api/mobile/v1/requests` for creation and `GET /api/mobile/v1/requests` / `GET /api/mobile/v1/requests/{id}` for reads. **No Request v2 API exists in the target architecture**, and no mixed v1-create/v2-read final design is approved. |
+| **Current code** | A disabled `POST /api/mobile/v2/requests` route is still registered and returns **404**. It is **legacy scaffolding, not an approved contract**, and must not be activated, extended or treated as a fallback. The current v2 read routes are likewise not the approved final read contract. |
+| **B2.5C** | Must **evolve the existing canonical v1 endpoint** (channel, mandatory coordinates, fingerprint v2, dedicated Mobile resource). It must not introduce, activate or maintain a separate Request v2 creation contract. |
+| **Future cleanup** | The obsolete v2 scaffolding is recorded for removal as part of a later **explicitly approved** API consolidation/cleanup, with appropriate regression verification. It is **not** removed by this documentation update. |
+| **Security baseline** | Consolidation preserves authentication, ownership scoping, eligibility validation, idempotency and all existing security requirements. |
+
+Earlier v2 design and read evidence remains historical context for traceability; it does not
+establish a second active contract.
+
 ### Historical compatibility and remaining delivery scope
 
 Future B2.5B migration/backfill: existing `active → pending`, `channel → app` (historical persisted
@@ -3889,7 +3936,7 @@ as a system migration event. No migration is created here.
 |---|---|
 | B2.5A | ✅ COMPLETE / DECISIONS APPROVED — Request Lifecycle + Channel Analysis |
 | B2.5B | **CURRENT NEXT STEP — Backend Request Model Extension**: vehicle_id, channel, latitude, longitude, replace active for new rows, historical compatibility/backfill, status history, fixed reason catalog, multi-select history-reason relationship, model/casts/relationships/indexes/constraints, migration safety, tests |
-| B2.5C | Canonical Request Contract Update |
+| B2.5C | Canonical Request Contract Update — evolves the existing `POST /api/mobile/v1/requests` only; no Request v2 API is created or activated |
 | B2.5D | Mobile Request Integration Update |
 | B2.5E | Dashboard Request Tracking |
 | B2.5F | Actual Runtime Verification |
