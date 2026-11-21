@@ -228,7 +228,7 @@ Superseded decision**.
 | **Tracked lifecycle statuses** | ❌ **NOT IMPLEMENTED** (today the server sets `active`) → B2.5A–D |
 | **Status history** | ❌ **NOT IMPLEMENTED** → B2.5B–D |
 | **WhatsApp / phone → tracked request** | ❌ **NOT IMPLEMENTED** (today they only hand off externally) → B2.5A–D |
-| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED** |
+| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED**; B3.6 real-backend verification **BLOCKED** |
 | **Dashboard request tracking** | ❌ **NOT IMPLEMENTED** → B2.5E |
 | **Provider lifecycle actions** | ❌ **FUTURE** (deliberately out of the MVP queue) |
 
@@ -327,7 +327,7 @@ Decisions closed 2026-11-04; authoritative record and full reason catalog:
 - **B2.5F — Runtime verification.** Prove each channel end-to-end, DB truth, location blocking,
   privacy, and dashboard visibility. No code review substitutes for runtime proof.
 
-#### B3 - My Requests - **B3.3 + B3.4 + B3.5 COMPLETE; B3.6 NOT STARTED**
+#### B3 - My Requests - **B3.3 + B3.4 + B3.5 COMPLETE; B3.6 BLOCKED**
 
 New official Phase B feature: the authenticated user can see **their own** tracked requests
 (app, WhatsApp, and phone), with a list and a details view. Provisional plan (titles may be
@@ -367,7 +367,23 @@ pull-to-refresh, back navigation, public timeline and absence of injected sensit
 dumps. A 401 response invoked the existing sign-out/redirect flow. No production endpoint or real
 request record was used. Pre-existing, unrelated check findings (the `app-tabs.web.tsx` TypeScript
 route error and two `react-hooks/set-state-in-effect` ESLint findings in `use-my-requests.ts`) are
-recorded, not hidden. **Stop before B3.6 formal runtime verification.**
+recorded, not hidden.
+
+**B3.6 real-backend runtime verification is BLOCKED.** The locally configured Laravel `.env` points
+at nonexistent `yamak_test_disposable`; the candidate local `yamak_integration_test` database has
+zero requests, no request #2, and zero mobile-capable tokens. Production-like local databases were
+not accessed. Static review of routes, authentication, owner-scoped queries, resources, and Expo
+API/hooks found no new contract defect, but no HTTP or Android real-API test was run. See
+`B3.6_RUNTIME_VERIFICATION_REPORT.md` for full evidence and verdicts.
+
+**B3.6-E environment recovery audit (read-only):** the immediate config blocker is confirmed, and
+`phpunit.xml` is correctly isolated on `yamak_test_disposable`. Read-only metadata shows that
+`service_requests` previously held rows (auto-increment `19`) but now has none; the exact cause,
+actor, and time are **UNKNOWN** because general/binary logging is off and no backup or destructive
+SQL was found. One active AppUser exists, but both stored tokens are dashboard-only and no
+`mobile`-ability token exists. Environment recovery is **READY** as a proposal, test data readiness
+is **BLOCKED**, B3.6 runtime is **STILL BLOCKED**, and no B3.6 runtime PASS is claimed. See
+`B3.6_ENVIRONMENT_RECOVERY_REPORT.md`. **Stop before B3.7.**
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 

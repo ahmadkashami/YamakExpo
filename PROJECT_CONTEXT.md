@@ -75,7 +75,11 @@ An explicit user decision outranks any document, including this one.
   Not started here. No schema, migration, product code or dashboard code changed.
 - **B3 My Requests** is a new official Phase B feature (list + details for app / WhatsApp / phone
   requests). **B3.3 DATA LAYER + B3.4 LIST SCREEN + B3.5 DETAILS SCREEN IMPLEMENTED, VERIFIED
-  WITH A LOCAL MOCK API, COMMITTED AND PUSHED.** Formal B3.6 runtime verification is not started.
+  WITH A LOCAL MOCK API, COMMITTED AND PUSHED.** B3.6 real-backend runtime verification was
+  attempted but is **BLOCKED**: `yamak_integration_test` is empty, request #2 is absent, and no
+  mobile-capable token exists. The B3.6-E read-only audit found the exact data-loss cause
+  **UNKNOWN** and proposed a safe recovery plan; runtime remains **STILL BLOCKED**. See
+  `B3.6_RUNTIME_VERIFICATION_REPORT.md` and `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3675,8 +3679,8 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
 
 - The authenticated customer can see **their own** tracked requests for **all three channels**, as
   a list plus a details view.
-- **B3.3 / B3.4 / B3.5 IMPLEMENTED; B3.6+ PLANNED.** Sequence (order fixed; titles were refined in
-  B3.1): B3.1 legacy/read-contract analysis → B3.2 read-contract decision (list/detail,
+- **B3.3 / B3.4 / B3.5 IMPLEMENTED; B3.6 BLOCKED; B3.7+ PLANNED.** Sequence (order fixed; titles
+  were refined in B3.1): B3.1 legacy/read-contract analysis → B3.2 read-contract decision (list/detail,
   pagination, status vocabulary, channel) → B3.3 data layer (API module + hook) → B3.4 functional
   list screen + real entry point → B3.5 functional details screen → B3.6 runtime verification →
   B3.7 code review/learning → B3.8 design review → B3.9 approved UI → B3.10 final verification +
@@ -3721,7 +3725,16 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   `src/components/app-tabs.web.tsx` TypeScript route error, and two `react-hooks/set-state-in-effect`
   ESLint findings on the intentional guarded fetch-on-mount calls in `use-my-requests.ts`. Neither
   is a runtime blocker; neither was hidden or rewritten in this task.
-- **STOP:** B3.6 formal runtime verification is not started; no B3.6 work was performed.
+- **B3.6 outcome:** static/security review passed at the source level, but real HTTP and Android
+  verification are blocked by the environment fixture gate above. No HTTP integration test, Android
+  real-API run, fixture creation, DB write, PHPUnit run, or fixture change was performed.
+- **B3.6-E audit:** read-only diagnosis confirmed the immediate config blocker (Laravel `.env`
+  targets nonexistent `yamak_test_disposable`, while `phpunit.xml` correctly keeps PHPUnit separate)
+  and confirmed `0` requests with no mobile-capable token in `yamak_integration_test`. The exact cause
+  of the missing Request #2 is **UNKNOWN**; no record was restored or recreated. Environment recovery
+  is **READY** as a proposal, test data readiness is **BLOCKED**, and B3.6 runtime is **STILL
+  BLOCKED**. See `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`.
+- **STOP:** B3.6 is STILL BLOCKED; do not start B3.7.
 
 ### 9. Admin Dashboard - request tracking requirement
 
