@@ -78,8 +78,11 @@ An explicit user decision outranks any document, including this one.
   WITH A LOCAL MOCK API, COMMITTED AND PUSHED.** B3.6 real-backend runtime verification was
   attempted but is **BLOCKED**: `yamak_integration_test` is empty, request #2 is absent, and no
   mobile-capable token exists. The B3.6-E read-only audit found the exact data-loss cause
-  **UNKNOWN** and proposed a safe recovery plan; runtime remains **STILL BLOCKED**. See
-  `B3.6_RUNTIME_VERIFICATION_REPORT.md` and `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`.
+  **UNKNOWN**. B3.6-F corrected the local Laravel `.env` target to `yamak_integration_test` while
+  PHPUnit remains isolated on `yamak_test_disposable`; config correction/separation **PASS**, but
+  runtime remains **STILL BLOCKED** because test data, a mobile token, and cross-user fixtures are
+  unavailable. See `B3.6_RUNTIME_VERIFICATION_REPORT.md`,
+  `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`, and `B3.6_CONFIG_RECOVERY_REPORT.md`.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3729,11 +3732,18 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   verification are blocked by the environment fixture gate above. No HTTP integration test, Android
   real-API run, fixture creation, DB write, PHPUnit run, or fixture change was performed.
 - **B3.6-E audit:** read-only diagnosis confirmed the immediate config blocker (Laravel `.env`
-  targets nonexistent `yamak_test_disposable`, while `phpunit.xml` correctly keeps PHPUnit separate)
+  targeted nonexistent `yamak_test_disposable`, while `phpunit.xml` correctly keeps PHPUnit separate)
   and confirmed `0` requests with no mobile-capable token in `yamak_integration_test`. The exact cause
-  of the missing Request #2 is **UNKNOWN**; no record was restored or recreated. Environment recovery
-  is **READY** as a proposal, test data readiness is **BLOCKED**, and B3.6 runtime is **STILL
-  BLOCKED**. See `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`.
+  of the missing Request #2 is **UNKNOWN**; no record was restored or recreated. See
+  `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`.
+- **B3.6-F config recovery:** the local ignored `.env` was changed only from
+  `DB_DATABASE=yamak_test_disposable` to `DB_DATABASE=yamak_integration_test`; host, port, credentials,
+  `APP_ENV`, and `phpunit.xml` were unchanged. Laravel config inspection now resolves `mysql` at
+  `127.0.0.1:3306/yamak_integration_test`, while PHPUnit remains on `yamak_test_disposable`.
+  **CONFIG CORRECTION: PASS; ENVIRONMENT SEPARATION: PASS.** No database query/write, HTTP request,
+  migration, seed, PHPUnit run, or fixture/user/token creation was performed. Remaining blockers are
+  unchanged: no mobile-ability token, no request data, no cross-user fixtures, and Request #2
+  disappearance remains unexplained. See `B3.6_CONFIG_RECOVERY_REPORT.md`.
 - **STOP:** B3.6 is STILL BLOCKED; do not start B3.7.
 
 ### 9. Admin Dashboard - request tracking requirement

@@ -369,10 +369,10 @@ request record was used. Pre-existing, unrelated check findings (the `app-tabs.w
 route error and two `react-hooks/set-state-in-effect` ESLint findings in `use-my-requests.ts`) are
 recorded, not hidden.
 
-**B3.6 real-backend runtime verification is BLOCKED.** The locally configured Laravel `.env` points
-at nonexistent `yamak_test_disposable`; the candidate local `yamak_integration_test` database has
-zero requests, no request #2, and zero mobile-capable tokens. Production-like local databases were
-not accessed. Static review of routes, authentication, owner-scoped queries, resources, and Expo
+**B3.6 real-backend runtime verification is BLOCKED.** B3.6-F corrected the local Laravel `.env`
+target to `yamak_integration_test` while PHPUnit remains isolated on `yamak_test_disposable`; the
+integration database still has zero requests, no request #2, and zero mobile-capable tokens.
+Production-like local databases were not accessed. Static review of routes, authentication, owner-scoped queries, resources, and Expo
 API/hooks found no new contract defect, but no HTTP or Android real-API test was run. See
 `B3.6_RUNTIME_VERIFICATION_REPORT.md` for full evidence and verdicts.
 
@@ -383,7 +383,16 @@ actor, and time are **UNKNOWN** because general/binary logging is off and no bac
 SQL was found. One active AppUser exists, but both stored tokens are dashboard-only and no
 `mobile`-ability token exists. Environment recovery is **READY** as a proposal, test data readiness
 is **BLOCKED**, B3.6 runtime is **STILL BLOCKED**, and no B3.6 runtime PASS is claimed. See
-`B3.6_ENVIRONMENT_RECOVERY_REPORT.md`. **Stop before B3.7.**
+`B3.6_ENVIRONMENT_RECOVERY_REPORT.md`.
+
+**B3.6-F development config recovery:** the local ignored `.env` now resolves `mysql` at
+`127.0.0.1:3306/yamak_integration_test`; only `DB_DATABASE` changed, and credentials, host, port,
+`APP_ENV`, and `phpunit.xml` were preserved. PHPUnit continues to target `yamak_test_disposable`.
+Configuration correction and environment separation are **PASS** by configuration inspection only:
+no HTTP request, database query/write, migration, seed, PHPUnit run, or fixture/user/token creation
+was performed. B3.6 real runtime remains **STILL BLOCKED** because no suitable mobile-ability token,
+request data, or cross-user fixtures exist, and Request #2 disappearance remains unexplained. See
+`B3.6_CONFIG_RECOVERY_REPORT.md`. **Stop before B3.7.**
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 
