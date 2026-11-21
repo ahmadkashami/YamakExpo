@@ -84,9 +84,11 @@ An explicit user decision outranks any document, including this one.
   unavailable. A subsequent read-only B3.6-G1 audit confirmed the integration DB identity and
   PHPUnit separation, but found a fully privileged account, an unguarded truncating Artisan command,
   no verified backup, and no fail-closed DB-name guard; fixture creation is **BLOCKED** pending
-  separate user approval. See `B3.6_RUNTIME_VERIFICATION_REPORT.md`,
-  `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`, `B3.6_CONFIG_RECOVERY_REPORT.md`, and
-  `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`.
+  separate user approval. B3.6-G1R added fail-closed guards to the legacy import command and PHPUnit
+  (source only); PHPUnit's approved `yamak_test_disposable` target was not changed. Fixture creation
+  and B3.6 runtime remain **STILL BLOCKED**. See `B3.6_RUNTIME_VERIFICATION_REPORT.md`,
+  `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`, `B3.6_CONFIG_RECOVERY_REPORT.md`,
+  `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`, and `B3.6_G1R_SAFETY_HARDENING_REPORT.md`.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3761,6 +3763,18 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   **NOT VERIFIED**, FIXTURE CREATION **BLOCKED**, B3.6 REAL RUNTIME **STILL BLOCKED**. No write,
   migration, seeder, PHPUnit, auth call, or notification was performed. See
   `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`.
+- **B3.6-G1R source safety hardening:** added `app/Support/DatabaseSafety.php` and
+  `config/database-safety.php` (all opt-ins default to deny). `SeedMongoDumpCommand.php` now calls
+  the guard as the first statement of `handle()`, requires `--force` plus explicit env acknowledgement
+  for `--clean`, and restores `FOREIGN_KEY_CHECKS` in `finally`. PHPUnit is guarded in both
+  `tests/bootstrap.php` (before any test loads) and `tests/TestCase::createApplication()` (before
+  `RefreshDatabase` traits run). The stale sqlite-only guard test was reconciled to accept the two
+  approved disposable strategies without changing `phpunit.xml`; a focused pure-logic guard test was
+  added. Verdicts: IMPORT COMMAND GUARD **PASS**, PHPUNIT PRE-EXECUTION GUARD **PASS**, STATIC
+  VERIFICATION **PASS**, DATABASE BACKUP **NOT VERIFIED**, FIXTURE CREATION **STILL BLOCKED**, B3.6
+  REAL RUNTIME **STILL BLOCKED**. PHPUnit and the import command were **NOT EXECUTED**; no DB
+  connection, query, migration, seed, or write occurred. The fully privileged DB account and absent
+  verified backup remain unresolved. See `B3.6_G1R_SAFETY_HARDENING_REPORT.md`.
 - **STOP:** B3.6 is STILL BLOCKED; do not start B3.6-G2 or B3.7.
 
 ### 9. Admin Dashboard - request tracking requirement

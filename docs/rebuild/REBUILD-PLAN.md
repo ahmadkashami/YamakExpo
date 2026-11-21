@@ -409,6 +409,23 @@ no existing record modified, notification-free, ID-based rollback) was proposed 
 Verdicts: DATABASE SAFETY **PARTIAL**, BACKUP READINESS **NOT VERIFIED**, FIXTURE CREATION
 **BLOCKED**, B3.6 REAL RUNTIME **STILL BLOCKED**. No write, migration, seeder, PHPUnit, auth call,
 HTTP POST, or device test was performed. See `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`.
+
+**B3.6-G1R source safety hardening (static only):** the two destructive entry points now fail closed
+on effective configuration. `app/Support/DatabaseSafety.php` rejects `yamak_integration_test`,
+`yamakdb`, `yamakdb_prod_test`, any `prod`-like name, and missing/ambiguous config. The legacy import
+command calls the guard before path checks, BSON conversion, cleanup or writes; it requires
+`APP_ENV=local`, MySQL on local host with the dedicated `yamak_import_disposable` name,
+`YAMAK_IMPORT_ALLOW=1`, a matching `YAMAK_IMPORT_DATABASE`, and for `--clean` both
+`YAMAK_IMPORT_ALLOW_DESTRUCTIVE=1` and `--force`. FK checks are restored in `finally` after truncation.
+PHPUnit is guarded in `tests/bootstrap.php` before any test loads and in
+`tests/TestCase::createApplication()` before `RefreshDatabase` traits can migrate. The stale
+sqlite-only guard test was reconciled to the two approved disposable strategies without changing
+`phpunit.xml` (no silent database switch). `php -l` passed on all 7 changed/new PHP files and
+`git diff --check` passed. Verdicts: IMPORT COMMAND GUARD **PASS**, PHPUNIT PRE-EXECUTION GUARD
+**PASS**, STATIC VERIFICATION **PASS**, DATABASE BACKUP **NOT VERIFIED**, FIXTURE CREATION
+**STILL BLOCKED**, B3.6 REAL RUNTIME **STILL BLOCKED**. PHPUnit and the import command were NOT
+EXECUTED; no DB connection, query, migration, seed, or write occurred. The fully privileged DB
+account and absent verified backup remain unresolved. See `B3.6_G1R_SAFETY_HARDENING_REPORT.md`.
 **Stop before B3.6-G2 or B3.7.**
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
