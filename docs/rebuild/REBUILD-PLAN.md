@@ -441,7 +441,25 @@ auth-endpoint or notification calls, `B36G1_OWNER_A/B` markers, ID-based FK-safe
 backup/restore evidence. Verdicts: SOURCE GUARD **PARTIAL**, BACKUP **BLOCKED**, PRIVILEGE
 **BLOCKED**, FIXTURE CREATION **STILL BLOCKED**, B3.6 RUNTIME **STILL BLOCKED**. No DB write,
 privilege change, backup, PHPUnit run, or fixture/token creation occurred. See
-`B3.6_G1S_SAFETY_READINESS_REPORT.md`. **Stop before B3.6-G2 or B3.7.**
+`B3.6_G1S_SAFETY_READINESS_REPORT.md`.
+
+**B3.6-G1U backup and isolated restore rehearsal:** an identity gate confirmed `APP_ENV=local`,
+`mysql`, `127.0.0.1:3306/yamak_integration_test` with no `DATABASE_URL`/`DB_SOCKET` before any
+backup. A consistent, access-restricted logical backup was created outside Git (60,239 bytes,
+SHA-256 `cd15961...6a77a`) using `mysqldump --single-transaction --quick --no-create-db --routines
+--triggers --hex-blob`; content scanning found no `CREATE DATABASE`, `USE`, privilege-change or
+redirect statements. The new scratch schema `yamak_restore_rehearsal_20261121_174518` was confirmed
+absent before creation, then restored via `mysql --database=<scratch>` with no `--force`; exit code
+0, empty stderr. Read-only verification matched 42 tables, 42 total rows, 50 foreign keys, identical
+schema/FK fingerprints, 0 service requests, 1 AppUser and 2 tokens between source and scratch. Source
+fingerprints before and after restore were identical. Events could not be enumerated because the
+event scheduler is disabled, so `--events` was omitted; all other inspectable schema objects were
+verified. Verdicts: BACKUP CREATED **PASS**, SCRATCH RESTORE **PASS**, BACKUP RECOVERABILITY
+**VERIFIED**, SOURCE DATABASE PRESERVED **PASS**, PRIVILEGE READINESS **STILL BLOCKED**, FIXTURE
+CREATION **NOT AUTHORIZED**, B3.6 REAL API RUNTIME **STILL BLOCKED**. No fixture/token/user was
+created, no source record was modified, no migration/seed/PHPUnit run occurred, and no Production
+database was accessed. Scratch schema and backup were retained with a separate cleanup plan. See
+`B3.6_G1U_BACKUP_RESTORE_REPORT.md`. **Stop before B3.6-G2 or B3.7.**
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 

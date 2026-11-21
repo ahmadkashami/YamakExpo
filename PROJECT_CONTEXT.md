@@ -91,7 +91,10 @@ An explicit user decision outranks any document, including this one.
   `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`, `B3.6_G1R_SAFETY_HARDENING_REPORT.md`, and
   `B3.6_G1S_SAFETY_READINESS_REPORT.md`. A read-only B3.6-G1S review rated source guards **PARTIAL**
   (host/port, `DATABASE_URL`, named connections and post-guard mutation are not covered) and backup
-  plus privilege readiness **BLOCKED**; fixtures and runtime remain **STILL BLOCKED**.
+  plus privilege readiness **BLOCKED**. B3.6-G1U then created an access-restricted backup of
+  `yamak_integration_test` and verified an isolated restore into a new scratch database;
+  recoverability and source preservation are **PASS**, but privileges remain **STILL BLOCKED** and
+  fixtures/runtime remain **STILL BLOCKED**.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3794,6 +3797,23 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   **BLOCKED**, FIXTURE CREATION **STILL BLOCKED**, B3.6 RUNTIME **STILL BLOCKED**. No DB write,
   privilege change, backup, PHPUnit run, or fixture/token creation occurred. See
   `B3.6_G1S_SAFETY_READINESS_REPORT.md`.
+- **B3.6-G1U backup and isolated restore rehearsal:** after an identity gate confirmed `local` /
+  `mysql` / `127.0.0.1:3306/yamak_integration_test`, a consistent `mysqldump --single-transaction`
+  backup (60,239 bytes, SHA-256 `cd15961...6a77a`) was stored outside Git under `D:\OpenCodeTemp`
+  with access-restricted ACL. The dump was scanned and contained no `CREATE DATABASE`, `USE`,
+  privilege-change or redirect directives. A new scratch schema
+  `yamak_restore_rehearsal_20261121_174518` was created only after confirming it did not exist, and
+  the dump was restored there with `--database` and no `--force`; restore exit code was 0 with empty
+  stderr. Read-only comparison showed 42 tables, 42 rows, 50 foreign keys, identical schema and FK
+  fingerprints, 0 service requests, 1 AppUser and 2 tokens in both source and scratch. Source
+  fingerprints were unchanged after restore. Event objects could not be enumerated because the
+  event scheduler is disabled, so `--events` was omitted; this is the only documented recoverability
+  limitation. Verdicts: BACKUP CREATED **PASS**, SCRATCH RESTORE **PASS**, BACKUP RECOVERABILITY
+  **VERIFIED**, SOURCE DATABASE PRESERVED **PASS**, PRIVILEGE READINESS **STILL BLOCKED**, FIXTURE
+  CREATION **NOT AUTHORIZED**, B3.6 REAL API RUNTIME **STILL BLOCKED**. No source record, fixture,
+  token, user, permission, migration or seed was created; no PHPUnit or production access occurred.
+  The scratch schema and backup were retained with a separate cleanup plan. See
+  `B3.6_G1U_BACKUP_RESTORE_REPORT.md`.
 - **STOP:** B3.6 is STILL BLOCKED; do not start B3.6-G2 or B3.7.
 
 ### 9. Admin Dashboard - request tracking requirement
