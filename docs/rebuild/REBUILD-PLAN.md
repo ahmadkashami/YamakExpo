@@ -392,7 +392,24 @@ Configuration correction and environment separation are **PASS** by configuratio
 no HTTP request, database query/write, migration, seed, PHPUnit run, or fixture/user/token creation
 was performed. B3.6 real runtime remains **STILL BLOCKED** because no suitable mobile-ability token,
 request data, or cross-user fixtures exist, and Request #2 disappearance remains unexplained. See
-`B3.6_CONFIG_RECOVERY_REPORT.md`. **Stop before B3.7.**
+`B3.6_CONFIG_RECOVERY_REPORT.md`.
+
+**B3.6-G1 integration DB safety audit (read-only):** an identity gate confirmed `local` / `mysql` /
+`127.0.0.1:3306/yamak_integration_test` before any inspection; `yamakdb`, `yamakdb_prod_test`, and
+Production were never contacted. Read-only metadata/SELECT queries found 1 active AppUser, 2
+dashboard-only tokens and 0 `mobile` tokens, 0 service requests (auto-increment `19`), 0
+lifecycle/idempotency rows, and 0 soft-deleted records. Privileges are `ALL PRIVILEGES ... WITH GRANT
+OPTION` (DROP/DELETE/ALTER all permitted); `SeedMongoDumpCommand.php:89-132` can truncate 29 core
+tables with no environment guard; committed `phpunit.xml` (mysql / `yamak_test_disposable`)
+contradicts `TestingEnvironmentGuardTest` (sqlite in a temp dir) and no fail-closed DB-name guard
+exists. No recent backup, documented restore, or rehearsal was found; general/binary logging is off.
+Auth route side effects, FK cascades, 50 FKs, 0 triggers/events, and an idle scheduler were reviewed.
+A design-only fixture manifest (2 synthetic owners, 2 scoped short-lived mobile tokens, max 87 rows,
+no existing record modified, notification-free, ID-based rollback) was proposed but **not created**.
+Verdicts: DATABASE SAFETY **PARTIAL**, BACKUP READINESS **NOT VERIFIED**, FIXTURE CREATION
+**BLOCKED**, B3.6 REAL RUNTIME **STILL BLOCKED**. No write, migration, seeder, PHPUnit, auth call,
+HTTP POST, or device test was performed. See `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`.
+**Stop before B3.6-G2 or B3.7.**
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 

@@ -81,8 +81,12 @@ An explicit user decision outranks any document, including this one.
   **UNKNOWN**. B3.6-F corrected the local Laravel `.env` target to `yamak_integration_test` while
   PHPUnit remains isolated on `yamak_test_disposable`; config correction/separation **PASS**, but
   runtime remains **STILL BLOCKED** because test data, a mobile token, and cross-user fixtures are
-  unavailable. See `B3.6_RUNTIME_VERIFICATION_REPORT.md`,
-  `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`, and `B3.6_CONFIG_RECOVERY_REPORT.md`.
+  unavailable. A subsequent read-only B3.6-G1 audit confirmed the integration DB identity and
+  PHPUnit separation, but found a fully privileged account, an unguarded truncating Artisan command,
+  no verified backup, and no fail-closed DB-name guard; fixture creation is **BLOCKED** pending
+  separate user approval. See `B3.6_RUNTIME_VERIFICATION_REPORT.md`,
+  `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`, `B3.6_CONFIG_RECOVERY_REPORT.md`, and
+  `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3744,7 +3748,20 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   migration, seed, PHPUnit run, or fixture/user/token creation was performed. Remaining blockers are
   unchanged: no mobile-ability token, no request data, no cross-user fixtures, and Request #2
   disappearance remains unexplained. See `B3.6_CONFIG_RECOVERY_REPORT.md`.
-- **STOP:** B3.6 is STILL BLOCKED; do not start B3.7.
+- **B3.6-G1 integration DB safety audit (read-only):** an identity gate confirmed `APP_ENV=local`,
+  `mysql` at `127.0.0.1:3306/yamak_integration_test` before any inspection. Read-only metadata/SELECT
+  queries found 1 active AppUser, 2 dashboard-only tokens, 0 mobile tokens, 0 service requests
+  (auto-increment `19`), and 0 lifecycle/idempotency rows with no soft-deleted records. The app uses
+  a `GRANT ALL PRIVILEGES ... WITH GRANT OPTION` account; `SeedMongoDumpCommand.php:89-132` can
+  truncate 29 core tables without an environment guard; committed `phpunit.xml` contradicts
+  `TestingEnvironmentGuardTest` (mysql vs sqlite) and no fail-closed DB-name guard exists. No recent
+  backup, restore procedure, or rehearsal was found; general/binary logging is off. A design-only
+  fixture manifest (2 synthetic AppUsers, 2 scoped mobile tokens, max 87 rows, exact rollback) was
+  proposed but **not implemented**. Verdicts: DATABASE SAFETY **PARTIAL**, BACKUP READINESS
+  **NOT VERIFIED**, FIXTURE CREATION **BLOCKED**, B3.6 REAL RUNTIME **STILL BLOCKED**. No write,
+  migration, seeder, PHPUnit, auth call, or notification was performed. See
+  `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`.
+- **STOP:** B3.6 is STILL BLOCKED; do not start B3.6-G2 or B3.7.
 
 ### 9. Admin Dashboard - request tracking requirement
 
