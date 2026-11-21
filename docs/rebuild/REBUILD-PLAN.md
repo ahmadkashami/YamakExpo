@@ -426,7 +426,22 @@ sqlite-only guard test was reconciled to the two approved disposable strategies 
 **STILL BLOCKED**, B3.6 REAL RUNTIME **STILL BLOCKED**. PHPUnit and the import command were NOT
 EXECUTED; no DB connection, query, migration, seed, or write occurred. The fully privileged DB
 account and absent verified backup remain unresolved. See `B3.6_G1R_SAFETY_HARDENING_REPORT.md`.
-**Stop before B3.6-G2 or B3.7.**
+
+**B3.6-G1S safety readiness review (read-only):** the G1R guards correctly refuse forbidden DB
+names and `phpunit.xml` remains on `yamak_test_disposable`, but source readiness is **PARTIAL**:
+provider bootstrap precedes the guard (no direct DB query found), MySQL host/port are unchecked,
+`DATABASE_URL` is parsed after the guard reads config, only the default connection is validated, and
+runtime `config()->set()`/`DB::purge()` mutations are not re-checked. Backup readiness is **BLOCKED**:
+no Yamak/MySQL dump, no backup script, no documented or rehearsed restore; cutover docs leave
+rehearsal open and `log_bin`/`general_log` are off. Privilege readiness is **BLOCKED**: the effective
+grant is still `ALL PRIVILEGES ON *.* ... WITH GRANT OPTION`; a separate development, read-only,
+administration and disposable test-runner account model was proposed without execution. The 87-row
+fixture manifest was reviewed with prerequisites, direct token insertion with short expiry, no
+auth-endpoint or notification calls, `B36G1_OWNER_A/B` markers, ID-based FK-safe rollback and required
+backup/restore evidence. Verdicts: SOURCE GUARD **PARTIAL**, BACKUP **BLOCKED**, PRIVILEGE
+**BLOCKED**, FIXTURE CREATION **STILL BLOCKED**, B3.6 RUNTIME **STILL BLOCKED**. No DB write,
+privilege change, backup, PHPUnit run, or fixture/token creation occurred. See
+`B3.6_G1S_SAFETY_READINESS_REPORT.md`. **Stop before B3.6-G2 or B3.7.**
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 

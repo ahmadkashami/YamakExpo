@@ -88,7 +88,10 @@ An explicit user decision outranks any document, including this one.
   (source only); PHPUnit's approved `yamak_test_disposable` target was not changed. Fixture creation
   and B3.6 runtime remain **STILL BLOCKED**. See `B3.6_RUNTIME_VERIFICATION_REPORT.md`,
   `B3.6_ENVIRONMENT_RECOVERY_REPORT.md`, `B3.6_CONFIG_RECOVERY_REPORT.md`,
-  `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`, and `B3.6_G1R_SAFETY_HARDENING_REPORT.md`.
+  `B3.6_G1_INTEGRATION_DB_SAFETY_AUDIT.md`, `B3.6_G1R_SAFETY_HARDENING_REPORT.md`, and
+  `B3.6_G1S_SAFETY_READINESS_REPORT.md`. A read-only B3.6-G1S review rated source guards **PARTIAL**
+  (host/port, `DATABASE_URL`, named connections and post-guard mutation are not covered) and backup
+  plus privilege readiness **BLOCKED**; fixtures and runtime remain **STILL BLOCKED**.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3775,6 +3778,22 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   REAL RUNTIME **STILL BLOCKED**. PHPUnit and the import command were **NOT EXECUTED**; no DB
   connection, query, migration, seed, or write occurred. The fully privileged DB account and absent
   verified backup remain unresolved. See `B3.6_G1R_SAFETY_HARDENING_REPORT.md`.
+- **B3.6-G1S safety readiness review (read-only):** confirmed the G1R guards refuse forbidden DB
+  names and that `phpunit.xml` was not changed. Concrete gaps: provider bootstrap runs before the
+  guard (no direct DB query found, low/unverified risk); the PHPUnit guard does not validate MySQL
+  host/port; Laravel parses `DATABASE_URL` at connection time after the guard reads config; only the
+  default connection is checked (named connections and runtime `config()->set()`/`DB::purge()`
+  mutations are not re-checked); `<env>` entries lack `force="true"`. Severity: source guards
+  **PARTIAL**. Backup scan found 33 candidates but no Yamak/MySQL dump, no backup script, and no
+  documented or rehearsed restore; cutover docs list rehearsal as open, `log_bin`/`general_log` off
+  → backup **BLOCKED**. Effective grant is still `ALL PRIVILEGES ON *.* ... WITH GRANT OPTION`; a
+  four-account least-privilege model (development, read-only, admin, disposable test-runner) was
+  proposed but not applied → privilege **BLOCKED**. The 87-row fixture manifest was reviewed with
+  prerequisites, no auth-endpoint calls, no notifications, ownership markers, ID-based rollback and
+  backup evidence requirements. Verdicts: SOURCE GUARD **PARTIAL**, BACKUP **BLOCKED**, PRIVILEGE
+  **BLOCKED**, FIXTURE CREATION **STILL BLOCKED**, B3.6 RUNTIME **STILL BLOCKED**. No DB write,
+  privilege change, backup, PHPUnit run, or fixture/token creation occurred. See
+  `B3.6_G1S_SAFETY_READINESS_REPORT.md`.
 - **STOP:** B3.6 is STILL BLOCKED; do not start B3.6-G2 or B3.7.
 
 ### 9. Admin Dashboard - request tracking requirement
