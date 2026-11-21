@@ -459,7 +459,27 @@ verified. Verdicts: BACKUP CREATED **PASS**, SCRATCH RESTORE **PASS**, BACKUP RE
 CREATION **NOT AUTHORIZED**, B3.6 REAL API RUNTIME **STILL BLOCKED**. No fixture/token/user was
 created, no source record was modified, no migration/seed/PHPUnit run occurred, and no Production
 database was accessed. Scratch schema and backup were retained with a separate cleanup plan. See
-`B3.6_G1U_BACKUP_RESTORE_REPORT.md`. **Stop before B3.6-G2 or B3.7.**
+`B3.6_G1U_BACKUP_RESTORE_REPORT.md`.
+
+**B3.6-G1T database guard hardening (source only):** the B3.6-G1S gaps were addressed in backend
+source. `tests/bootstrap.php` now fails closed before `bootstrap/app.php`/Kernel boot with a raw-env
+gate; `DatabaseSafety` validates effective MySQL host (`127.0.0.1`/`localhost`), port (`3306`) and
+exact disposable database name, rejects unix-socket redirects, and resolves `DATABASE_URL` using
+Laravel's `ConfigurationUrlParser` so conflicting scheme/host/port/database and query overrides are
+refused before a connection is made. Named declared connections and every newly resolved connection
+are validated via `assertNamedTestingConnectionsAllowed()` and a testing-only `SafeDatabaseManager`
+hook in `makeConnection()` and `connectUsing()`; `Tests\TestCase` re-checks before each app instance
+and in `tearDown()`. All `phpunit.xml` env entries use `force="true"`, with explicit host/port and
+empty `DATABASE_URL`/`DB_SOCKET`. The approved `mysql`/`yamak_test_disposable` target, legacy
+OpenCodeTemp sqlite, in-memory sqlite and import opt-ins were preserved — no silent DB switch.
+Static verification: PHP lint, well-formed XML, 11/11 pure-logic acceptance/rejection cases,
+`git diff --check` and secret scan all PASS. PHPUnit was **NOT EXECUTED**; runtime mutation coverage
+is **PARTIAL** (already-cached connections and `DB::extend()` resolvers cannot be retroactively
+controlled by application code), so least-privilege MySQL grants remain the definitive control and
+are **STILL BLOCKED**. Verdicts: SOURCE GUARD IMPLEMENTATION **PASS (with documented runtime
+limitation)**, STATIC VERIFICATION **PASS**, RUNTIME TESTS **NOT EXECUTED**, FIXTURE CREATION **NOT
+AUTHORIZED**, B3.6 REAL API RUNTIME **STILL BLOCKED**. See `B3.6_G1T_GUARD_HARDENING_REPORT.md`.
+**Stop before B3.6-G1V, B3.6-G2 or B3.7.**
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 

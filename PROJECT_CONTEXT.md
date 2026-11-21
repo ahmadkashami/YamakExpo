@@ -3814,7 +3814,19 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   token, user, permission, migration or seed was created; no PHPUnit or production access occurred.
   The scratch schema and backup were retained with a separate cleanup plan. See
   `B3.6_G1U_BACKUP_RESTORE_REPORT.md`.
-- **STOP:** B3.6 is STILL BLOCKED; do not start B3.6-G2 or B3.7.
+- **B3.6-G1T database guard hardening (source only):** the PHPUnit gate now runs before
+  `bootstrap/app.php` and Kernel boot, validates effective MySQL host/port/database, resolves and
+  checks `DATABASE_URL` with Laravel's own parser, validates named and newly resolved connections
+  through a testing-only `SafeDatabaseManager`, and forces all `phpunit.xml` env values. The approved
+  `mysql`/`yamak_test_disposable` strategy, the legacy OpenCodeTemp sqlite strategy, in-memory sqlite
+  and the import opt-ins were preserved. Static verification passed (PHP lint, XML, 11/11 pure-logic
+  cases, `git diff --check`, secret scan); PHPUnit was **NOT EXECUTED**. Runtime mutation coverage is
+  **PARTIAL** because an already-cached connection or `DB::extend()` resolver cannot be retroactively
+  controlled in application code — least-privilege grants remain the real control and are **STILL
+  BLOCKED**. Verdicts: SOURCE GUARD IMPLEMENTATION **PASS (with documented runtime limitation)**,
+  STATIC VERIFICATION **PASS**, RUNTIME TESTS **NOT EXECUTED**, FIXTURE CREATION **NOT AUTHORIZED**,
+  B3.6 REAL RUNTIME **STILL BLOCKED**. See `B3.6_G1T_GUARD_HARDENING_REPORT.md`.
+- **STOP:** B3.6 is STILL BLOCKED; do not start B3.6-G1V, B3.6-G2 or B3.7.
 
 ### 9. Admin Dashboard - request tracking requirement
 
