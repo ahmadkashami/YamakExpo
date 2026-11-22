@@ -228,7 +228,7 @@ Superseded decision**.
 | **Tracked lifecycle statuses** | ❌ **NOT IMPLEMENTED** (today the server sets `active`) → B2.5A–D |
 | **Status history** | ❌ **NOT IMPLEMENTED** → B2.5B–D |
 | **WhatsApp / phone → tracked request** | ❌ **NOT IMPLEMENTED** (today they only hand off externally) → B2.5A–D |
-| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED**; B3.6 real-backend + Android verification **COMPLETE / PASS WITH DOCUMENTED LIMITATIONS**; B3.7 code review **COMPLETE / FINDINGS** (no critical security, no code changes) |
+| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED**; B3.6 real-backend + Android verification **COMPLETE / PASS WITH DOCUMENTED LIMITATIONS**; B3.7 review **COMPLETE / FINDINGS** and accepted medium fixes **B7-01 / B7-02 / B7-05 COMPLETE** (no critical security) |
 | **Dashboard request tracking** | ❌ **NOT IMPLEMENTED** → B2.5E |
 | **Provider lifecycle actions** | ❌ **FUTURE** (deliberately out of the MVP queue) |
 
@@ -327,7 +327,7 @@ Decisions closed 2026-11-04; authoritative record and full reason catalog:
 - **B2.5F — Runtime verification.** Prove each channel end-to-end, DB truth, location blocking,
   privacy, and dashboard visibility. No code review substitutes for runtime proof.
 
-#### B3 - My Requests - **B3.3 + B3.4 + B3.5 + B3.6 COMPLETE; B3.7 REVIEW COMPLETE; B3.8 PENDING**
+#### B3 - My Requests - **B3.3 + B3.4 + B3.5 + B3.6 COMPLETE; B3.7 REVIEW + MEDIUM FIXES COMPLETE; B3.8 PENDING**
 
 New official Phase B feature: the authenticated user can see **their own** tracked requests
 (app, WhatsApp, and phone), with a list and a details view. Provisional plan (titles may be
@@ -341,7 +341,7 @@ refined in B3.1 analysis; **the order is fixed**):
 | B3.4 | Functional **My Requests list** screen + real entry point |
 | B3.5 | Functional **request details** screen (status, channel, services, timestamps, location shown only as allowed) |
 | B3.6 | Runtime verification (all three channels visible, correct ownership filtering) — **COMPLETE / PASS WITH DOCUMENTED LIMITATIONS** |
-| B3.7 | Code review / learning gate — **COMPLETE / FINDINGS** (review only; no code changes) |
+| B3.7 | Code review / learning gate — **COMPLETE / FINDINGS**; accepted medium findings **B7-01 / B7-02 / B7-05 FIXED** |
 | B3.8 | Design review (design source must be approved before UI work) — **PENDING OWNER REVIEW** |
 | B3.9 | Approved UI implementation |
 | B3.10 | Final verification + commit |
@@ -486,19 +486,15 @@ AUTHORIZED**, B3.6 REAL API RUNTIME **STILL BLOCKED**. See `B3.6_G1T_GUARD_HARDE
 reopened or rerun. The historical “Do not start B3.7” instruction was superseded by the explicit
 B3.7 review-only request.
 
-**B3.7 code review / learning gate: COMPLETE / FINDINGS (review only).** Authoritative report:
-workspace-root `B3.7_MY_REQUESTS_CODE_REVIEW.md`. Verdicts: BACKEND **FINDINGS**, EXPO **FINDINGS**,
-CRITICAL SECURITY **NONE**, CODE QUALITY **IMPROVEMENTS NEEDED**. Confirmed good practices:
-owner-scoped v1 reads, indistinguishable wrong-owner/missing 404, dedicated mobile allowlists,
-preserved POST, strict API → hook → UI separation, stale/in-flight guards and protected routes.
-Confirmed findings: **B7-01** wrong 404 envelope assertion in the feature test; **B7-02** legacy v2
-mobile reads still use Dashboard serialization; **B7-03** dead `update()`/`destroy()` in the Mobile
-controller; **B7-04** B3.2 `id` type table contradicts the implemented numeric `id`; **B7-05** detail
-UI can show a previous request while a new id loads; **B7-06** contract-extraneous `provider_name`
-escape hatch in the list. No Blocker, High or critical security finding. Minimal fixes are recorded
-in the report and were **not implemented**. **Recommended next action: B3.8 design review / owner
-review (PENDING); do not start implementation.** No code, test, migration, DB, fixture or environment
-change was made by B3.7.
+**B3.7 code review / learning gate + accepted medium fixes: COMPLETE.** Authoritative sources:
+workspace-root `B3.7_MY_REQUESTS_CODE_REVIEW.md` (review) and `B3.7_MEDIUM_FINDINGS_FIX_REPORT.md`
+(fix verification). Accepted fixes: **B7-01** test-only 404 envelope alignment; **B7-02** legacy v2
+GETs reuse the customer-safe Mobile allowlist resources with v2 envelope/shape, owner scoping, auth
+and fail-closed POST preserved; **B7-05** detail/error state is id-bound and the screen guards on
+`detail.id === requestId`. Low findings **B7-03**, **B7-04** and **B7-06** remain documented but
+unimplemented by decision. No Blocker, High or critical security finding. No global error handler,
+migration, fixture, DB record or environment file was changed. **Recommended next action: B3.8 design
+review / owner review (PENDING); do not start implementation.** B3.6 remains closed and was not rerun.
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 

@@ -32,8 +32,9 @@ import {
  * Directly under `(app)`, so the existing auth/onboarding gate protects the
  * route. All data comes from the B3.3 `useMyRequestDetails()` hook: no endpoint,
  * hook, type, auth logic or networking is duplicated here. The hook's request
- * token and in-flight guard already ignore stale ID changes and overlapping
- * duplicate loads.
+ * token, in-flight guard and id-bound detail/error state ignore stale ID
+ * changes and overlapping duplicate loads. The screen also verifies that the
+ * rendered detail id matches the route id.
  *
  * Only the approved `MyRequestDetail` allowlist is read and rendered. Internal
  * actor/reason/transition/admin fields are not referenced, and phone numbers
@@ -230,6 +231,10 @@ export default function MyRequestDetailsScreen() {
   const { signOut } = useAuth();
   const signOutStartedRef = useRef(false);
 
+  // Explicit screen-level contract: never render a detail that belongs to a
+  // different route id, even if a stale value reaches this component.
+  const visibleDetail = detail !== null && detail.id === requestId ? detail : null;
+
   // 401 is an expired/invalid Sanctum session. Clear it through the existing
   // auth action; (app)/_layout.tsx then performs the normal unauthenticated
   // redirect. No second auth client, token store or login route is introduced.
@@ -249,10 +254,10 @@ export default function MyRequestDetailsScreen() {
   }, [router]);
 
   const handleRefresh = useCallback(() => {
-    if (!isLoading && detail !== null) {
+    if (!isLoading && visibleDetail !== null) {
       refetch();
     }
-  }, [detail, isLoading, refetch]);
+  }, [visibleDetail, isLoading, refetch]);
 
   if (requestId === null) {
     return (
@@ -274,7 +279,7 @@ export default function MyRequestDetailsScreen() {
     );
   }
 
-  if (isLoading && detail === null && error === null) {
+  if (isLoading && visibleDetail === null && error === null) {
     return (
       <View style={styles.screen}>
         <AppBar insets={insets} subtitle={`Request #${requestId}`} onBack={goBack} />
@@ -334,7 +339,7 @@ export default function MyRequestDetailsScreen() {
     );
   }
 
-  if (detail === null) {
+  if (visibleDetail === null) {
     return (
       <View style={styles.screen}>
         <AppBar insets={insets} subtitle={`Request #${requestId}`} onBack={goBack} />
@@ -356,7 +361,7 @@ export default function MyRequestDetailsScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppBar insets={insets} subtitle={`Request #${detail.id}`} onBack={goBack} />
+      <AppBar insets={insets} subtitle={`Request #${visibleDetail.id}`} onBack={goBack} />
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -372,7 +377,7 @@ export default function MyRequestDetailsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <DetailContent detail={detail} />
+        <DetailContent detail={visibleDetail} />
       </ScrollView>
     </View>
   );

@@ -147,6 +147,9 @@ export type UseMyRequestDetailsResult = {
   retry: () => void;
 };
 
+type DetailState = { id: number; data: MyRequestDetail };
+type DetailErrorState = { id: number; error: ApiError };
+
 /** Owner-only detail data for the My Request details screen. */
 export function useMyRequestDetails(requestId: number | null | undefined): UseMyRequestDetailsResult {
   const validId =
@@ -154,18 +157,21 @@ export function useMyRequestDetails(requestId: number | null | undefined): UseMy
       ? requestId
       : null;
 
-  const [detail, setDetail] = useState<MyRequestDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(validId !== null);
-  const [error, setError] = useState<ApiError | null>(null);
+  // Detail and error state carry the id they belong to. A value from a previous
+  // route id can never be returned for the current id, even if a late response
+  // or a reused screen instance survives an A -> B navigation.
+  const [detailState, setDetailState] = useState<DetailState | null>(null);
+  const [errorState, setErrorState] = useState<DetailErrorState | null>(null);
+  const [isFetching, setIsFetching] = useState(validId !== null);
 
   const requestIdRef = useRef(0);
   const inFlightRef = useRef<number | null>(null);
 
   const load = useCallback(async (id: number | null) => {
     if (id === null) {
-      setDetail(null);
-      setError(null);
-      setIsLoading(false);
+      setDetailState(null);
+      setErrorState(null);
+      setIsFetching(false);
       return;
     }
     if (inFlightRef.current === id) {
@@ -174,8 +180,8 @@ export function useMyRequestDetails(requestId: number | null | undefined): UseMy
 
     const requestToken = ++requestIdRef.current;
     inFlightRef.current = id;
-    setError(null);
-    setIsLoading(true);
+    setErrorState(null);
+    setIsFetching(true);
 
     try {
       const response = await getMyRequestDetails(id);
@@ -185,17 +191,17 @@ export function useMyRequestDetails(requestId: number | null | undefined): UseMy
       if (!response.success || response.data === null) {
         throw new ApiError('http', 'Request could not be loaded.', { body: response });
       }
-      setDetail(response.data);
+      setDetailState({ id, data: response.data });
     } catch (cause) {
       if (requestToken !== requestIdRef.current) {
         return;
       }
-      setDetail(null);
-      setError(unexpected(cause));
+      setDetailState(null);
+      setErrorState({ id, error: unexpected(cause) });
     } finally {
       if (requestToken === requestIdRef.current) {
         inFlightRef.current = null;
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
   }, []);
@@ -207,6 +213,13 @@ export function useMyRequestDetails(requestId: number | null | undefined): UseMy
   const refetch = useCallback(() => {
     void load(validId);
   }, [load, validId]);
+
+  const detail = detailState?.id === validId ? detailState.data : null;
+  const error = errorState?.id === validId ? errorState.error : null;
+  // A newly selected id has no state of its own yet, so it must show loading
+  // before the effect starts its fetch. For a same-id refresh, `isFetching`
+  // keeps the current detail visible while the RefreshControl spins.
+  const isLoading = validId !== null && (isFetching || (detail === null && error === null));
 
   return { detail, isLoading, error, refetch, retry: refetch };
 }
