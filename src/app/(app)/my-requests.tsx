@@ -7,7 +7,7 @@ import type { MyRequestListItem } from '@/api';
 import { ApiErrorRow } from '@/components/home/ApiErrorRow';
 import { BackIcon } from '@/components/vehicle-details/icons';
 import { useMyRequests } from '@/hooks/use-my-requests';
-import { colors, radius, spacing, typography } from '@/theme';
+import { colors, interactionOpacity, radius, spacing, typography } from '@/theme';
 import {
   CHANNEL_LABELS,
   STATUS_LABELS,
@@ -52,25 +52,33 @@ function MyRequestCard({
   onPress: () => void;
 }) {
   const provider = providerName(item);
+  const status = labelFor(item.status, STATUS_LABELS);
+  const channel = labelFor(item.channel, CHANNEL_LABELS);
+  const vehicle = vehicleSummary(item);
+  const services = servicesSummary(item);
+  // B3.9 D3: one announcement per card with the visible, owner-safe summary.
+  // No provider phone or coordinates are part of this label.
+  const accessibilityLabel =
+    `Request ${item.id}, ${status}, ${channel}, ${vehicle}, ${services}. Open details`;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open request ${item.id} details`}
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
       <View style={styles.cardHeader}>
         <Text style={styles.requestId}>Request #{item.id}</Text>
         <View style={styles.statusPill}>
-          <Text style={styles.statusText}>{labelFor(item.status, STATUS_LABELS)}</Text>
+          <Text style={styles.statusText}>{status}</Text>
         </View>
       </View>
 
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
           <Text style={styles.metaLabel}>Channel</Text>
-          <Text style={styles.metaValue}>{labelFor(item.channel, CHANNEL_LABELS)}</Text>
+          <Text style={styles.metaValue}>{channel}</Text>
         </View>
         <View style={styles.metaItem}>
           <Text style={styles.metaLabel}>Created</Text>
@@ -80,12 +88,12 @@ function MyRequestCard({
 
       <View style={styles.detailBlock}>
         <Text style={styles.detailLabel}>Vehicle</Text>
-        <Text style={styles.detailValue}>{vehicleSummary(item)}</Text>
+        <Text style={styles.detailValue}>{vehicle}</Text>
       </View>
 
       <View style={styles.detailBlock}>
         <Text style={styles.detailLabel}>Services</Text>
-        <Text style={styles.detailValue}>{servicesSummary(item)}</Text>
+        <Text style={styles.detailValue}>{services}</Text>
       </View>
 
       {provider === null ? null : (
@@ -360,7 +368,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   cardPressed: {
-    opacity: 0.7,
+    opacity: interactionOpacity.pressed,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -451,7 +459,9 @@ const styles = StyleSheet.create({
   },
   pageButton: {
     minWidth: 100,
+    minHeight: 44,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,

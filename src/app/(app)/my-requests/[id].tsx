@@ -16,7 +16,7 @@ import { useAuth } from '@/auth';
 import { ApiErrorRow } from '@/components/home/ApiErrorRow';
 import { BackIcon } from '@/components/vehicle-details/icons';
 import { useMyRequestDetails } from '@/hooks/use-my-requests';
-import { colors, radius, spacing, typography } from '@/theme';
+import { colors, interactionOpacity, radius, spacing, typography } from '@/theme';
 import {
   CHANNEL_LABELS,
   STATUS_LABELS,
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   primaryButtonPressed: {
-    opacity: 0.7,
+    opacity: interactionOpacity.pressed,
   },
   primaryButtonLabel: {
     ...typography.label,
