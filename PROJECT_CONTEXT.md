@@ -3826,7 +3826,19 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   BLOCKED**. Verdicts: SOURCE GUARD IMPLEMENTATION **PASS (with documented runtime limitation)**,
   STATIC VERIFICATION **PASS**, RUNTIME TESTS **NOT EXECUTED**, FIXTURE CREATION **NOT AUTHORIZED**,
   B3.6 REAL RUNTIME **STILL BLOCKED**. See `B3.6_G1T_GUARD_HARDENING_REPORT.md`.
-- **STOP:** B3.6 is STILL BLOCKED; do not start B3.6-G1V, B3.6-G2 or B3.7.
+- **B3.6 final runtime execution: COMPLETE / ACCEPTANCE PASS.** Authoritative target remained
+  `yamak_integration_test` at `127.0.0.1:3306` with `APP_ENV=local`; G1T source guards (backend commit
+  `5fd27eb0d9fe69c0c7cd0541f72d395751d4c8b0`) and G1U backup/restore (verified dump
+  `yamak_integration_test_20261121_174518.sql`, successful scratch restore
+  `yamak_restore_rehearsal_20261121_174518`) were preserved, not repeated. Synthetic fixtures were
+  user-approved; **89/89** rows and least-privilege enforcement were re-verified, the real Laravel
+  API passed **47/47** checks, and the local Expo dev build passed real-API Android list/detail,
+  A/B isolation, cross-owner not-found, loading, network-error and Retry checks. Empty-state UI was
+  **NOT VERIFIED** (both owners have records) and HTTP **403** was **UNVERIFIED by design** (no
+  non-mobile token was approved or minted). Historical Request #2 was not recreated and remains
+  **UNKNOWN**; Production (`yamakdb`, `yamakdb_prod_test`, `https://yamak-kw.com`) was never
+  contacted. See `B3.6_FINAL_RUNTIME_ACCEPTANCE_REPORT.md` in the workspace root.
+- **STOP:** B3.6 is CLOSED. Do not start B3.7.
 
 ### 9. Admin Dashboard - request tracking requirement
 

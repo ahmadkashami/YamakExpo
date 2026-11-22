@@ -228,7 +228,7 @@ Superseded decision**.
 | **Tracked lifecycle statuses** | ❌ **NOT IMPLEMENTED** (today the server sets `active`) → B2.5A–D |
 | **Status history** | ❌ **NOT IMPLEMENTED** → B2.5B–D |
 | **WhatsApp / phone → tracked request** | ❌ **NOT IMPLEMENTED** (today they only hand off externally) → B2.5A–D |
-| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED**; B3.6 real-backend verification **BLOCKED** |
+| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED**; B3.6 real-backend + Android verification **COMPLETE / PASS** |
 | **Dashboard request tracking** | ❌ **NOT IMPLEMENTED** → B2.5E |
 | **Provider lifecycle actions** | ❌ **FUTURE** (deliberately out of the MVP queue) |
 
@@ -327,7 +327,7 @@ Decisions closed 2026-11-04; authoritative record and full reason catalog:
 - **B2.5F — Runtime verification.** Prove each channel end-to-end, DB truth, location blocking,
   privacy, and dashboard visibility. No code review substitutes for runtime proof.
 
-#### B3 - My Requests - **B3.3 + B3.4 + B3.5 COMPLETE; B3.6 BLOCKED**
+#### B3 - My Requests - **B3.3 + B3.4 + B3.5 + B3.6 COMPLETE**
 
 New official Phase B feature: the authenticated user can see **their own** tracked requests
 (app, WhatsApp, and phone), with a list and a details view. Provisional plan (titles may be
@@ -340,7 +340,7 @@ refined in B3.1 analysis; **the order is fixed**):
 | B3.3 | Data layer: API module + hook (typed, owner-scoped, no global store) |
 | B3.4 | Functional **My Requests list** screen + real entry point |
 | B3.5 | Functional **request details** screen (status, channel, services, timestamps, location shown only as allowed) |
-| B3.6 | Runtime verification (all three channels visible, correct ownership filtering) |
+| B3.6 | Runtime verification (all three channels visible, correct ownership filtering) — **COMPLETE / PASS** |
 | B3.7 | Code review / learning gate |
 | B3.8 | Design review (design source must be approved before UI work) |
 | B3.9 | Approved UI implementation |
@@ -369,12 +369,15 @@ request record was used. Pre-existing, unrelated check findings (the `app-tabs.w
 route error and two `react-hooks/set-state-in-effect` ESLint findings in `use-my-requests.ts`) are
 recorded, not hidden.
 
-**B3.6 real-backend runtime verification is BLOCKED.** B3.6-F corrected the local Laravel `.env`
-target to `yamak_integration_test` while PHPUnit remains isolated on `yamak_test_disposable`; the
-integration database still has zero requests, no request #2, and zero mobile-capable tokens.
-Production-like local databases were not accessed. Static review of routes, authentication, owner-scoped queries, resources, and Expo
-API/hooks found no new contract defect, but no HTTP or Android real-API test was run. See
-`B3.6_RUNTIME_VERIFICATION_REPORT.md` for full evidence and verdicts.
+**B3.6 real-backend and Android runtime verification is COMPLETE / PASS.** The approved local target
+was `127.0.0.1:3306/yamak_integration_test` with `APP_ENV=local`; PHPUnit stayed isolated on
+`yamak_test_disposable`. Two minimum-privilege local principals were provisioned for fixture writing
+and API verification, least-privilege enforcement re-passed, the approved synthetic manifest contained
+89 rows, and the real Laravel API passed 47/47 checks. A local Expo dev build on `emulator-5554`
+verified owner-scoped list/detail, all three channels and six statuses, pagination, A/B isolation,
+cross-owner not-found, and error/retry against the real local API. Empty-state UI was **NOT VERIFIED**
+and 403 was **UNVERIFIED by design**; the earlier environment/audit reports remain historical. See
+`B3.6_FINAL_RUNTIME_ACCEPTANCE_REPORT.md` in the workspace root for full evidence and limitations.
 
 **B3.6-E environment recovery audit (read-only):** the immediate config blocker is confirmed, and
 `phpunit.xml` is correctly isolated on `yamak_test_disposable`. Read-only metadata shows that
@@ -479,7 +482,7 @@ controlled by application code), so least-privilege MySQL grants remain the defi
 are **STILL BLOCKED**. Verdicts: SOURCE GUARD IMPLEMENTATION **PASS (with documented runtime
 limitation)**, STATIC VERIFICATION **PASS**, RUNTIME TESTS **NOT EXECUTED**, FIXTURE CREATION **NOT
 AUTHORIZED**, B3.6 REAL API RUNTIME **STILL BLOCKED**. See `B3.6_G1T_GUARD_HARDENING_REPORT.md`.
-**Stop before B3.6-G1V, B3.6-G2 or B3.7.**
+**B3.6 is CLOSED after final runtime acceptance. Do not start B3.7.**
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 
