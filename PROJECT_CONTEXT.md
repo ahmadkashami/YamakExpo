@@ -94,7 +94,18 @@ An explicit user decision outranks any document, including this one.
   plus privilege readiness **BLOCKED**. B3.6-G1U then created an access-restricted backup of
   `yamak_integration_test` and verified an isolated restore into a new scratch database;
   recoverability and source preservation are **PASS**, but privileges remain **STILL BLOCKED** and
-  fixtures/runtime remain **STILL BLOCKED**.
+  fixtures/runtime remain **STILL BLOCKED**. **Later closure:** B3.6 final runtime acceptance is
+  **COMPLETE / PASS WITH DOCUMENTED LIMITATIONS**; the blocked snapshot above is retained as history.
+- **B3.7 — My Requests code review: COMPLETE (review/documentation only).** No application/backend
+  source, test, migration, fixture, DB record or environment file was changed. Authoritative report:
+  workspace-root `B3.7_MY_REQUESTS_CODE_REVIEW.md`. Verdicts: BACKEND **FINDINGS** (4 lower-priority
+  items: wrong 404 feature-test assertion, legacy v2 Dashboard serialization, unexposed
+  `update()`/`destroy()`, B3.2 id-type ambiguity), EXPO **FINDINGS** (id-bound detail display,
+  contract-extraneous `provider_name` escape hatch), CRITICAL SECURITY **NONE**, CODE QUALITY
+  **IMPROVEMENTS NEEDED**. Confirmed: owner-scoped v1 reads, indistinguishable 404, dedicated mobile
+  allowlists, preserved POST, strict API → hook → UI separation, stale/in-flight guards, protected
+  routes. **Recommended next action: B3.8 design review / owner review (PENDING); do not start
+  implementation.** B3.6 remains **CLOSED / COMPLETED** and was not reopened or rerun.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3694,12 +3705,12 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
 
 - The authenticated customer can see **their own** tracked requests for **all three channels**, as
   a list plus a details view.
-- **B3.3 / B3.4 / B3.5 IMPLEMENTED; B3.6 BLOCKED; B3.7+ PLANNED.** Sequence (order fixed; titles
-  were refined in B3.1): B3.1 legacy/read-contract analysis → B3.2 read-contract decision (list/detail,
-  pagination, status vocabulary, channel) → B3.3 data layer (API module + hook) → B3.4 functional
-  list screen + real entry point → B3.5 functional details screen → B3.6 runtime verification →
-  B3.7 code review/learning → B3.8 design review → B3.9 approved UI → B3.10 final verification +
-  commit.
+- **B3.3 / B3.4 / B3.5 IMPLEMENTED; B3.6 COMPLETED; B3.7 COMPLETE (REVIEW ONLY); B3.8 PENDING.**
+  Sequence (order fixed; titles were refined in B3.1): B3.1 legacy/read-contract analysis → B3.2
+  read-contract decision (list/detail, pagination, status vocabulary, channel) → B3.3 data layer
+  (API module + hook) → B3.4 functional list screen + real entry point → B3.5 functional details
+  screen → B3.6 runtime verification → B3.7 code review/learning (**COMPLETE**) → B3.8 design
+  review (**PENDING OWNER REVIEW**) → B3.9 approved UI → B3.10 final verification + commit.
 - Ownership filtering is mandatory: a user must never see another user's requests.
 - B3 must not start until the tracked-request read contract is stable (after B2.5C; ideally after
   B2.5F).
@@ -3838,7 +3849,20 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   non-mobile token was approved or minted). Historical Request #2 was not recreated and remains
   **UNKNOWN**; Production (`yamakdb`, `yamakdb_prod_test`, `https://yamak-kw.com`) was never
   contacted. See `B3.6_FINAL_RUNTIME_ACCEPTANCE_REPORT.md` in the workspace root.
-- **STOP:** B3.6 is CLOSED. Do not start B3.7.
+- **B3.7 code review / learning gate: COMPLETE (review only).** Authoritative source-supported report:
+  workspace-root `B3.7_MY_REQUESTS_CODE_REVIEW.md`. Verdicts: BACKEND **FINDINGS**, EXPO **FINDINGS**,
+  CRITICAL SECURITY **NONE**, CODE QUALITY **IMPROVEMENTS NEEDED**. Confirmed good practices include
+  owner-scoped v1 reads, identical wrong-owner/missing 404, dedicated mobile allowlists, preserved
+  POST, strict API → hook → UI separation and stale/in-flight guards. Confirmed findings: **B7-01**
+  wrong 404 envelope assertion in the feature test; **B7-02** legacy v2 mobile reads still use
+  Dashboard serialization; **B7-03** dead `update()`/`destroy()` in the Mobile controller; **B7-04**
+  B3.2 `id` type table contradicts the implemented numeric `id`; **B7-05** detail UI can show a
+  previous request while a new id loads; **B7-06** contract-extraneous `provider_name` escape hatch
+  in the list. No Blocker, High or critical security finding. Recommendations are documented only,
+  not implemented; no code, test, migration, DB, fixture or environment change was made.
+- **STOP:** B3.6 remains **CLOSED / COMPLETED** and was not reopened or rerun. B3.7 was explicitly
+  requested and is now **COMPLETE** as review/documentation only. **B3.8 design review / owner
+  review remains PENDING; do not start implementation.**
 
 ### 9. Admin Dashboard - request tracking requirement
 
