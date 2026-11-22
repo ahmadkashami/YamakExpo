@@ -228,7 +228,7 @@ Superseded decision**.
 | **Tracked lifecycle statuses** | ❌ **NOT IMPLEMENTED** (today the server sets `active`) → B2.5A–D |
 | **Status history** | ❌ **NOT IMPLEMENTED** → B2.5B–D |
 | **WhatsApp / phone → tracked request** | ❌ **NOT IMPLEMENTED** (today they only hand off externally) → B2.5A–D |
-| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED**; B3.6 real-backend + Android verification **COMPLETE / PASS WITH DOCUMENTED LIMITATIONS**; B3.7 review **COMPLETE / FINDINGS** and accepted medium fixes **B7-01 / B7-02 / B7-05 COMPLETE** (no critical security) |
+| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED**; B3.6 real-backend + Android verification **COMPLETE / PASS WITH DOCUMENTED LIMITATIONS**; B3.7 review **COMPLETE / FINDINGS** and accepted medium fixes **B7-01 / B7-02 / B7-05 COMPLETE**; B3.8 design review **COMPLETE / PARTIAL REFERENCES**; B3.9 **NOT STARTED** |
 | **Dashboard request tracking** | ❌ **NOT IMPLEMENTED** → B2.5E |
 | **Provider lifecycle actions** | ❌ **FUTURE** (deliberately out of the MVP queue) |
 
@@ -327,7 +327,7 @@ Decisions closed 2026-11-04; authoritative record and full reason catalog:
 - **B2.5F — Runtime verification.** Prove each channel end-to-end, DB truth, location blocking,
   privacy, and dashboard visibility. No code review substitutes for runtime proof.
 
-#### B3 - My Requests - **B3.3 + B3.4 + B3.5 + B3.6 COMPLETE; B3.7 REVIEW + MEDIUM FIXES COMPLETE; B3.8 PENDING**
+#### B3 - My Requests - **B3.3 + B3.4 + B3.5 + B3.6 COMPLETE; B3.7 REVIEW + MEDIUM FIXES COMPLETE; B3.8 DESIGN REVIEW COMPLETE; B3.9 PENDING OWNER APPROVAL**
 
 New official Phase B feature: the authenticated user can see **their own** tracked requests
 (app, WhatsApp, and phone), with a list and a details view. Provisional plan (titles may be
@@ -342,8 +342,8 @@ refined in B3.1 analysis; **the order is fixed**):
 | B3.5 | Functional **request details** screen (status, channel, services, timestamps, location shown only as allowed) |
 | B3.6 | Runtime verification (all three channels visible, correct ownership filtering) — **COMPLETE / PASS WITH DOCUMENTED LIMITATIONS** |
 | B3.7 | Code review / learning gate — **COMPLETE / FINDINGS**; accepted medium findings **B7-01 / B7-02 / B7-05 FIXED** |
-| B3.8 | Design review (design source must be approved before UI work) — **PENDING OWNER REVIEW** |
-| B3.9 | Approved UI implementation |
+| B3.8 | Design review (design source must be approved before UI work) — **COMPLETE / NO DEDICATED APPROVED REFERENCE** |
+| B3.9 | Approved UI implementation — **NOT STARTED / OWNER APPROVAL REQUIRED** |
 | B3.10 | Final verification + commit |
 
 **B3.3 / B3.4 / B3.5 closure:** B3.3 owner-scoped v1 reads and the Expo API/hook layer were
@@ -493,8 +493,19 @@ GETs reuse the customer-safe Mobile allowlist resources with v2 envelope/shape, 
 and fail-closed POST preserved; **B7-05** detail/error state is id-bound and the screen guards on
 `detail.id === requestId`. Low findings **B7-03**, **B7-04** and **B7-06** remain documented but
 unimplemented by decision. No Blocker, High or critical security finding. No global error handler,
-migration, fixture, DB record or environment file was changed. **Recommended next action: B3.8 design
-review / owner review (PENDING); do not start implementation.** B3.6 remains closed and was not rerun.
+migration, fixture, DB record or environment file was changed.
+
+**B3.8 design review: COMPLETE (review only).** Authoritative report: workspace-root
+`B3.8_MY_REQUESTS_DESIGN_REVIEW.md`. Verdicts: DESIGN REFERENCES **PARTIAL**, MY REQUESTS DESIGN
+REVIEW **COMPLETE**, REQUEST DETAILS DESIGN REVIEW **COMPLETE**, DESIGN PROPOSAL **READY FOR OWNER
+APPROVAL**. The approved `approve-ui/**` language and `src/theme/*` exist, including the close
+All-Vehicles list and Vehicle Details precedents, but no dedicated approved My Requests or Request
+Details design was found in local `approve-ui/**`, `new-ui/**` or elsewhere; `new-ui/**` remains
+proposed and non-authoritative. The report documents current designs, differences, reusable approved
+components, accessibility findings, owner decisions and a **PROPOSED — NOT APPROVED** specification.
+No UI code, approved reference, backend code, migration, DB record or environment file was changed.
+**Recommended next action: owner approval of the B3.8 proposal; B3.9 remains NOT STARTED. Do not start
+implementation.** B3.6 remains closed and was not rerun.
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 

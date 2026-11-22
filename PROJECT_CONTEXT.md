@@ -103,9 +103,16 @@ An explicit user decision outranks any document, including this one.
   verified. Low findings **B7-03**, **B7-04** and **B7-06** remain documented but intentionally
   unimplemented. No Blocker/High/critical security finding. Owner-scoped v1 reads, indistinguishable
   404, dedicated mobile allowlists, preserved POST, strict API → hook → UI separation, stale/in-flight
-  guards and protected routes remain intact. **Next action: B3.8 design review / owner review
-  (PENDING); do not start implementation.** B3.6 remains **CLOSED / COMPLETED** and was not reopened
+  guards and protected routes remain intact. B3.6 remains **CLOSED / COMPLETED** and was not reopened
   or rerun.
+- **B3.8 — My Requests design review: COMPLETE (review/documentation only).** Authoritative report:
+  workspace-root `B3.8_MY_REQUESTS_DESIGN_REVIEW.md`. Design references verdict **PARTIAL**: the
+  approved `approve-ui/**` language and `src/theme/*` exist, including the close All-Vehicles list
+  precedent, but **no dedicated approved My Requests or Request Details design** was found in local
+  `approve-ui/**`, `new-ui/**` or elsewhere. The report documents current list/detail designs,
+  accessibility findings and a concise **PROPOSED — NOT APPROVED** specification. No application,
+  backend or approved-reference file was changed. **B3.9 remains NOT STARTED pending explicit owner
+  approval.**
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3706,12 +3713,13 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
 - The authenticated customer can see **their own** tracked requests for **all three channels**, as
   a list plus a details view.
 - **B3.3 / B3.4 / B3.5 IMPLEMENTED; B3.6 COMPLETED; B3.7 COMPLETE (REVIEW + ACCEPTED MEDIUM FIXES);
-  B3.8 PENDING.** Sequence (order fixed; titles were refined in B3.1): B3.1 legacy/read-contract
-  analysis → B3.2 read-contract decision (list/detail, pagination, status vocabulary, channel) →
-  B3.3 data layer (API module + hook) → B3.4 functional list screen + real entry point → B3.5
-  functional details screen → B3.6 runtime verification → B3.7 code review/learning and accepted
-  medium fixes (**COMPLETE**) → B3.8 design review (**PENDING OWNER REVIEW**) → B3.9 approved UI →
-  B3.10 final verification + commit.
+  B3.8 COMPLETE (DESIGN REVIEW); B3.9 PENDING OWNER APPROVAL.** Sequence (order fixed; titles were
+  refined in B3.1): B3.1 legacy/read-contract analysis → B3.2 read-contract decision (list/detail,
+  pagination, status vocabulary, channel) → B3.3 data layer (API module + hook) → B3.4 functional
+  list screen + real entry point → B3.5 functional details screen → B3.6 runtime verification →
+  B3.7 code review/learning and accepted medium fixes (**COMPLETE**) → B3.8 design review
+  (**COMPLETE / NO DEDICATED APPROVED REFERENCE**) → B3.9 approved UI (**NOT STARTED**) → B3.10 final
+  verification + commit.
 - Ownership filtering is mandatory: a user must never see another user's requests.
 - B3 must not start until the tracked-request read contract is stable (after B2.5C; ideally after
   B2.5F).
@@ -3861,9 +3869,16 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   Low findings **B7-03** (dead `update()`/`destroy()`), **B7-04** (B3.2 id-type ambiguity) and
   **B7-06** (`provider_name` list escape hatch) remain documented but unimplemented. No global error
   handler, migration, fixture, DB record or environment file was changed.
+- **B3.8 design review: COMPLETE (review only).** Authoritative report: workspace-root
+  `B3.8_MY_REQUESTS_DESIGN_REVIEW.md`. Verdicts: DESIGN REFERENCES **PARTIAL**, MY REQUESTS DESIGN
+  REVIEW **COMPLETE**, REQUEST DETAILS DESIGN REVIEW **COMPLETE**, DESIGN PROPOSAL **READY FOR OWNER
+  APPROVAL**. No dedicated approved My Requests / Request Details reference exists; `new-ui/**`
+  remains proposed and non-authoritative. The report records reusable approved components/tokens,
+  accessibility findings, owner decisions and a **PROPOSED — NOT APPROVED** screen specification. No
+  UI code, approved reference, backend code, migration, DB record or environment file was changed.
 - **STOP:** B3.6 remains **CLOSED / COMPLETED** and was not reopened or rerun. B3.7 review and the
-  three accepted medium fixes are **COMPLETE**. **B3.8 design review / owner review remains PENDING;
-  do not start implementation.**
+  three accepted medium fixes are **COMPLETE**. B3.8 design review is **COMPLETE**. **B3.9 approved
+  UI remains NOT STARTED and requires explicit owner approval; do not start implementation.**
 
 ### 9. Admin Dashboard - request tracking requirement
 
