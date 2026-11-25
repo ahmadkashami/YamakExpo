@@ -41,6 +41,13 @@ export default function ProfileScreen() {
     router.push('/my-requests');
   }, [router]);
 
+  // B4.2: the single real entry point to the protected Edit Profile route.
+  const handleEditProfile = useCallback(() => {
+    // Cast only until Expo regenerates typed routes for the new file; the
+    // resolved URL is /profile/edit under the same (app) auth gate.
+    router.push('/profile/edit' as never);
+  }, [router]);
+
   const handleLogout = useCallback(() => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
@@ -116,6 +123,11 @@ export default function ProfileScreen() {
           label="My Requests"
           onPress={handleMyRequests}
           testID="menu-my-requests"
+        />
+        <ProfileMenuItem
+          label="Edit Profile"
+          onPress={handleEditProfile}
+          testID="menu-edit-profile"
         />
         <ProfileMenuItem label="Share" onPress={handleShareApp} testID="menu-share" />
         <ProfileMenuItem

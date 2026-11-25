@@ -129,6 +129,21 @@ An explicit user decision outranks any document, including this one.
   was found. Full TalkBack gesture behaviour, transient spinner frames and runtime long-text
   wrapping remain NOT VERIFIED (source-level PASS only). Authoritative report: workspace-root
   `B3.10_FINAL_VERIFICATION_REPORT.md`.
+- **B4.2 — Edit Profile functional route: IMPLEMENTED / STATIC VERIFICATION ONLY — AWAITING OWNER
+  REVIEW.** Protected read-only `/profile/edit` renders Name, Phone and Email from `useAuth().user`
+  immediately, then reconciles with `GET app-users/profile` through the shared authenticated client.
+  The Profile Hub has exactly one new `Edit Profile` row; every existing menu action is preserved.
+  No editing/save, PATCH, photo/location, auth/session, backend, DB, migration, dependency or native
+  changes were made. `npx tsc --noEmit` introduced no B4.2 errors; only the pre-existing unrelated
+  `src/components/app-tabs.web.tsx(27,38)` TS2322 remains. No runtime/live-API verification was
+  performed; no runtime PASS is claimed. **B4.3 was subsequently authorized and executed.**
+- **B4.3 — Edit Profile editable fields: IMPLEMENTED / STATIC VERIFICATION ONLY — AWAITING OWNER
+  REVIEW.** Name and Phone are editable local drafts on the existing `/profile/edit` screen; Email
+  remains read-only. AuthProvider prefill and the existing GET reconciliation still work, with dirty
+  flags preventing late GET responses from overwriting edited fields. `maxLength={255}` plus a simple
+  length error enforce the confirmed backend contract; no phone format rules, PATCH, Save, auth/session,
+  backend, DB, dependency or native changes were made. `npx tsc --noEmit` and `npx expo lint` introduced
+  no B4.3 findings; only previously documented unrelated findings remain. No runtime PASS is claimed.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -4151,3 +4166,83 @@ approval in the B2.5B task. Remaining UI/pagination/resource details stay in lat
 the separate stray dev-row purge remains a user decision. No additional business decisions made.
 
 **B2.5A DECISION CLOSURE PASS — B2.5B READY. STOP: do not implement B2.5B, commit or push.**
+
+## PHASE B — B4.2 EDIT PROFILE FUNCTIONAL IMPLEMENTATION (implementation, 2026-11-25)
+
+**Status: IMPLEMENTED / STATIC VERIFICATION ONLY — AWAITING OWNER REVIEW. B4.3 was subsequently
+authorized and executed; see the B4.3 section below.**
+
+No persisted B4.1 analysis report was found in the workspace, so this slice was based on the explicit
+task brief plus `PROJECT_CONTEXT.md`, `REBUILD-PLAN.md` §9 and the approved Profile Hub specification.
+Per `REBUILD-PLAN.md` §9, functional implementation may precede design review; the proposed
+`docs/rebuild/new-ui/main/edit-profile/` prototype was **not** treated as approved and no Save, input
+or Change Photo control was copied.
+
+### Implemented
+- Added protected read-only route `src/app/(app)/profile/edit.tsx`. As a direct child of `(app)`, it
+  inherits the existing auth/onboarding gate; it intentionally does not rebuild the drawer/tabs frame.
+- Added minimal profile GET contract `src/api/profile.ts` (`getUserProfile`, `ProfileResponse`,
+  `ProfileUser`) and exported it from `src/api/index.ts`. Only Name, Phone and Email are modelled.
+- Values render immediately from `useAuth().user`, then reconcile with `GET app-users/profile` via the
+  existing `apiGet` client. Envelope `success`/`data` is validated; absent keys keep cached values,
+  while explicit null/empty values render `Not provided`.
+- Initial loading shows an indicator; network/HTTP failures keep cached values and show the shared
+  `ApiErrorRow` with Retry; 401/403 show a user-facing message with Go back only. No `signOut()` or
+  redirect was added, so auth/session behavior is unchanged.
+- Added exactly one Profile Hub row (`Edit Profile`, `testID="menu-edit-profile"`) targeting
+  `/profile/edit`; all pre-existing menu actions remain. Typed-route declarations were not regenerated,
+  so that one `router.push` uses a narrow cast until Expo type generation refreshes.
+
+### Verification and boundaries
+- `npx tsc --noEmit`: no new B4.2 finding; only the pre-existing unrelated
+  `src/components/app-tabs.web.tsx(27,38)` TS2322 (`/explore`) remains.
+- `npx expo lint`: no finding in B4.2 files; 40 pre-existing unrelated problems (35 errors, 5 warnings)
+  remain elsewhere. Expo's temporary auto-generated ESLint config was removed afterward.
+- No live API probe, on-device run, Android rebuild, dependency install, backend/DB change, migration,
+  seed, token/test-user creation, commit or push was performed. No runtime PASS is claimed.
+- Unrelated pre-existing working-tree changes (including `src/app/register.tsx`) were preserved.
+
+**STOP: owner review of B4.2 was required before B4.3; the explicit B4.3 task has now been executed
+and awaits its own owner review.**
+
+## PHASE B — B4.3 EDIT PROFILE EDITABLE FIELDS (implementation, 2026-11-25)
+
+**Status: IMPLEMENTED / STATIC VERIFICATION ONLY — AWAITING OWNER REVIEW.**
+
+No persisted B4.1 analysis report was found in the workspace (only the two references recorded in
+B4.2). This slice therefore followed the explicit B4.3 brief plus the canonical context/plan and the
+existing screen. The proposed `new-ui` Edit Profile prototype remains **PROPOSED / NOT APPROVED**; no
+Save, photo, location or extra-field design was copied.
+
+### Implemented
+- Modified only `src/app/(app)/profile/edit.tsx`. No new route, API helper, auth/session, backend, DB,
+  migration, dependency or native change was made.
+- Name and Phone are `TextInput` fields initialized from the current profile data and kept in local
+  draft state. Phone uses `keyboardType="phone-pad"`; neither field is reformatted or validated against
+  a country-code rule.
+- Email remains a read-only `Text` row bound to the loaded profile baseline; it cannot be changed by
+  this form.
+- Three separate state concerns are kept: `initialValues` (loaded baseline, starting from
+  `useAuth().user`), `draft` (current editable strings), and `dirty`/`dirtyRef` (per-field edited
+  flags). A successful GET updates the baseline and only applies it to draft fields not yet edited,
+  so late responses never overwrite user edits. Retry preserves dirty flags.
+- Missing optional values render safely: editable fields show `Not provided` as a placeholder with an
+  empty controlled value; the read-only Email row shows `Not provided` explicitly.
+- Validation mirrors the confirmed backend contract only: `maxLength={255}` on both inputs plus an
+  inline `Maximum 255 characters` error for an over-length loaded value. Empty values remain valid
+  because both backend fields are nullable.
+
+### Verification and boundaries
+- `npx tsc --noEmit`: no new B4.3 finding; only the pre-existing unrelated
+  `src/components/app-tabs.web.tsx(27,38)` TS2322 remains.
+- `npx expo lint`: no finding in `src/app/(app)/profile/edit.tsx`; 40 pre-existing unrelated problems
+  (35 errors, 5 warnings) remain. Expo's temporary auto-generated ESLint config was removed afterward.
+- `git diff --check`: clean for the changed tracked files.
+- Protected route, Profile Hub navigation, GET loading, network/Retry, 401/403 handling and back
+  navigation were preserved.
+- No live API probe, on-device run, Android rebuild, dependency install, auth/session change,
+  backend/DB change, migration, seed, token/test-user creation, commit or push was performed. No
+  runtime PASS is claimed. Pre-existing unrelated changes, especially `src/app/register.tsx`, remain
+  untouched.
+
+**STOP: owner review of B4.3 is required before B4.4.**

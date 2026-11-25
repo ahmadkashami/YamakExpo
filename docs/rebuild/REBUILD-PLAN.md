@@ -530,6 +530,29 @@ or attempt further runtime work without explicit authorization.
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 
+**B4.2 (functional Edit Profile) — IMPLEMENTED / STATIC VERIFICATION ONLY — AWAITING OWNER REVIEW.**
+A protected read-only `/profile/edit` route was added under `(app)`, with a minimal authenticated GET
+helper and exactly one new Profile Hub row. It renders Name/Phone/Email from `useAuth().user`, then
+from `GET app-users/profile`, with loading, network-error + Retry, 401/403 and missing-value states.
+Per §9 this is functional-only: the proposed edit-profile prototype is not approved, and no PATCH,
+inputs, Save, photo/location, auth/session, backend/DB, migration, dependency or native work was
+done. `npx tsc --noEmit` introduced no B4.2 error; `npx expo lint` reported no B4.2 finding (40
+pre-existing unrelated problems remain). No runtime verification was performed; no runtime PASS is
+claimed. This record does not reopen
+B3 or alter §0.3's standing next step. **B4.3 was subsequently authorized and executed.**
+
+**B4.3 (editable Name/Phone on the existing Edit Profile screen) — IMPLEMENTED / STATIC VERIFICATION
+ONLY — AWAITING OWNER REVIEW.** Only `src/app/(app)/profile/edit.tsx` changed. Name and Phone are
+local `TextInput` drafts initialized from `useAuth().user` and then from `GET app-users/profile`;
+Email stays read-only. `initialValues`, `draft` and per-field `dirty`/`dirtyRef` are separate, so a
+late GET response never overwrites an edited field, and Retry preserves edits. Phone uses
+`keyboardType="phone-pad"`; no country-code or reformatting rules were added. Validation is limited
+to the confirmed `nullable|string|max:255` contract (`maxLength` plus an inline length error). No
+PATCH, Save, photo/location/extra fields, auth/session, backend/DB, migration, dependency or native
+work was done. `npx tsc --noEmit` and `npx expo lint` introduced no B4.3 finding (only the previously
+documented unrelated baseline remains), and `git diff --check` is clean. No runtime PASS is claimed.
+**B4.4 must not start without explicit owner approval.**
+
 | # | Feature |
 |---|---|
 | B4 | Edit Profile (`SCREEN-017`) |

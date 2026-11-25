@@ -19,6 +19,7 @@ export {
   type OnboardingSlide,
 } from './onboarding';
 export { ApiError, extractBackendMessage, type ApiErrorKind } from './api-error';
+export { getUserProfile, type ProfileResponse, type ProfileUser } from './profile';
 export {
   createServiceRequest,
   createTrackedServiceRequest,
