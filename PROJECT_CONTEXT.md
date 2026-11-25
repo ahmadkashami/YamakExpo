@@ -120,12 +120,15 @@ An explicit user decision outranks any document, including this one.
   with `interactionOpacity.pressed`; D2/D4/D5/D6/D7/D8 were already implemented and were preserved
   and verified. Focused source verification: 14/14 checks passed. `npx tsc --noEmit` and
   `npx expo lint` were executed; only pre-existing unrelated findings remain, with no findings in the
-  two modified screens. Android runtime verification was attempted but blocked by the installed
-  standalone build and the absence of a dev-only seeding route; no runtime pass is claimed. B3.6,
-  B3.7 and B3.8 were not reopened. **B3.10 is PARTIAL / BLOCKED.** A genuine Expo dev client was
-  rebuilt and loaded from Metro, but both pre-existing approved fixture tokens now return HTTP 401
-  `Unauthenticated`, so authenticated runtime acceptance checks could not be executed. Authoritative
-  report: workspace-root `B3.10_FINAL_VERIFICATION_REPORT.md`.
+  two modified screens. Android runtime verification was initially blocked by the installed
+  standalone build and the absence of a dev-only seeding route. B3.6, B3.7 and B3.8 were not
+  reopened. **B3.10 is COMPLETED / PASS WITH DOCUMENTED LIMITATIONS.** A genuine Expo dev client
+  loads from Metro, and owner-approved temporary Sanctum sessions for AppUser IDs `4` and `5` were
+  provisioned via the debugger, so authenticated Android runtime acceptance was executed with PASS
+  results for list, details, pagination, 401/404 handling and Owner A/B isolation. No product defect
+  was found. Full TalkBack gesture behaviour, transient spinner frames and runtime long-text
+  wrapping remain NOT VERIFIED (source-level PASS only). Authoritative report: workspace-root
+  `B3.10_FINAL_VERIFICATION_REPORT.md`.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -3726,14 +3729,17 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
 - The authenticated customer can see **their own** tracked requests for **all three channels**, as
   a list plus a details view.
 - **B3.3 / B3.4 / B3.5 IMPLEMENTED; B3.6 COMPLETED; B3.7 COMPLETE (REVIEW + ACCEPTED MEDIUM FIXES);
-  B3.8 COMPLETE (DESIGN REVIEW); B3.9 COMPLETED (OWNER-APPROVED UI); B3.10 PARTIAL / BLOCKED.** Sequence (order
+  B3.8 COMPLETE (DESIGN REVIEW); B3.9 COMPLETED (OWNER-APPROVED UI); B3.10 COMPLETED / PASS WITH
+  DOCUMENTED LIMITATIONS.** Sequence (order
   fixed; titles were refined in B3.1): B3.1 legacy/read-contract analysis → B3.2 read-contract
   decision (list/detail, pagination, status vocabulary, channel) → B3.3 data layer (API module +
   hook) → B3.4 functional list screen + real entry point → B3.5 functional details screen → B3.6
   runtime verification → B3.7 code review/learning and accepted medium fixes (**COMPLETE**) →
   B3.8 design review (**COMPLETE / NO DEDICATED APPROVED REFERENCE**) → B3.9 approved UI
   (**COMPLETED / D1–D9 OWNER APPROVED, O1–O3 DEFERRED**) → B3.10 final verification + commit
-  (**PARTIAL / BLOCKED**: dev client loads from Metro, but the approved session is unauthenticated).
+  (**COMPLETED / PASS WITH DOCUMENTED LIMITATIONS**: authenticated on-device runtime checks passed
+  with owner-approved temporary tokens; TalkBack gestures, spinner frames and long-text wrapping
+  remain NOT VERIFIED at runtime).
 - Ownership filtering is mandatory: a user must never see another user's requests.
 - B3 must not start until the tracked-request read contract is stable (after B2.5C; ideally after
   B2.5F).
@@ -3897,10 +3903,12 @@ Opening WhatsApp or the dialer first, and creating the request afterwards (or no
   migration, fixture, DB, environment or approved-reference file was changed.
 - **STOP:** B3.6 remains **CLOSED / COMPLETED** and was not reopened or rerun. B3.7 review and the
   three accepted medium fixes are **COMPLETE**. B3.8 design review is **COMPLETE**. B3.9 approved UI
-  is **COMPLETED**. **B3.10 final verification is PARTIAL / BLOCKED**: the dev client loads from
-  Metro, but both pre-existing approved tokens return HTTP 401 `Unauthenticated`, so authenticated
-  runtime acceptance is impossible without forbidden auth/token changes. See workspace-root
-  `B3.10_FINAL_VERIFICATION_REPORT.md`. No further B3 runtime work is authorized.
+  is **COMPLETED**. **B3.10 final verification is COMPLETED / PASS WITH DOCUMENTED LIMITATIONS**:
+  owner-approved temporary Sanctum sessions enabled real authenticated on-device acceptance for
+  both owners, with PASS results for list, details, pagination, 401/404 and isolation; no product
+  defect was found. TalkBack gestures, spinner frames and long-text wrapping are NOT VERIFIED at
+  runtime. See workspace-root `B3.10_FINAL_VERIFICATION_REPORT.md`. No further B3 runtime work is
+  authorized.
 
 ### 9. Admin Dashboard - request tracking requirement
 

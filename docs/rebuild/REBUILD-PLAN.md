@@ -228,7 +228,7 @@ Superseded decision**.
 | **Tracked lifecycle statuses** | ❌ **NOT IMPLEMENTED** (today the server sets `active`) → B2.5A–D |
 | **Status history** | ❌ **NOT IMPLEMENTED** → B2.5B–D |
 | **WhatsApp / phone → tracked request** | ❌ **NOT IMPLEMENTED** (today they only hand off externally) → B2.5A–D |
-| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED**; B3.6 real-backend + Android verification **COMPLETE / PASS WITH DOCUMENTED LIMITATIONS**; B3.7 review **COMPLETE / FINDINGS** and accepted medium fixes **B7-01 / B7-02 / B7-05 COMPLETE**; B3.8 design review **COMPLETE / PARTIAL REFERENCES**; B3.9 approved UI **COMPLETED (D1–D9 OWNER APPROVED)**; B3.10 **PARTIAL / BLOCKED** |
+| **My Requests (list + details)** | B3.3 data layer + B3.4 list + B3.5 details **IMPLEMENTED / PUSHED**; B3.6 real-backend + Android verification **COMPLETE / PASS WITH DOCUMENTED LIMITATIONS**; B3.7 review **COMPLETE / FINDINGS** and accepted medium fixes **B7-01 / B7-02 / B7-05 COMPLETE**; B3.8 design review **COMPLETE / PARTIAL REFERENCES**; B3.9 approved UI **COMPLETED (D1–D9 OWNER APPROVED)**; B3.10 **COMPLETED / PASS WITH DOCUMENTED LIMITATIONS** |
 | **Dashboard request tracking** | ❌ **NOT IMPLEMENTED** → B2.5E |
 | **Provider lifecycle actions** | ❌ **FUTURE** (deliberately out of the MVP queue) |
 
@@ -327,7 +327,7 @@ Decisions closed 2026-11-04; authoritative record and full reason catalog:
 - **B2.5F — Runtime verification.** Prove each channel end-to-end, DB truth, location blocking,
   privacy, and dashboard visibility. No code review substitutes for runtime proof.
 
-#### B3 - My Requests - **B3.3 + B3.4 + B3.5 + B3.6 COMPLETE; B3.7 REVIEW + MEDIUM FIXES COMPLETE; B3.8 DESIGN REVIEW COMPLETE; B3.9 APPROVED UI COMPLETED; B3.10 PARTIAL / BLOCKED**
+#### B3 - My Requests - **B3.3 + B3.4 + B3.5 + B3.6 COMPLETE; B3.7 REVIEW + MEDIUM FIXES COMPLETE; B3.8 DESIGN REVIEW COMPLETE; B3.9 APPROVED UI COMPLETED; B3.10 COMPLETED / PASS WITH DOCUMENTED LIMITATIONS**
 
 New official Phase B feature: the authenticated user can see **their own** tracked requests
 (app, WhatsApp, and phone), with a list and a details view. Provisional plan (titles may be
@@ -344,7 +344,7 @@ refined in B3.1 analysis; **the order is fixed**):
 | B3.7 | Code review / learning gate — **COMPLETE / FINDINGS**; accepted medium findings **B7-01 / B7-02 / B7-05 FIXED** |
 | B3.8 | Design review (design source must be approved before UI work) — **COMPLETE / NO DEDICATED APPROVED REFERENCE** |
 | B3.9 | Approved UI implementation — **COMPLETED / D1–D9 OWNER APPROVED, O1–O3 DEFERRED** |
-| B3.10 | Final verification + commit — **PARTIAL / BLOCKED**: dev client loads from Metro; approved session returns HTTP 401 |
+| B3.10 | Final verification + commit — **COMPLETED / PASS WITH DOCUMENTED LIMITATIONS**: authenticated on-device acceptance executed with owner-approved temporary tokens (IDs 4/5); list, details, pagination, 401/404 and Owner A/B isolation PASS; no product defect; TalkBack gestures, spinner frames and long-text wrapping NOT VERIFIED at runtime |
 
 **B3.3 / B3.4 / B3.5 closure:** B3.3 owner-scoped v1 reads and the Expo API/hook layer were
 implemented, committed and pushed in the backend and Expo repositories respectively; POST creation
@@ -518,13 +518,15 @@ modified screens. Android runtime verification was attempted but blocked by the 
 build and the absence of a dev-only seeding route; no runtime pass is claimed. No backend, hook,
 migration, fixture, DB, environment or approved-reference file was changed.
 
-**B3.10 was executed and is PARTIAL / BLOCKED.** A genuine Expo dev client was rebuilt and loads
-from Metro on `emulator-5554`, but both pre-existing approved fixture tokens now return HTTP 401
-`Unauthenticated` from the local API, so the authenticated My Requests / Request Details runtime
-acceptance checks could not be run without forbidden auth/token changes. No runtime PASS is claimed.
-Authoritative report: workspace-root `B3.10_FINAL_VERIFICATION_REPORT.md`. B3.10 is now closed at
-this status; do not reopen B3.6-B3.9 or attempt further runtime work without explicit authorization
-and a valid approved session.
+**B3.10 was executed and is COMPLETED / PASS WITH DOCUMENTED LIMITATIONS.** A genuine Expo dev
+client loads from Metro on `emulator-5554`. Owner-approved temporary Sanctum sessions for AppUser
+IDs `4` and `5` were provisioned through the debugger, and real authenticated on-device acceptance
+returned PASS for My Requests list/cards/labels, pagination, pull-to-refresh settling, Request
+Details binding/fields/lifecycle, 401 and 404 handling, and Owner A/B isolation. No product defect
+was found. TalkBack gesture-level behaviour, transient spinner frames and runtime long-text
+wrapping remain NOT VERIFIED (source-level PASS only). Authoritative report: workspace-root
+`B3.10_FINAL_VERIFICATION_REPORT.md`. B3.10 is now closed at this status; do not reopen B3.6-B3.9
+or attempt further runtime work without explicit authorization.
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 
