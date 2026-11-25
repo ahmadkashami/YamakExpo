@@ -488,6 +488,17 @@ export default function RegisterScreen() {
               </Pressable>
             </View>
           </View>
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>Already have an account?</Text>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="Sign in"
+              hitSlop={8}
+              onPress={() => router.push('/login')}
+              style={({ pressed }) => [pressed && styles.footerLinkPressed]}>
+              <Text style={styles.footerLink}>Sign in</Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </View>
       <CountrySelectorModal
@@ -699,6 +710,27 @@ const styles = StyleSheet.create({
   submitButtonLabel: {
     ...typography.buttonLabel,
     color: colors.brandText,
+  },
+  footerRow: {
+    marginTop: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  footerText: {
+    ...typography.label,
+    fontWeight: fontWeight.regular,
+    color: colors.subtitle,
+  },
+  footerLink: {
+    ...typography.label,
+    fontWeight: fontWeight.semibold,
+    color: colors.title,
+    textDecorationLine: 'underline',
+  },
+  footerLinkPressed: {
+    opacity: interactionOpacity.pressed,
   },
   title: {
     ...typography.title,

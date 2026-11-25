@@ -33,6 +33,10 @@ import { colors, interactionOpacity, radius, spacing, typography } from '@/theme
  * Name and Phone are locally editable drafts. Email stays read-only. There is
  * no PATCH, Save button or navigation away from this screen that persists the
  * draft; photo, location and all other profile fields remain out of scope.
+ *
+ * Comment map: `initialValues` is the loaded baseline, `draft` is what the user
+ * sees and types into, and `dirtyRef` guards those drafts from late GET replies.
+ * See `B4.2_FINAL_REPORT.md` / `B4.3_FINAL_REPORT.md` for task scope and limits.
  */
 
 type ProfileValues = {
@@ -184,7 +188,11 @@ export default function EditProfileScreen() {
   // baseline object stable so it does not trigger needless GET effects.
   const authValues = useMemo(() => valuesFromAuth(user), [user]);
 
-  // Separate baseline from draft: GET updates the baseline, never an edited draft.
+  // Three separate concerns (do not merge them):
+  // 1. initialValues = loaded baseline, also the source for read-only Email.
+  // 2. draft         = current editable Name/Phone strings shown in the inputs.
+  // 3. dirty + ref   = per-field "user has typed here" flags. The ref is updated
+  //                   synchronously so a late GET can read it before re-render.
   const [initialValues, setInitialValues] = useState<ProfileValues>(() => ({ ...authValues }));
   const [draft, setDraft] = useState<EditableDraft>(() => ({
     name: toEditableValue(authValues.name),
@@ -214,6 +222,11 @@ export default function EditProfileScreen() {
     [markDirty],
   );
 
+  /**
+   * Called only after a successful GET. The baseline always refreshes, but a
+   * draft field is replaced only while it is still pristine — this is the
+   * late-response guard required by B4.3. Retry reuses the same guard.
+   */
   const applyLoadedValues = useCallback((nextValues: ProfileValues) => {
     setInitialValues(nextValues);
     setDraft(current => ({
@@ -261,6 +274,7 @@ export default function EditProfileScreen() {
     setAttempt(current => current + 1);
   }, []);
 
+  // B4.3: drafts are intentionally discarded on exit — no Save/PATCH exists.
   const goBack = useCallback(() => {
     if (router.canGoBack()) {
       router.back();
@@ -269,6 +283,8 @@ export default function EditProfileScreen() {
     }
   }, [router]);
 
+  // B4.3: only the confirmed max:255 contract is enforced. No phone format
+  // rule and no mandatory value — both backend fields are nullable.
   const nameError = getLengthError(draft.name);
   const phoneError = getLengthError(draft.phone);
   const isAuthError = error !== null && (error.status === 401 || error.status === 403);
@@ -310,6 +326,7 @@ export default function EditProfileScreen() {
         ) : null}
 
         <View style={styles.card}>
+          {/* B4.3: local drafts only; keyboardType is the sole field-specific rule. */}
           <EditableFieldRow
             label="Name"
             value={draft.name}
@@ -328,6 +345,7 @@ export default function EditProfileScreen() {
             keyboardType="phone-pad"
             testID="edit-profile-phone"
           />
+          {/* B4.3: Email is deliberately read-only and bound to the baseline. */}
           <ReadOnlyValueRow
             label="Email"
             value={initialValues.email}

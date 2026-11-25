@@ -41,7 +41,9 @@ export default function ProfileScreen() {
     router.push('/my-requests');
   }, [router]);
 
-  // B4.2: the single real entry point to the protected Edit Profile route.
+  // B4.2/B4.3: the single real entry point to the protected Edit Profile route.
+  // The target screen keeps Name/Phone edits local, so no refresh or
+  // revalidation is needed when returning to this hub.
   const handleEditProfile = useCallback(() => {
     // Cast only until Expo regenerates typed routes for the new file; the
     // resolved URL is /profile/edit under the same (app) auth gate.
@@ -124,6 +126,7 @@ export default function ProfileScreen() {
           onPress={handleMyRequests}
           testID="menu-my-requests"
         />
+        {/* B4.2: exactly one new entry point; every pre-existing item stays. */}
         <ProfileMenuItem
           label="Edit Profile"
           onPress={handleEditProfile}

@@ -19,6 +19,9 @@ export {
   type OnboardingSlide,
 } from './onboarding';
 export { ApiError, extractBackendMessage, type ApiErrorKind } from './api-error';
+// B4.2/B4.3: profile GET contract used by /profile/edit. Only read types and
+// getUserProfile are exported; Name/Phone edits stay local to the screen until
+// a write contract is explicitly approved.
 export { getUserProfile, type ProfileResponse, type ProfileUser } from './profile';
 export {
   createServiceRequest,

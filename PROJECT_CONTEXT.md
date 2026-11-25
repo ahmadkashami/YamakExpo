@@ -129,6 +129,9 @@ An explicit user decision outranks any document, including this one.
   was found. Full TalkBack gesture behaviour, transient spinner frames and runtime long-text
   wrapping remain NOT VERIFIED (source-level PASS only). Authoritative report: workspace-root
   `B3.10_FINAL_VERIFICATION_REPORT.md`.
+<!-- B4.2/B4.3 canonical summary: records the committed implementation only; no
+     runtime PASS is claimed. Authoritative task detail is in the B4.2/B4.3
+     sections near the end of this file and in the matching final reports. -->
 - **B4.2 — Edit Profile functional route: IMPLEMENTED / STATIC VERIFICATION ONLY — AWAITING OWNER
   REVIEW.** Protected read-only `/profile/edit` renders Name, Phone and Email from `useAuth().user`
   immediately, then reconciles with `GET app-users/profile` through the shared authenticated client.
@@ -4166,6 +4169,9 @@ approval in the B2.5B task. Remaining UI/pagination/resource details stay in lat
 the separate stray dev-row purge remains a user decision. No additional business decisions made.
 
 **B2.5A DECISION CLOSURE PASS — B2.5B READY. STOP: do not implement B2.5B, commit or push.**
+
+<!-- B4.2/B4.3 implementation records: appended after the earlier B-phase log.
+     These are historical task records; they do not authorize B4.4 or B5. -->
 
 ## PHASE B — B4.2 EDIT PROFILE FUNCTIONAL IMPLEMENTATION (implementation, 2026-11-25)
 

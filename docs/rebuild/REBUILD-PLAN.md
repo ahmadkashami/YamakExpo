@@ -530,6 +530,10 @@ or attempt further runtime work without explicit authorization.
 
 #### B4-B11 - FUTURE PHASE B ORDER (after B3)
 
+<!-- B4.2/B4.3 canonical roadmap records: per §9 functional work preceded design
+     review, so the proposed edit-profile UI is NOT approved. These records log
+     status only; they do not authorize B4.4 or B5. -->
+
 **B4.2 (functional Edit Profile) — IMPLEMENTED / STATIC VERIFICATION ONLY — AWAITING OWNER REVIEW.**
 A protected read-only `/profile/edit` route was added under `(app)`, with a minimal authenticated GET
 helper and exactly one new Profile Hub row. It renders Name/Phone/Email from `useAuth().user`, then
