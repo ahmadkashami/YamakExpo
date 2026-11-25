@@ -49,6 +49,21 @@ export async function saveSession(session: StoredSession): Promise<void> {
   }
 }
 
+/**
+ * B4.4 — persist ONLY the user snapshot after a confirmed profile save.
+ *
+ * Deliberately does not touch ACCESS_TOKEN_KEY and does not call clearSession():
+ * a storage failure must leave the existing session intact. Callers decide how
+ * to surface the rejection; no authentication state is changed here.
+ */
+export async function saveUserSnapshot(user: RegisteredUser): Promise<void> {
+  if (!isSessionUser(user)) {
+    throw new Error('A saved user snapshot requires an email');
+  }
+
+  await SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(user));
+}
+
 export async function loadSession(): Promise<StoredSession | null> {
   let accessToken: string | null;
   let rawUser: string | null;

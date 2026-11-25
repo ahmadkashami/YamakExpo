@@ -1,13 +1,12 @@
-import { apiGet } from './http-client';
+import { apiGet, apiPatch } from './http-client';
 
 /**
- * B4.2/B4.3 — read-only profile contract for the functional Edit Profile screen.
+ * B4.2/B4.3/B4.4 — profile contract for the functional Edit Profile screen.
  *
- * Scope: GET only. The backend `appUserResource` exposes many more fields, but
- * only the three values the screen reads are modelled here. B4.3 edits Name and
- * Phone locally on the screen, so there is deliberately no PATCH request type
- * or update helper in this module. Do not add one without a separately approved
- * backend contract (see `REBUILD-PLAN.md` §9 and the B4.3 final report).
+ * The backend `appUserResource` exposes many more fields, but only the three
+ * values the screen reads are modelled here. B4.4 adds a deliberately narrow
+ * PATCH type for Name/Phone only; email, id, photo, location and all other
+ * fields remain outside this screen's contract.
  */
 export type ProfileUser = {
   /** Locally editable on /profile/edit; backend contract: nullable, max 255. */
@@ -27,7 +26,22 @@ export type ProfileResponse = {
   data: ProfileUser | null;
 };
 
+/**
+ * B4.4 — only changed editable fields are sent. A cleared optional value is
+ * sent as an explicit `null` because both backend fields are nullable.
+ * Email, id, photo, location and every other field are never included.
+ */
+export type UpdateProfileRequest = {
+  name?: string | null;
+  phone?: string | null;
+};
+
 /** GET /api/mobile/v1/app-users/profile via the existing authenticated client. */
 export function getUserProfile(): Promise<ProfileResponse> {
   return apiGet<ProfileResponse>('app-users/profile');
+}
+
+/** PATCH /api/mobile/v1/app-users/profile via the same authenticated client. */
+export function updateUserProfile(payload: UpdateProfileRequest): Promise<ProfileResponse> {
+  return apiPatch<ProfileResponse, UpdateProfileRequest>('app-users/profile', payload);
 }

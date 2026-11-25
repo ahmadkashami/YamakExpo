@@ -19,10 +19,15 @@ export {
   type OnboardingSlide,
 } from './onboarding';
 export { ApiError, extractBackendMessage, type ApiErrorKind } from './api-error';
-// B4.2/B4.3: profile GET contract used by /profile/edit. Only read types and
-// getUserProfile are exported; Name/Phone edits stay local to the screen until
-// a write contract is explicitly approved.
-export { getUserProfile, type ProfileResponse, type ProfileUser } from './profile';
+// B4.2/B4.3: profile GET contract used by /profile/edit.
+// B4.4: PATCH contract for the explicitly-approved Name/Phone save flow.
+export {
+  getUserProfile,
+  updateUserProfile,
+  type ProfileResponse,
+  type ProfileUser,
+  type UpdateProfileRequest,
+} from './profile';
 export {
   createServiceRequest,
   createTrackedServiceRequest,

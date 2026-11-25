@@ -147,6 +147,15 @@ An explicit user decision outranks any document, including this one.
   length error enforce the confirmed backend contract; no phone format rules, PATCH, Save, auth/session,
   backend, DB, dependency or native changes were made. `npx tsc --noEmit` and `npx expo lint` introduced
   no B4.3 findings; only previously documented unrelated findings remain. No runtime PASS is claimed.
+  **B4.4 was subsequently authorized and executed; see the B4.4 bullet below.**
+- **B4.4 — Edit Profile save + auth user refresh: IMPLEMENTED / STATIC VERIFIED — AWAITING OWNER
+  REVIEW.** Save PATCHes only genuinely changed Name/Phone to `app-users/profile`, with explicit
+  `null` for a cleared value and no email/id/photo/location/unrelated fields. The response envelope
+  and returned Name/Phone are validated before success. `AuthProvider.updateUser` + a new
+  user-only `saveUserSnapshot` persist the refreshed user in SecureStore without rewriting the
+  access token or clearing the session. Save is disabled until a loaded, changed, valid draft
+  exists; duplicate presses are blocked, failures preserve the draft, 422 field messages are shown,
+  and stale GET replies cannot overwrite a save or live edits. No runtime PASS is claimed.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
@@ -4251,4 +4260,48 @@ Save, photo, location or extra-field design was copied.
   runtime PASS is claimed. Pre-existing unrelated changes, especially `src/app/register.tsx`, remain
   untouched.
 
-**STOP: owner review of B4.3 is required before B4.4.**
+**STOP: owner review of B4.3 was required before B4.4; the explicit B4.4 task has now been executed
+and awaits its own owner review.**
+
+## PHASE B — B4.4 EDIT PROFILE SAVE & AUTH REFRESH (implementation, 2026-11-25)
+
+**Status: IMPLEMENTED / STATIC VERIFIED — AWAITING OWNER REVIEW. No runtime PASS is claimed.**
+
+The explicit B4.4 brief authorized this slice. The proposed `new-ui/main/edit-profile/` prototype
+remains **PROPOSED / NOT APPROVED**; the Save button uses the existing theme and the same
+`Pressable` + `typography.buttonLabel` pattern as the login submit button, with no visual redesign.
+
+### Implemented
+- `src/api/profile.ts`: added `UpdateProfileRequest` (`name?`, `phone?`) and `updateUserProfile()`
+  using the existing `apiPatch` helper against `app-users/profile`. `src/api/index.ts` exports the
+  new helper and type. Email, id, photo, location and every unrelated field remain outside the
+  contract.
+- `src/app/(app)/profile/edit.tsx`: Save is enabled only after a successful GET, when the current
+  draft differs from the loaded baseline, local validation passes, no save is in flight and an
+  authenticated user exists. Payload is built by actual value comparison: unchanged fields are
+  omitted, a cleared field is sent as explicit `null`. `savingRef` blocks duplicate submissions;
+  a spinner, success notice and distinct failure notices cover saving, 401/403, network, 422 and
+  unexpected-response cases. Baseline/dirty flags reset only after a confirmed save and successful
+  user persistence; failed PATCH or failed persistence preserves the draft. A `stateEpochRef`
+  invalidates GET replies started before a successful save, while `dirtyRef` still protects fields
+  currently being typed. No automatic navigation after Save.
+- `src/auth/auth-storage.ts`: added `saveUserSnapshot(user)`, which writes **only**
+  `AUTH_USER_KEY` and never touches `ACCESS_TOKEN_KEY` or calls `clearSession()`. A storage failure
+  propagates without silently signing the user out. Exported from `src/auth/index.ts`.
+- `src/auth/auth-context.tsx`: added `updateUser(user)`, which persists the user snapshot first and
+  then updates in-memory `AuthProvider.user`. Token, status, identity, email and all other
+  `RegisteredUser` properties are preserved. `authenticate()` and `saveSession()` are not used for
+  this update.
+
+### Verification and boundaries
+- `npx tsc --noEmit`: no B4.4 finding; only the pre-existing unrelated
+  `src/components/app-tabs.web.tsx(27,38)` TS2322 remains.
+- `npx expo lint`: no finding in B4.4 files; 40 pre-existing unrelated problems (35 errors,
+  5 warnings) remain elsewhere. Expo's temporary auto-generated ESLint config was removed afterward.
+- `git diff --check`: clean for the changed tracked files.
+- No JS test runner is configured in this repository (`package.json` has no test script/dependency
+  and no `*.test.*`/`__tests__` files), so no focused automated tests were added; no dependency was
+  installed. No live HTTP/API/security probe, Android rebuild, Gradle run, backend/DB change,
+  migration, token rotation or dependency change was performed.
+- No runtime PASS is claimed. `src/app/register.tsx` and all unrelated files were left untouched.
+- Authoritative report: workspace-root `B4.4_FINAL_REPORT.md` (outside this repository, not staged).

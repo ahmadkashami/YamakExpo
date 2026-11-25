@@ -555,7 +555,26 @@ to the confirmed `nullable|string|max:255` contract (`maxLength` plus an inline 
 PATCH, Save, photo/location/extra fields, auth/session, backend/DB, migration, dependency or native
 work was done. `npx tsc --noEmit` and `npx expo lint` introduced no B4.3 finding (only the previously
 documented unrelated baseline remains), and `git diff --check` is clean. No runtime PASS is claimed.
-**B4.4 must not start without explicit owner approval.**
+**B4.4 must not start without explicit owner approval.** That explicit approval was subsequently
+granted and B4.4 was executed; see the record below. B5 remains unapproved and was not started.
+
+**B4.4 (save edited Name/Phone + refresh the authenticated user) — IMPLEMENTED / STATIC VERIFIED —
+AWAITING OWNER REVIEW.** Only the existing Edit Profile screen, the profile API contract and the
+auth layer changed. `updateUserProfile()` reuses `apiPatch` against `app-users/profile` and sends
+only fields whose current value differs from the loaded baseline; a deliberately cleared optional
+field is sent as explicit `null`. Email, id, photo, location and all other fields are excluded. The
+`success` envelope and returned Name/Phone are validated before the save is treated as successful.
+`AuthProvider.updateUser()` persists the refreshed user through a new user-only SecureStore helper
+that never writes the token key and never clears the session, then updates the in-memory user;
+token, identity, email and other `RegisteredUser` properties stay intact. Save is gated on a loaded,
+changed, valid draft with no request in flight; `savingRef` prevents duplicate submissions, errors
+preserve the draft, 422 `errors.details` field messages are displayed, and a state epoch prevents a
+late GET from overwriting a successful save. No PATCH was present in B4.2/B4.3, so this record adds
+the write path only. `npx tsc --noEmit` and `npx expo lint` introduced no B4.4 finding (only the
+previously documented unrelated baseline remains); `git diff --check` is clean. No JS test runner is
+configured, so no focused automated tests were added. No runtime PASS, live probe, backend/DB work,
+migration, dependency/native change or B5 work was performed. Authoritative report: workspace-root
+`B4.4_FINAL_REPORT.md`.
 
 | # | Feature |
 |---|---|

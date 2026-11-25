@@ -10,7 +10,7 @@ import {
 
 import type { RegisteredUser } from '@/api/auth';
 
-import { clearSession, loadSession, saveSession } from './auth-storage';
+import { clearSession, loadSession, saveSession, saveUserSnapshot } from './auth-storage';
 
 export type AuthStatus = 'loading' | 'unauthenticated' | 'authenticated';
 
@@ -19,6 +19,8 @@ export interface AuthContextValue {
   user: RegisteredUser | null;
   accessToken: string | null;
   authenticate: (accessToken: string, user: RegisteredUser) => Promise<void>;
+  /** B4.4: refresh the user snapshot only; token, status and identity stay put. */
+  updateUser: (user: RegisteredUser) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -74,6 +76,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('authenticated');
   }, []);
 
+  /**
+   * B4.4 — persist first, then update in memory. If persistence fails the
+   * existing session, token and user remain untouched and the error propagates
+   * to the caller. This is deliberately not `authenticate()` or `saveSession()`.
+   */
+  const updateUser = useCallback(async (nextUser: RegisteredUser) => {
+    await saveUserSnapshot(nextUser);
+    setUser({ ...nextUser });
+  }, []);
+
   const signOut = useCallback(async () => {
     await clearSession();
 
@@ -83,8 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user, accessToken, authenticate, signOut }),
-    [status, user, accessToken, authenticate, signOut],
+    () => ({ status, user, accessToken, authenticate, updateUser, signOut }),
+    [status, user, accessToken, authenticate, updateUser, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

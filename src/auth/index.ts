@@ -12,5 +12,6 @@ export {
   getAccessToken,
   loadSession,
   saveSession,
+  saveUserSnapshot,
   type StoredSession,
 } from './auth-storage';
