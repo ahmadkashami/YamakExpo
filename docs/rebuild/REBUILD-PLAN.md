@@ -677,6 +677,21 @@ API or runtime verification, no screen/navigation/mutation/dependency. History a
 Workspace-root report: `B5.4_FINAL_REPORT.md`. Next: owner review, then separately authorize
 B5.5's functional read-only screen scope. B5.5/B6 not started; no prototype design approval.
 
+**B5.5 read-only functional screen (2026-11-28) — IMPLEMENTED / STATIC VERIFIED.**
+Approved functional route is `/my-cars` (`src/app/(app)/my-cars.tsx`), replacing the earlier
+proposed `/profile/cars` route choice. Existing `(app)` auth/onboarding protection is inherited.
+One useMyCars instance supplies FlatList data, loading/empty/error/refresh states; no duplicate
+GET/data state or hook changes. Stable car.id keys; noninteractive cards display Make/Model/Year
+(Not provided when null/blank), Type and Status only. Shared ApiErrorRow gives visible initial
+and retained-list refresh errors with Retry. Pull-to-refresh uses the hook; Back returns through
+history or safely to `/profile`. Exactly one Profile Hub My Cars row (`menu-my-cars`) targets
+this route, preserving all other actions and the tab/drawer structure. No mutations, prototype
+actions/fields, backend/auth/dependency changes or final design approval. Direct static checks:
+known `/explore` TS2322 and 35 ESLint errors / 5 warnings remain, none in changed screens; npx
+launcher remains blocked. Diff checks pass. Runtime/API/device acceptance NOT RUN. Report:
+workspace-root `B5.5_FINAL_REPORT.md`. Next: owner review then separately authorize B5.6;
+recommended smallest next task is targeted read-only Android acceptance. B5.6/B6 not started.
+
 | # | Feature |
 |---|---|
 | B4 | Edit Profile (`SCREEN-017`) |

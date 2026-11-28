@@ -257,6 +257,22 @@ An explicit user decision outranks any document, including this one.
   the known broken Node launcher. Diff checks pass. Runtime NOT RUN, no runtime PASS claimed.
   Report: workspace-root `B5.4_FINAL_REPORT.md`. Next: owner review and explicit B5.5 scope
   approval; proposed next task is the functional read-only My Cars screen. B5.5/B6 not started.
+- **B5.5 My Cars read-only functional screen (2026-11-28): IMPLEMENTED / STATIC VERIFIED.**
+  Owner-selected route `/my-cars` is `src/app/(app)/my-cars.tsx`, superseding the earlier proposed
+  `/profile/cars` path. It inherits existing auth/onboarding protection and consumes `useMyCars()`
+  once without duplicate fetching/data state. Plain noninteractive FlatList cards use stable car.id
+  keys and show only Make/Model/Year/Type/Status; nullable/blank first three use `Not provided`.
+  Loading, successful empty, visible error/Retry and pull-to-refresh states use the existing hook
+  and ApiErrorRow; retained rows remain present on refresh failure. 401/403 have explicit headings
+  without auth changes. Back uses history with `/profile` fallback. Profile Hub gains exactly
+  one `My Cars` / `menu-my-cars` row while retaining every existing action. No hook/API/backend,
+  tab/drawer, dependency or mutation change. This is functional only, not final UI approval;
+  proposed prototype fields/actions were not adopted. Static checks retain only known `/explore`
+  TS2322 and 35 ESLint errors / 5 warnings, zero findings in both screens; direct Node fallback
+  used for known npx launcher issue. Diff checks pass. Android/live API verification NOT RUN;
+  source route/state/accessibility checks are not runtime acceptance. Report:
+  workspace-root `B5.5_FINAL_REPORT.md`. Next: owner review and separate B5.6 authorization;
+  recommended next task is targeted read-only Android acceptance. B5.6/B6 not started.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile

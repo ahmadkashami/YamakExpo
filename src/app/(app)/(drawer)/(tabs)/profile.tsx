@@ -41,6 +41,11 @@ export default function ProfileScreen() {
     router.push('/my-requests');
   }, [router]);
 
+  const handleMyCars = useCallback(() => {
+    // Same typed-route fallback as Edit Profile until Expo regenerates routes.
+    router.push('/my-cars' as never);
+  }, [router]);
+
   // B4.2/B4.3: the single real entry point to the protected Edit Profile route.
   // The target screen keeps Name/Phone edits local, so no refresh or
   // revalidation is needed when returning to this hub.
@@ -132,6 +137,7 @@ export default function ProfileScreen() {
           onPress={handleEditProfile}
           testID="menu-edit-profile"
         />
+        <ProfileMenuItem label="My Cars" onPress={handleMyCars} testID="menu-my-cars" />
         <ProfileMenuItem label="Share" onPress={handleShareApp} testID="menu-share" />
         <ProfileMenuItem
           label="About Us"
