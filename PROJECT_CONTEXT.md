@@ -241,6 +241,22 @@ An explicit user decision outranks any document, including this one.
   checks passed. Runtime/live API verification NOT RUN; no runtime PASS claimed. Report:
   workspace-root `B5.3_FINAL_REPORT.md`. Next: owner review, then separately approve B5.4 scope;
   recommended smallest increment is a read-only My Cars hook. B5.4/screens/B6 not started.
+- **B5.4 My Cars read-only data hook (2026-11-28): IMPLEMENTED / STATIC VERIFIED.**
+  `src/hooks/use-my-cars.ts` exports `useMyCars()` and `UseMyCarsResult`: cars, isLoading,
+  isRefreshing, error, isEmpty, refresh and retry. Uses only `getMyCars()` and local React state;
+  validates success=true plus array data, preserves existing same-session rows on refresh/error,
+  and reports empty only after successful loading with no active request/error. Existing ApiError
+  instances (including 401/403) pass through; other failures become safe network errors.
+  AuthProvider account/session identity scopes state and effects. Render-time identity matching
+  hides prior-account rows immediately; effect cleanup invalidates late completions, and a
+  per-effect pending guard ignores overlapping explicit actions. Development StrictMode may
+  still issue an initial request for each setup; invalidated setup results are ignored. Requests
+  are not aborted because the existing GET helper takes no signal. No auth/API/backend changes,
+  screen, hook consumer, navigation, mutation or dependency. Direct static checks retain only the
+  existing `/explore` TS2322 and 35 ESLint errors / 5 warnings, with zero hook findings; npx uses
+  the known broken Node launcher. Diff checks pass. Runtime NOT RUN, no runtime PASS claimed.
+  Report: workspace-root `B5.4_FINAL_REPORT.md`. Next: owner review and explicit B5.5 scope
+  approval; proposed next task is the functional read-only My Cars screen. B5.5/B6 not started.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile

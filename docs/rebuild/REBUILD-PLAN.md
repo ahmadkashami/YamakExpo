@@ -663,6 +663,20 @@ records remain intact. Workspace-root report: `B5.3_FINAL_REPORT.md`. Next: owne
 explicit B5.4 scope approval; proposed smallest increment is a read-only My Cars hook before
 screen work. B5.4, My Cars screen and B6 were not started.
 
+**B5.4 read-only data hook (2026-11-28) — IMPLEMENTED / STATIC VERIFIED.**
+`src/hooks/use-my-cars.ts` exposes typed cars/loading/refreshing/error/empty plus refresh/retry,
+using only existing `getMyCars()` and local state. Success envelope and direct-array data are
+validated; malformed payloads are errors, not empty success. Same-session rows survive refresh
+and refresh failure. Existing ApiError/401/403 behavior is retained. Auth context identity masks
+old-account state immediately; scope cleanup ignores stale/unmounted completions; pending actions
+are deduplicated within each active scope. StrictMode setup may issue another initial request;
+the retired scope cannot apply its result. No cancellation/API/auth architecture change was added.
+Static checks retain existing `/explore` TS2322 and 35 ESLint errors / 5 warnings, no hook findings;
+npx launcher issue handled with the established direct Node fallback. Diff checks pass. No live
+API or runtime verification, no screen/navigation/mutation/dependency. History above preserved.
+Workspace-root report: `B5.4_FINAL_REPORT.md`. Next: owner review, then separately authorize
+B5.5's functional read-only screen scope. B5.5/B6 not started; no prototype design approval.
+
 | # | Feature |
 |---|---|
 | B4 | Edit Profile (`SCREEN-017`) |
