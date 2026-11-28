@@ -606,6 +606,21 @@ Next: remaining B4.5 failed-request draft preservation and retry/validation acce
 TalkBack and deterministic simultaneous duplicate-handler coverage remain unverified. B5 remains
 unstarted. This follow-up supersedes the fix-pending next step above, without closing full B4.5.
 
+**B4.5 remaining Android acceptance (2026-11-28) — COMPLETED / PASS WITH DOCUMENTED LIMITATIONS.**
+Separate continuation, preserving the original FAIL, historical 16 PASS results and B45-01 fix
+and Android PASS. On `emulator-5554` / local `yamak_integration_test`, synthetic user 4 passed
+failed-PATCH error/draft/session preservation, no automatic retry, explicit Save retry without
+duplicate PATCH, and GET failure/Retry with newer unsaved drafts retained. Connectivity failures
+were real and reversible via removal/restoration of backend ADB forwarding. No fabricated server
+response, scripted HTTP/security probe or product/backend change was made. No new defect observed.
+HTTP 422 remains NOT VERIFIED because permitted Name/Phone input cannot naturally violate the
+backend's nullable-string/max-255 validation without bypassing UI limits. Full TalkBack gestures
+and deterministic simultaneous Save-handler invocation remain NOT VERIFIED. Original Name/Phone
+restored by UI Save and fresh GET; temporary SecureStore session removed; one issued 24-hour
+mobile token left unrevoked. This closes the remaining verification task with those limitations;
+it supersedes the next-step text above. Next planned task: separately authorized B5 My Cars
+analysis. B5 and B4 design work were not started. Workspace-root report records the full evidence.
+
 | # | Feature |
 |---|---|
 | B4 | Edit Profile (`SCREEN-017`) |

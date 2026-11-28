@@ -185,6 +185,20 @@ An explicit user decision outranks any document, including this one.
   changed screen. No framework, backend, auth-layer, dependency or native change was made.
   **Next:** remaining B4.5 failure/draft-preservation and retry/validation acceptance; full TalkBack
   and deterministic simultaneous duplicate-handler coverage remain unverified. B5 not started.
+- **B4.5 remaining Android acceptance (2026-11-28): COMPLETED / PASS WITH DOCUMENTED LIMITATIONS.**
+  This continuation supersedes the remaining-acceptance next step above without rewriting the
+  original FAIL, 16 PASS results or B45-01 fix/retest history. Synthetic user 4 on `emulator-5554`
+  against local `yamak_integration_test` passed failed-PATCH messaging/draft/session preservation,
+  no automatic retry, explicit Save retry (one successful retry PATCH), and GET failure/Retry
+  with newer local draft preservation. Real network failures used reversible removal of ADB's
+  backend port forwarding; no response fabrication, backend/product change or HTTP probe was used.
+  No new product defect was observed. HTTP 422 remains NOT VERIFIED: Name/Phone accept nullable
+  strings up to 255 characters, and normal UI maxLength prevents a natural contract violation.
+  Full TalkBack gestures and deterministic simultaneous Save-handler invocation remain NOT VERIFIED.
+  Original Name/Phone were restored through UI Save and confirmed by a fresh GET; temporary
+  SecureStore credentials removed. One 24-hour mobile token was issued because no session remained;
+  it was left unrevoked. Only documentation changed. Next planned task is B5 My Cars analysis,
+  requiring separate owner authorization; B5 and B4 design changes were not started.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
