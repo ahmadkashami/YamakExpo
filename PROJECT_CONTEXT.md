@@ -199,6 +199,36 @@ An explicit user decision outranks any document, including this one.
   SecureStore credentials removed. One 24-hour mobile token was issued because no session remained;
   it was left unrevoked. Only documentation changed. Next planned task is B5 My Cars analysis,
   requiring separate owner authorization; B5 and B4 design changes were not started.
+- **B5.1 analysis / B5.2 delete ownership hardening (2026-11-28): IMPLEMENTED / VERIFIED in
+  isolated automated tests; uncommitted.** B5.1 history is retained in workspace-root
+  `B5.1_MY_CARS_ANALYSIS_REPORT.md`. Its unscoped DELETE finding matched the backend source.
+  B5.2 changes only the existing DELETE handler to require an AppUser principal and find the
+  requested car through that user's `cars()` relationship before soft deletion. Other-owner and
+  nonexistent IDs use the same existing 404 envelope; owner-delete success/resource is preserved.
+  GET/POST, validation, schema, routes and shared auth middleware are unchanged. Focused regression
+  checks in `tests/Feature/MobileUserCarOwnershipTest.php` ran on guarded SQLite `:memory:`:
+  5 tests / 28 assertions, no assertion failures/errors; PHPUnit reported 5 risky warnings about
+  removal of error/exception handlers. PHP syntax/diff checks passed. Pint reports the same
+  controller formatting findings as the unchanged HEAD baseline. No MySQL/live API/device
+  acceptance was run, no persistent database was touched, and no token was generated.
+  Workspace-root `B5.2_FINAL_REPORT.md` records details and limitations. No staging/commit/push.
+  Next: owner review, then separately authorize B5.3 My Cars read data layer. No B5 frontend
+  implementation, B5.3 or B6 was started; B3/B4 history remains unchanged.
+- **B5.2 final verification follow-up (2026-11-28): ownership assertions VERIFIED; shared-harness
+  warnings diagnosed, not suppressed.** Temporary tracing of the same focused tests confirmed
+  `tests/bootstrap.php` installs Laravel handlers before PHPUnit snapshots them; per-test setup
+  installs another pair, then Laravel `HandleExceptions::flushHandlersState()` removes both pairs
+  during teardown. PHPUnit reports the removed pre-test error/exception handlers for each test.
+  This originates in the existing bootstrap/framework lifecycle, not the new ownership test or
+  DELETE code. All required assertions complete before the teardown mismatch; no test or shared
+  infrastructure change was justified. The uninstrumented SQLite-memory rerun again had 5 tests /
+  28 assertions, no failures/errors, and 5 risky tests (two handler messages each); not a clean
+  suite. Syntax/diff checks passed and Pint findings still match the unchanged controller baseline.
+  Focused Git closure is separately owner-authorized for backend code/tests and these plan files;
+  no other endpoints or Expo application code changed. See `B5.2_FINAL_REPORT.md` follow-up.
+  Backend commit `a701af0` (`fix(b5): enforce ownership on user car deletion`) was pushed to its
+  verified `origin/main`; these plan updates have a separate documentation-only Git closure.
+  Next: owner review, then separate B5.3 authorization. B5.3 remains unstarted.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile

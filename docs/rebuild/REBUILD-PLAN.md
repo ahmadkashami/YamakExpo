@@ -621,6 +621,35 @@ mobile token left unrevoked. This closes the remaining verification task with th
 it supersedes the next-step text above. Next planned task: separately authorized B5 My Cars
 analysis. B5 and B4 design work were not started. Workspace-root report records the full evidence.
 
+**B5.1 / B5.2 follow-up (2026-11-28) — B5.2 IMPLEMENTED / VERIFIED (isolated automated evidence).**
+Analysis history remains in workspace-root `B5.1_MY_CARS_ANALYSIS_REPORT.md`. The owner approved
+404 for foreign/nonexistent cars. The existing backend DELETE handler now requires AppUser and
+resolves the car through the authenticated user's `cars()` relation before soft-deleting it;
+the existing successful resource/envelope and standard error envelope remain. GET/POST, routes,
+validation, relationships, schema and shared authentication are unchanged. Focused SQLite-memory
+tests: 5 tests / 28 assertions, no assertion failures/errors, with 5 PHPUnit risky warnings for
+error/exception-handler removal. Syntax/diff checks passed; Pint controller findings match HEAD.
+No persistent DB, MySQL acceptance, live API/device probe or token creation. Report:
+workspace-root `B5.2_FINAL_REPORT.md`. Changes remain unstaged/uncommitted; no push. This does
+not implement or accept the B5 frontend. Next requires owner review and separate B5.3 read-data
+layer authorization. B5.3/B6 not started; previous analysis and B3/B4 decisions preserved.
+
+**B5.2 final verification follow-up (2026-11-28).** Earlier isolated results above are preserved.
+Temporary tracing of this same focused test class confirmed the existing global bootstrap installs
+Laravel error/exception handlers before PHPUnit's snapshots. Each fresh test application adds its
+handlers, and Laravel teardown clears the complete stacks; PHPUnit then reports removal of its
+pre-test baseline handlers. No ownership-test or production correction is needed for this cause;
+shared lifecycle changes remain outside this task. Final uninstrumented SQLite-memory result:
+5 tests / 28 assertions, zero failures/errors, 5 risky tests with the same two handler messages
+each. These are known teardown lifecycle issues, not failed ownership assertions; the suite is
+not warning-free. PHP syntax/diff checks pass; Pint findings match baseline. No persistent DB,
+live probe, auth/schema change or Expo application edit. Separate backend and Expo documentation
+Git closure is authorized; details are in workspace-root `B5.2_FINAL_REPORT.md`. Next: review,
+then separately authorized B5.3; no automatic frontend work.
+
+Backend Git closure: `a701af0` — `fix(b5): enforce ownership on user car deletion` — pushed to
+the verified backend `origin/main`. Expo plan documentation has its own separate scoped commit.
+
 | # | Feature |
 |---|---|
 | B4 | Edit Profile (`SCREEN-017`) |
