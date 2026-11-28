@@ -650,6 +650,19 @@ then separately authorized B5.3; no automatic frontend work.
 Backend Git closure: `a701af0` — `fix(b5): enforce ownership on user car deletion` — pushed to
 the verified backend `origin/main`. Expo plan documentation has its own separate scoped commit.
 
+**B5.3 read-only API foundation (2026-11-28) — IMPLEMENTED / STATIC VERIFIED.** Only the typed
+read module `src/api/user-cars.ts` and its barrel exports were added to application code.
+`getMyCars(): Promise<MyCarsResponse>` calls shared authenticated `apiGet('user-cars')` for
+`GET /api/mobile/v1/user-cars`; `data` is `MyCar[]`, with no list/metaData or pagination.
+Fields/nullability match the inspected controller/model/schema. No public Vehicle type reuse,
+hook, route, screen, navigation, mutation, backend/auth change or dependency. Static checks:
+npx launcher blocked by existing Node configuration; direct TypeScript retains only known
+`/explore` TS2322; direct ESLint retains 35 errors / 5 warnings, zero in changed API files.
+Diff checks pass; no runtime/live API verification was performed or claimed. Prior B5.1/B5.2
+records remain intact. Workspace-root report: `B5.3_FINAL_REPORT.md`. Next: owner review and
+explicit B5.4 scope approval; proposed smallest increment is a read-only My Cars hook before
+screen work. B5.4, My Cars screen and B6 were not started.
+
 | # | Feature |
 |---|---|
 | B4 | Edit Profile (`SCREEN-017`) |

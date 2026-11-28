@@ -28,6 +28,7 @@ export {
   type ProfileUser,
   type UpdateProfileRequest,
 } from './profile';
+export { getMyCars, type MyCar, type MyCarsResponse } from './user-cars';
 export {
   createServiceRequest,
   createTrackedServiceRequest,

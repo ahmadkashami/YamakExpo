@@ -229,6 +229,18 @@ An explicit user decision outranks any document, including this one.
   Backend commit `a701af0` (`fix(b5): enforce ownership on user car deletion`) was pushed to its
   verified `origin/main`; these plan updates have a separate documentation-only Git closure.
   Next: owner review, then separate B5.3 authorization. B5.3 remains unstarted.
+- **B5.3 My Cars read-only API foundation (2026-11-28): IMPLEMENTED / STATIC VERIFIED.**
+  `src/api/user-cars.ts` defines `MyCar`, `MyCarsResponse` and `getMyCars()` using the existing
+  authenticated `apiGet('user-cars')`; `src/api/index.ts` exports them. The confirmed GET contract
+  is a direct `MyCar[]` data array with no pagination: numeric id, string _id/userId/type/status,
+  nullable string make/model/year/createdAt/updatedAt. Backend read contract matched B5.1;
+  B5.2 history and backend behavior are unchanged. No hook, screen, navigation, mutation helper,
+  auth change or dependency was added. Requested npx checks hit the existing unconfigured Node
+  launcher; direct installed TypeScript reports only known `/explore` TS2322, and direct ESLint
+  reports 35 existing errors / 5 warnings with zero findings in both changed API files. Diff
+  checks passed. Runtime/live API verification NOT RUN; no runtime PASS claimed. Report:
+  workspace-root `B5.3_FINAL_REPORT.md`. Next: owner review, then separately approve B5.4 scope;
+  recommended smallest increment is a read-only My Cars hook. B5.4/screens/B6 not started.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
