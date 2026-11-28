@@ -170,6 +170,21 @@ An explicit user decision outranks any document, including this one.
   Report: workspace-root `B4.5_FINAL_VERIFICATION_REPORT.md` (outside the repository).
   **Next:** owner-authorized focused B45-01 fix, then resume remaining B4.5 acceptance. B5 not started;
   B3 historical acceptance is unchanged.
+- **B45-01 focused follow-up (2026-11-28): FIXED / RUNTIME VERIFIED.** This follow-up supersedes
+  the fix-pending next step above; the original B4.5 FAIL and 16 PASS / 1 FAIL / 2 NOT VERIFIED
+  record remains historical evidence. Only `src/app/(app)/profile/edit.tsx` changed: capture the
+  submitted draft and per-field revisions at Save start, reconcile the confirmed saved baseline
+  and AuthProvider, retain fields edited since submission, and recalculate dirty state. Unsaved
+  newer drafts keep Save available and suppress the saved notice; no automatic PATCH is sent.
+  Targeted Android retest on `emulator-5554` / local `yamak_integration_test` passed: delayed
+  PATCH saved A, AuthProvider/SecureStore held A, input retained B with Save enabled, no second
+  PATCH occurred until explicit Save, and explicit B save succeeded. Original synthetic user 4
+  Name/Phone were restored by UI Save and fresh GET; temporary SecureStore session removed.
+  One 24-hour `mobile` token was issued for this follow-up and left unrevoked. TypeScript retains
+  only the known `/explore` error; ESLint reports 35 existing errors / 5 warnings, none in the
+  changed screen. No framework, backend, auth-layer, dependency or native change was made.
+  **Next:** remaining B4.5 failure/draft-preservation and retry/validation acceptance; full TalkBack
+  and deterministic simultaneous duplicate-handler coverage remain unverified. B5 not started.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile

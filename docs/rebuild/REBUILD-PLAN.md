@@ -591,6 +591,21 @@ NOT VERIFIED. Workspace-root report: `B4.5_FINAL_VERIFICATION_REPORT.md` (not st
 Next requires owner authorization for a focused B45-01 fix, then remaining B4.5 acceptance.
 B3 history remains unchanged and B5 was not started.
 
+**B45-01 focused follow-up (2026-11-28) — FIXED / RUNTIME VERIFIED.** The original B4.5 FAIL,
+16 PASS results and NOT VERIFIED limitations above remain historical evidence. The focused change
+in `src/app/(app)/profile/edit.tsx` captures the submitted draft and per-field edit revisions,
+updates the confirmed saved baseline/AuthProvider, preserves fields edited after submission and
+recalculates dirty state. Newer unsaved changes keep Save available, hide the saved notice and
+never trigger an automatic second PATCH. The single targeted Android retest passed: delayed PATCH
+saved A, AuthProvider and SecureStore held A, the input retained B with Save enabled, and B was
+sent/saved only on a later explicit Save. Original synthetic user 4 Name/Phone were restored by UI
+Save and fresh GET; temporary session removed. One temporary 24-hour `mobile` token was issued and
+left unrevoked. TypeScript retains only the existing `/explore` error; ESLint retains 35 errors /
+5 warnings with no findings in the changed screen. No prior acceptance suite was repeated.
+Next: remaining B4.5 failed-request draft preservation and retry/validation acceptance. Full
+TalkBack and deterministic simultaneous duplicate-handler coverage remain unverified. B5 remains
+unstarted. This follow-up supersedes the fix-pending next step above, without closing full B4.5.
+
 | # | Feature |
 |---|---|
 | B4 | Edit Profile (`SCREEN-017`) |

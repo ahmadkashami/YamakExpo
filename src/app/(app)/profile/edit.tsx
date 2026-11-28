@@ -286,6 +286,8 @@ export default function EditProfileScreen() {
     name: toEditableValue(authValues.name),
     phone: toEditableValue(authValues.phone),
   }));
+  const draftRef = useRef(draft);
+  const editRevisionRef = useRef({ name: 0, phone: 0 });
   const [dirty, setDirty] = useState<DirtyFields>(() => ({ name: false, phone: false }));
   const dirtyRef = useRef<DirtyFields>({ name: false, phone: false });
 
@@ -314,8 +316,10 @@ export default function EditProfileScreen() {
 
   const updateDraft = useCallback(
     (field: EditableField, value: string) => {
+      editRevisionRef.current[field] += 1;
       markDirty(field);
-      setDraft(current => ({ ...current, [field]: value }));
+      draftRef.current = { ...draftRef.current, [field]: value };
+      setDraft(draftRef.current);
       setIsSaved(false);
       setServerFieldErrors(current => {
         if (current[field] === undefined) {
@@ -336,10 +340,11 @@ export default function EditProfileScreen() {
    */
   const applyLoadedValues = useCallback((nextValues: ProfileValues) => {
     setInitialValues(nextValues);
-    setDraft(current => ({
-      name: dirtyRef.current.name ? current.name : toEditableValue(nextValues.name),
-      phone: dirtyRef.current.phone ? current.phone : toEditableValue(nextValues.phone),
-    }));
+    draftRef.current = {
+      name: dirtyRef.current.name ? draftRef.current.name : toEditableValue(nextValues.name),
+      phone: dirtyRef.current.phone ? draftRef.current.phone : toEditableValue(nextValues.phone),
+    };
+    setDraft(draftRef.current);
   }, []);
 
   useEffect(() => {
@@ -417,13 +422,15 @@ export default function EditProfileScreen() {
     }
 
     savingRef.current = true;
+    const submittedDraft = { ...draftRef.current };
+    const submittedRevisions = { ...editRevisionRef.current };
     setIsSaving(true);
     setIsSaved(false);
     setSaveError(null);
     setServerFieldErrors({});
 
     try {
-      const response = await updateUserProfile(savePayload);
+      const response = await updateUserProfile(buildSavePayload(submittedDraft, initialValues));
       if (!response.success || response.data === null) {
         throw new ApiError('http', UNEXPECTED_RESPONSE_MESSAGE, { body: response });
       }
@@ -452,10 +459,24 @@ export default function EditProfileScreen() {
         email: initialValues.email,
       };
       setInitialValues(nextValues);
-      setDraft({ name: toEditableValue(saved.name), phone: toEditableValue(saved.phone) });
-      dirtyRef.current = { name: false, phone: false };
-      setDirty({ name: false, phone: false });
-      setIsSaved(true);
+      // Only reset fields that were not edited after this save began.
+      const nextDraft: EditableDraft = {
+        name: editRevisionRef.current.name === submittedRevisions.name
+          ? toEditableValue(saved.name)
+          : draftRef.current.name,
+        phone: editRevisionRef.current.phone === submittedRevisions.phone
+          ? toEditableValue(saved.phone)
+          : draftRef.current.phone,
+      };
+      const nextDirty: DirtyFields = {
+        name: nextDraft.name !== toEditableValue(saved.name),
+        phone: nextDraft.phone !== toEditableValue(saved.phone),
+      };
+      draftRef.current = nextDraft;
+      setDraft(nextDraft);
+      dirtyRef.current = nextDirty;
+      setDirty(nextDirty);
+      setIsSaved(!nextDirty.name && !nextDirty.phone);
     } catch (cause) {
       if (cause instanceof ApiError && cause.status === 422) {
         setServerFieldErrors({
@@ -471,7 +492,7 @@ export default function EditProfileScreen() {
       savingRef.current = false;
       setIsSaving(false);
     }
-  }, [canSave, initialValues.email, savePayload, updateUser, user]);
+  }, [canSave, initialValues, updateUser, user]);
 
   const noticeError = saveError ?? error;
   const noticeIsAuthError =
