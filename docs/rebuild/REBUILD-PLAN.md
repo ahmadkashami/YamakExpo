@@ -576,6 +576,21 @@ configured, so no focused automated tests were added. No runtime PASS, live prob
 migration, dependency/native change or B5 work was performed. Authoritative report: workspace-root
 `B4.4_FINAL_REPORT.md`.
 
+**B4.5 Android runtime acceptance (2026-11-28) — FAIL.** The existing dev client on
+`emulator-5554` authenticated as synthetic AppUser `4` against local `yamak_integration_test`, using
+one temporary 24-hour `mobile` token through the approved in-memory debugger/SecureStore handoff.
+Real UI GET/prefill, read-only Email, Name-only/Phone-only PATCH, explicit Phone null, unchanged
+identity/email/token, Profile Hub refresh, persisted user after restart, reopening saved data and
+late-GET draft protection passed. **B45-01:** with a real PATCH response delayed 30 seconds, Name
+remained editable; newer text entered while Save was busy was silently replaced by the older saved
+value when the response arrived. Acceptance stopped on this defect. No product code was modified.
+Original Name/Phone were restored using normal Edit Profile Save and verified by a fresh profile
+GET; emulator session credentials were removed, and the temporary DB token was not revoked.
+Failure/retry/422, full TalkBack and deterministic in-flight duplicate-save coverage remain
+NOT VERIFIED. Workspace-root report: `B4.5_FINAL_VERIFICATION_REPORT.md` (not staged).
+Next requires owner authorization for a focused B45-01 fix, then remaining B4.5 acceptance.
+B3 history remains unchanged and B5 was not started.
+
 | # | Feature |
 |---|---|
 | B4 | Edit Profile (`SCREEN-017`) |

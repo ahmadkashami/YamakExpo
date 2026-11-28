@@ -156,6 +156,20 @@ An explicit user decision outranks any document, including this one.
   access token or clearing the session. Save is disabled until a loaded, changed, valid draft
   exists; duplicate presses are blocked, failures preserve the draft, 422 field messages are shown,
   and stale GET replies cannot overwrite a save or live edits. No runtime PASS is claimed.
+- **B4.5 — Android runtime acceptance (2026-11-28): FAIL.** Authenticated acceptance ran on
+  `emulator-5554` against local `yamak_integration_test`, using synthetic AppUser `4` and one
+  temporary 24-hour Sanctum token with only `mobile` ability. GET/prefill, read-only Email,
+  changed-field-only Name/Phone PATCHes, explicit Phone null, Profile Hub refresh, stored user
+  refresh, unchanged identity/email/token, restart persistence and late-GET draft protection passed.
+  **B45-01 reproduced:** editing Name while a PATCH response is delayed is allowed, but the older
+  successful save resets the entire draft and silently discards the newer edit (`profile/edit.tsx`,
+  success-path `setDraft`). Further scenarios stopped; no product fix was authorized or made.
+  Original Name/Phone were restored through normal Edit Profile Save and confirmed by a fresh GET;
+  temporary emulator session material was removed. Token was not revoked. Failure/retry/422 paths,
+  full TalkBack behavior and a deterministic concurrent duplicate-save test remain NOT VERIFIED.
+  Report: workspace-root `B4.5_FINAL_VERIFICATION_REPORT.md` (outside the repository).
+  **Next:** owner-authorized focused B45-01 fix, then resume remaining B4.5 acceptance. B5 not started;
+  B3 historical acceptance is unchanged.
 - **Dashboard request tracking** is required (channel, status, coordinates, lifecycle history) and
   is **NOT IMPLEMENTED**.
 - **Canonical create contract:** `POST /api/mobile/v1/requests` is the **only** canonical Mobile
